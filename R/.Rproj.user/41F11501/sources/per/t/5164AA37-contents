@@ -1,0 +1,5 @@
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+  shiny::shinyApp(ui = ui, server = server)
+}
+

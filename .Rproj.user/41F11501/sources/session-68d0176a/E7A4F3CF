@@ -1,0 +1,26 @@
+{
+    "id": "E7A4F3CF",
+    "path": "D:/R Projects/nimo/R/server.R",
+    "project_path": "R/server.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1685347295321.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "17,9",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1685349841,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1685349841442,
+    "read_only": false,
+    "read_only_alternatives": []
+}

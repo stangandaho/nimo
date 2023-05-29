@@ -1,0 +1,156 @@
+runApp(shiny::shinyApp(ui = ui, server = server))
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+runApp(shiny::shinyApp(ui = ui, server = server))
+}
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+options(warn = -1, message = FALSE)# suppress warning
+source("./R/src/cust_functions.R", local = TRUE)[1]
+source("./R/src/find_highly_coor_var.R", local = TRUE)[1]
+source("./R/src/predictors_selection_update.R", local = TRUE)[1]
+source("./R/src/render_model_fitting.R", local = TRUE)[1]
+source("./R/src/cust_functions.R", local = T)[1]
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T)[1]; source("./R/server.R", local = T)[1]
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function(output) {
+source("./R/ui.R", local = T)[1]; source("./R/server.R", local = T)[1]
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T)[1]; source("./R/server.R", local = T)[1]
+#shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+library(nimo)
+library(nimo)
+nimo::nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+options(warn = -1, message = FALSE)# suppress warning
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+options(warn = -1, message = FALSE)# suppress warning
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+options(warn = -1, message = FALSE)# suppress warning
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+options(warn = -1, message = FALSE)# suppress warning
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+options(warn = -1, message = FALSE)# suppress warning
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+source("D:/R Projects/nimo/R/nimo.R", echo=TRUE)
+nimo <- function() {
+options(warn = -1, message = FALSE)# suppress warning
+setwd("./")
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+options(warn = -1, message = FALSE)# suppress warning
+setwd("./")
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+options(warn = -1, message = FALSE)# suppress warning
+setwd("./")
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+nimo <- function() {
+options(warn = -1, message = FALSE)# suppress warning
+setwd("./")
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
+setwd(".")
+nimo <- function() {
+options(warn = -1, message = FALSE)# suppress warning
+setwd(".")
+source("./R/ui.R", local = T); source("./R/server.R", local = T)
+shiny::shinyApp(ui = ui, server = server)
+}
+nimo()
