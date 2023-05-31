@@ -2,5 +2,8 @@ nimo <- function(browser = FALSE) {
   options(warn = -1, message = FALSE)# suppress warning
   source("./R/ui.R", local = T); source("./R/server.R", local = T)
 
-  shiny::shinyApp(ui = ui, server = server, options = opt_list)
+  shiny::shinyApp(ui = ui, server = server)
 }
+
+nimo()
+

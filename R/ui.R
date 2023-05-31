@@ -8,12 +8,13 @@ thr <- c("No omission" = "lpt", "Sensitivity = specificity" = "equal_sens_spec",
          "Sensitivity" = "sensitivity")
 bttn_primary_style <-  paste0("background-color:", "#39198a;", "color:#ffffff;")
 ##Include the custom CSS file in your Shiny app's UI:
-tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "style.css"))
 
+git_repo <- "https://github.com/stangandaho/nimo"
 git_issues <- "https://github.com/insta-s/Niche-Modeler/issues"
-mytitle <- tags$link(tags$a(href = '#',target="_blank",
-                            tags$img(src="R/nimo_logo.png", height = '30',width='80')),
+mytitle <- tags$link(tags$a(href = git_repo, target="_blank",
+                            tags$img(src= "../R/www/nimo_logo.png", height = '30',width='80')),
                      strong(""))
+
 colinearity_method <- c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
                         "Principal component analysis" = "pca", "Factorial analysis" = "fa")
 partition_types <- c("Random" = "part_random", "Spatial band" = "part_sband",
@@ -81,7 +82,7 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
              ),
     menuItem("Post-Modeling", tabName = "post_modeling", icon = icon("arrow-right", lib = "glyphicon"),
              menuSubItem("Spatial predictions", tabName = "spatial_predict", icon = NULL),
-             menuSubItem("Interpolation ", tabName = "interpolation", icon = NULL)
+             menuSubItem("Extrapolation ", tabName = "extrapolation", icon = NULL)
              ),
     ## CONFIGURATION
     div(
@@ -93,6 +94,8 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
   width = 300
 )
 
+# Add resource path for the 'www' directory
+addResourcePath(prefix = "www", directoryPath = "R/www")
 
 ## Body ####
 ### Theme ----
@@ -100,12 +103,7 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
 nimo_body <- shinydashboard::dashboardBody(
  # customTheme,
   tags$head(
-    # tags$style(".fa-question-circle {color:#FFFFF; font-size: 15px}"),
-    # tags$style(".fa-menu-right {font-size: 15px}"),
-    # tags$style(".fa-bug {font-size: 50px}"),
-    # tags$style(".fa-info {font-size: 15px}"),
-    # tags$style(".fa-sack-dollar {font-size: 15px}"),
-    # tags$style(".fa-hand-holding-dollar {font-size: 15px}"),
+    tags$link(rel = "stylesheet", type = "text/css", href = "style.css"),
     tags$style(".scrolling-container {
       display: flex;
       flex-wrap: nowrap;
@@ -154,7 +152,7 @@ nimo_body <- shinydashboard::dashboardBody(
                        hr()
                 ),
                 column(12,
-                       div(img(src = "./nimo_logo.png", height = "35%",width = "40%"), style="text-align: center;")
+                       div(shiny::img(src = "./R/www/nimo_logo.png", height = "35%",width = "40%"), style="text-align: center;")
                 ),
                 br(),
                 column(12,
@@ -185,223 +183,237 @@ nimo_body <- shinydashboard::dashboardBody(
     ),
     ## Calibration menu --------
     tabItem("calibration",
-            fluidRow(column(8,
-                            tabsetPanel(
-                              tabPanel(title = "Unique Occurence", icon = icon("database", "font-awesome"),
-                                       DT::DTOutput("unique_data")),
-                              tabPanel(title = "Duplicate Occurence", icon = icon("clone", "font-awesome"),
-                                       DT::DTOutput("duplicate_data")),
-                              tabPanel(title = "Geographic", icon = icon("globe", "font-awesome"),
-                                       plotlyOutput("geo_distribution", height = "600px")
-                                       )
-                            )
-                            ),
-                     column(4,
-                            hr(),
-                            checkboxInput("import_data_check", "Import data", value = FALSE),
-                            conditionalPanel("input.import_data_check == true",
-                                             selectInput("occ_type", "Data type",
-                                                         choices = c("Presence", "Presence - Absence"),
-                                                         selected = "Presence"),
-                                             shinyFilesButton("choose_data_file", "Load data",
-                                                              "Select Species data", multiple = FALSE,
-                                                              icon = icon("file-upload"))),
-                            hr(),
-                            conditionalPanel("output.geo_distribution != null",
-                                             shinyFilesButton("add_layer", "Add layer",
-                                                              title = "Select a vector file",
-                                                              icon = icon("plus"),
-                                                              multiple = FALSE)
-                                             ),
-                            hr(),
-                            actionButton("area_calibration", "Calibrate area",
-                                         icon = icon("draw-polygon", "font-awesome"))
-                            )
-                     )
+            fluidPage(
+              fluidRow(column(8,
+                              tabsetPanel(
+                                tabPanel(title = "Unique Occurence", icon = icon("database", "font-awesome"),
+                                         DT::DTOutput("unique_data")),
+                                tabPanel(title = "Duplicate Occurence", icon = icon("clone", "font-awesome"),
+                                         DT::DTOutput("duplicate_data")),
+                                tabPanel(title = "Geographic", icon = icon("globe", "font-awesome"),
+                                         plotlyOutput("geo_distribution", height = "600px")
+                                )
+                              )
+              ),
+              column(4,
+                     hr(),
+                     checkboxInput("import_data_check", "Import data", value = FALSE),
+                     conditionalPanel("input.import_data_check == true",
+                                      selectInput("occ_type", "Data type",
+                                                  choices = c("Presence", "Presence - Absence"),
+                                                  selected = "Presence"),
+                                      shinyFilesButton("choose_data_file", "Load data",
+                                                       "Select Species data", multiple = FALSE,
+                                                       icon = icon("file-upload"))),
+                     hr(),
+                     conditionalPanel("output.geo_distribution != null",
+                                      shinyFilesButton("add_layer", "Add layer",
+                                                       title = "Select a vector file",
+                                                       icon = icon("plus"),
+                                                       multiple = FALSE)
+                     ),
+                     hr(),
+                     actionButton("area_calibration", "Calibrate area",
+                                  icon = icon("draw-polygon"))
+              )
+              )
+            )
             ),
     ## Predictors menu -----
     tabItem("predictors",
-            fluidRow(column(8,
-                            tabsetPanel(
-                              tabPanel("Summary",
-                                       verbatimTextOutput("pred_summary")),
-                              tabPanel("Plot", icon = icon("image"),
-                                       plotOutput("pred_plot")),
-                              tabPanel("Colinearity", icon = icon("line"),
-                                       shiny::div(
-                                         DT::dataTableOutput("cr_df"),
-                                         fluidRow(column(7, verbatimTextOutput("cr_layer")),
-                                                  column(4, verbatimTextOutput("cr_remove")))
-                                                 )
-                                       )
-                            )),
-                     column(4,
-                            hr(),
-                            shinyDirButton("pred_source", "Source", icon = icon("folder"), style = bttn_primary_style,
-                                           title = "Select folder containing predictors"),
-                            hr(),
-                            selectInput("pred_single", "Predictors", choices = c()),
-                            fluidRow(column(3, actionButton("pred_load", "Show", icon = icon("eye"))),
-                                     column(4, actionButton("colinearize", "Colinearize", icon = icon("poll-h"))),
-                                     column(3, actionButton("occ_filt", "", icon = icon("braille")))),
-                            tags$hr(),
-                            tags$h4("Reduce colinearity"),
-                            selectInput("coli_method", "Method", choices = colinearity_method),
-                            conditionalPanel("input.coli_method == 'pearson'",
-                                             numericInput("pearson_threshold", "Threshold", value = 0.8, min = 0, step = 0.1)),
-                            conditionalPanel("input.coli_method == 'vif'",
-                                             numericInput("vif_threshold", "Threshold", value = 10, min = 1)),
-                            fluidRow(column(7, actionButton("reduce_collin", "Reduce colinearity", icon = icon("sort-amount-down")))
-                            )
-                            ))
+            fluidPage(
+              fluidRow(column(8,
+                              tabsetPanel(
+                                tabPanel("Summary",
+                                         verbatimTextOutput("pred_summary")),
+                                tabPanel("Plot", icon = icon("image"),
+                                         plotOutput("pred_plot")),
+                                tabPanel("Colinearity", icon = icon("line"),
+                                         shiny::div(
+                                           DT::dataTableOutput("cr_df"),
+                                           fluidRow(column(7, verbatimTextOutput("cr_layer")),
+                                                    column(4, verbatimTextOutput("cr_remove")))
+                                         )
+                                )
+                              )),
+                       column(4,
+                              hr(),
+                              shinyDirButton("pred_source", "Source", icon = icon("folder"), style = bttn_primary_style,
+                                             title = "Select folder containing predictors"),
+                              hr(),
+                              selectInput("pred_single", "Predictors", choices = c()),
+                              fluidRow(column(3, actionButton("pred_load", "Show", icon = icon("eye"))),
+                                       column(4, actionButton("colinearize", "Colinearize", icon = icon("poll-h"))),
+                                       column(3, actionButton("occ_filt", "", icon = icon("braille")))),
+                              tags$hr(),
+                              tags$h4("Reduce colinearity"),
+                              selectInput("coli_method", "Method", choices = colinearity_method),
+                              conditionalPanel("input.coli_method == 'pearson'",
+                                               numericInput("pearson_threshold", "Threshold", value = 0.8, min = 0, step = 0.1)),
+                              conditionalPanel("input.coli_method == 'vif'",
+                                               numericInput("vif_threshold", "Threshold", value = 10, min = 1)),
+                              fluidRow(column(7, actionButton("reduce_collin", "Reduce colinearity", icon = icon("sort-amount-down")))
+                              )
+                       ))
+            )
             ),
     ## Data partition menu -----
     tabItem("data_partition",
-            fluidRow(column(8,
-                             hr(),
-                             verbatimTextOutput("part_out"),
-                             conditionalPanel("input.divvy_data > 0 &&
+            fluidPage(
+              fluidRow(column(8,
+                              hr(),
+                              verbatimTextOutput("part_out"),
+                              conditionalPanel("input.divvy_data > 0 &&
                                    (input.partition_type == 'part_sband' || input.partition_type == 'part_sblock')",
-                                              plotOutput("part_sband_plot"))
-                            ),
-                     column(4,
-                            hr(),
-                            selectInput("partition_type", "Partitioning type", choices = partition_types),
-                            conditionalPanel("input.partition_type == 'part_random'",
-                                             selectInput("part_random_method", "Method",
-                                                         choices = c("kfold", "rep_kfold", "loocv", "boot")),
-                                             conditionalPanel("input.part_random_method == 'kfold' | input.part_random_method == 'rep_kfold'",
-                                                              numericInput("kfold_number", "Number of folds", value = 10, min = 1, step = 1)),
-                                             conditionalPanel("input.part_random_method == 'rep_kfold'",
-                                                              numericInput("rep_kfold", "Number of replicates", value = 10, min = 1, step = 1)),
-                                             conditionalPanel("input.part_random_method == 'boot'",
-                                                              numericInput("rep_boot", "Number of replicates", value = 2, min = 1, step = 1),
-                                                              numericInput("prop_boot", "Proportion", value = 0.7, min = 0, step = 0.1, max = 1)
-                                                              )
-                                             ),
-                            conditionalPanel("input.partition_type == 'part_sband'",
-                                             selectInput("sband_lon_lat", "Across", choices = c("Longitude" = "lon", "Latitude" = "lat")),
-                                             numericInput("sband_part_number", "Number of partition", value = 2, min = 2, step = 1),
-                                             fluidRow(column(6, numericInput("sband_part_min", "Min bands", value = 2, min = 2, step = 1, width = "55%")),
-                                                      column(6, numericInput("sband_part_max", "Max bands", value = 20, min = 1, step = 1, width = "55%"))),
-                                             numericInput("sband_part_min_occ", "Min occurence", value = 10, min = 1, step = 1),
-                                             numericInput("sband_part_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
-                                             ),
-                            conditionalPanel("input.partition_type == 'part_sblock'",
-                                             numericInput("sblock_part_number", "Number of partition", value = 2, min = 2, step = 1),
-                                             fluidRow(column(6, numericInput("min_res_mult", "Min precision", value = 3, min = 2, step = 1, width = "55%")),
-                                                      column(6, numericInput("max_res_mult", "Max precision", value = 200, min = 2, step = 1, width = "55%"))),
-                                             numericInput("num_grids", "Number of grid", value = 30, min = 1, step = 1),
-                                             numericInput("sblock_min_occ", "Min occurence", value = 10, min = 1, step = 1),
-                                             numericInput("sblock_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
-                                             ),
-                            conditionalPanel("input.partition_type == 'part_senv'",
-                                             fluidRow(column(6, numericInput("min_n_groups", "Min groups", value = 2, min = 1, step = 1, width = "55%")),
-                                                      column(6, numericInput("max_n_groups", "Max groups", value = 10, min = 1, width = "55%"))
-                                                      ),
-                                             numericInput("senv_min_occ", "Min occurence", value = 10, min = 1),
-                                             numericInput("senv_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
-                                             ),
-                            fluidRow(column(4, actionButton("divvy_data", "Divvy", icon = icon("project-diagram"))),
-                                     column(4, actionButton("valided_dp", "Validate", icon = icon("check-circle")))
-                            ),
-                            hr(),
-                            conditionalPanel("input.occ_type == 'Presence'",
-                                             div(id = "bpas_check",
-                                                 p("You must generate background or pseudo-absence points for the modeling goals"),
-                                                 div(actionButton("back_ps_ab_samp", "Sample", style = "border: 2px solid #fd7769"),
-                                                     style = "float: right; position:relative; margin: -10px 12px")
-                                             ))
-                            )
+                                               plotOutput("part_sband_plot"))
+              ),
+              column(4,
+                     hr(),
+                     selectInput("partition_type", "Partitioning type", choices = partition_types),
+                     conditionalPanel("input.partition_type == 'part_random'",
+                                      selectInput("part_random_method", "Method",
+                                                  choices = c("kfold", "rep_kfold", "loocv", "boot")),
+                                      conditionalPanel("input.part_random_method == 'kfold' | input.part_random_method == 'rep_kfold'",
+                                                       numericInput("kfold_number", "Number of folds", value = 10, min = 1, step = 1)),
+                                      conditionalPanel("input.part_random_method == 'rep_kfold'",
+                                                       numericInput("rep_kfold", "Number of replicates", value = 10, min = 1, step = 1)),
+                                      conditionalPanel("input.part_random_method == 'boot'",
+                                                       numericInput("rep_boot", "Number of replicates", value = 2, min = 1, step = 1),
+                                                       numericInput("prop_boot", "Proportion", value = 0.7, min = 0, step = 0.1, max = 1)
+                                      )
+                     ),
+                     conditionalPanel("input.partition_type == 'part_sband'",
+                                      selectInput("sband_lon_lat", "Across", choices = c("Longitude" = "lon", "Latitude" = "lat")),
+                                      numericInput("sband_part_number", "Number of partition", value = 2, min = 2, step = 1),
+                                      fluidRow(column(6, numericInput("sband_part_min", "Min bands", value = 2, min = 2, step = 1, width = "55%")),
+                                               column(6, numericInput("sband_part_max", "Max bands", value = 20, min = 1, step = 1, width = "55%"))),
+                                      numericInput("sband_part_min_occ", "Min occurence", value = 10, min = 1, step = 1),
+                                      numericInput("sband_part_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
+                     ),
+                     conditionalPanel("input.partition_type == 'part_sblock'",
+                                      numericInput("sblock_part_number", "Number of partition", value = 2, min = 2, step = 1),
+                                      fluidRow(column(6, numericInput("min_res_mult", "Min precision", value = 3, min = 2, step = 1, width = "55%")),
+                                               column(6, numericInput("max_res_mult", "Max precision", value = 200, min = 2, step = 1, width = "55%"))),
+                                      numericInput("num_grids", "Number of grid", value = 30, min = 1, step = 1),
+                                      numericInput("sblock_min_occ", "Min occurence", value = 10, min = 1, step = 1),
+                                      numericInput("sblock_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
+                     ),
+                     conditionalPanel("input.partition_type == 'part_senv'",
+                                      fluidRow(column(6, numericInput("min_n_groups", "Min groups", value = 2, min = 1, step = 1, width = "55%")),
+                                               column(6, numericInput("max_n_groups", "Max groups", value = 10, min = 1, width = "55%"))
+                                      ),
+                                      numericInput("senv_min_occ", "Min occurence", value = 10, min = 1),
+                                      numericInput("senv_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
+                     ),
+                     fluidRow(column(4, actionButton("divvy_data", "Divvy", icon = icon("project-diagram"))),
+                              column(4, actionButton("valided_dp", "Validate", icon = icon("check-circle")))
+                     ),
+                     hr(),
+                     conditionalPanel("input.occ_type == 'Presence'",
+                                      div(id = "bpas_check",
+                                          p("You must generate background or pseudo-absence points for the modeling goals"),
+                                          div(actionButton("back_ps_ab_samp", "Sample", style = "border: 2px solid #fd7769"),
+                                              style = "float: right; position:relative; margin: -10px 12px")
+                                      ))
+              )
 
-                     )
+              )
+            )
 
 
             ),
     ## Data Extraction ------
     tabItem("data_extraction",
-            fluidRow(column(8,
-                            div(id = "extracted_data_container",
-                              DT::DTOutput("extracted_data"))),
-                     column(4,
-                            selectInput("extract_variables", label = "Predictors to use",
-                                        choices = c(), multiple = T, selected = c()),
-                            actionButton("extract_data", "Extract data", icon = icon("table")),
-                            shinySaveButton(id = "save_extracted_data", label = "Save",  title = "Save occurence data filtered",
-                                             filename = "", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
-                            )
-                     )
+            fluidPage(
+              fluidRow(column(8,
+                              div(id = "extracted_data_container",
+                                  DT::DTOutput("extracted_data"))),
+                       column(4,
+                              selectInput("extract_variables", label = "Predictors to use",
+                                          choices = c(), multiple = T, selected = c()),
+                              actionButton("extract_data", "Extract data", icon = icon("table")),
+                              shinySaveButton(id = "save_extracted_data", label = "Save",  title = "Save occurence data filtered",
+                                              filename = "", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
+                       )
+              )
+            )
             ),
     ## MODELING
     ## Model fiting ----
     tabItem("model_fiting",
-            fluidPage(column(6,
-                             selectInput("fit_model_algorithm", label = "Algorithm", choices = c(),
-                                            multiple = T, selected = c(), width = "100%")),
-                      column(2, br(), checkboxInput("use_existing_df4mod", "Use existing data")),
-                      column(2, br(), conditionalPanel("input.use_existing_df4mod == true",
-                                                 shinyFilesButton("import_exiting_df4mod", "Load data",
-                                                                  title = "Import data for modeling",
-                                                                    icon = icon("upload"), multiple = F))
-                             ),
-                      column(2, br(), conditionalPanel("input.import_exiting_df4mod",
-                                                       checkboxInput("esm", "Ensemble of Small Models"))
-                      )),
-            uiOutput("dynamic_model_fitting"),
+            fluidPage(
+              fluidRow(column(6,
+                              selectInput("fit_model_algorithm", label = "Algorithm", choices = c(),
+                                          multiple = T, selected = c(), width = "100%")),
+                       column(2, br(), checkboxInput("use_existing_df4mod", "Use existing data")),
+                       column(2, br(), conditionalPanel("input.use_existing_df4mod == true",
+                                                        shinyFilesButton("import_exiting_df4mod", "Load data",
+                                                                         title = "Import data for modeling",
+                                                                         icon = icon("upload"), multiple = F))
+                       ),
+                       column(2, br(), conditionalPanel("input.import_exiting_df4mod",
+                                                        checkboxInput("esm", "Ensemble of Small Models"))
+                       )),
+              uiOutput("dynamic_model_fitting")
+            )
             #uiOutput("dynamic_esm_model_fitting")
             ),
     tabItem("model_ensembling",
-            fluidRow(column(7,
-                            DT::DTOutput("fitted_model_list_dt"),
-                            hr(),
-                            verbatimTextOutput("selected_mod_lenght"),
-                            DT::DTOutput("ens_performance")
-                            ),
-                     column(5,
-                            h4("Ensembling parameter"),
-                            selectInput("ens_method", "Method", choices = c()),
-                            selectInput("ens_thr", "Threshol", choices = thr, multiple = T),
-                            conditionalPanel("input.ens_thr.includes('sensitivity')",
-                                             numericInput("ens_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
-                            conditionalPanel("input.ens_method.includes('meanw', 'meandsup', 'meanthr')",
-                                             selectInput("ens_thr_model", "Model threshold", choices = thr, selected = "equal_sens_spec")),
-                            conditionalPanel("input.ens_thr_model.includes('sensitivity')",
-                                             numericInput("ens_sens_model", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
-                            selectInput("ens_metric", "Metric", choices = c("SORENSEN", "JACCARD", "FPB", "TSS", "KAPPA", "AUC", "IMAE", "BOYCE"), selected = "TSS"),
-                            actionButton("fit_ens", "Ensemble")
-                            )
-                     )
+            fluidPage(
+              fluidRow(column(7,
+                              DT::DTOutput("fitted_model_list_dt"),
+                              hr(),
+                              verbatimTextOutput("selected_mod_lenght"),
+                              DT::DTOutput("ens_performance")
+              ),
+              column(5,
+                     h4("Ensembling parameter"),
+                     selectInput("ens_method", "Method", choices = c()),
+                     selectInput("ens_thr", "Threshol", choices = thr, multiple = T),
+                     conditionalPanel("input.ens_thr.includes('sensitivity')",
+                                      numericInput("ens_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
+                     conditionalPanel("input.ens_method.includes('meanw', 'meandsup', 'meanthr')",
+                                      selectInput("ens_thr_model", "Model threshold", choices = thr, selected = "equal_sens_spec")),
+                     conditionalPanel("input.ens_thr_model.includes('sensitivity')",
+                                      numericInput("ens_sens_model", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
+                     selectInput("ens_metric", "Metric", choices = c("SORENSEN", "JACCARD", "FPB", "TSS", "KAPPA", "AUC", "IMAE", "BOYCE"), selected = "TSS"),
+                     actionButton("fit_ens", "Ensemble")
+              )
+              )
+            )
             ),
     tabItem("spatial_predict",
-            fluidRow(column(8,
-                            DT::DTOutput("st_fitted_model_list_dt"),
-                            DT::DTOutput("es_fitted_model_list_dt"),
-                            div(style = "height:450px",
-                                DT::DTOutput("model_perf_merged")),
-                            shinySaveButton("save_model_perf_merged", "Export",
-                                            title = "Save models performance table",
-                                            filename = "model_performance", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
-                            ),
-                     column(4,
-                            selectInput("model_category", "Model category",
-                                        choices = c("Standard models", "Ensemble")),
-                            selectInput("predict_thr", "Threshol", choices = thr, multiple = T),
-                            conditionalPanel("input.predict_thr.includes('sensitivity')",
-                                             numericInput("predict_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
-                            shinyFilesButton("predict_area", label = "Add", title = "Select spatial polygon to restrict prediction", icon = icon("plus"), multiple = F),
-                            br(), br(),
-                            selectInput("predict_clamp", "Clamp", choices = c("No" = FALSE, "Yes" = TRUE),
-                                        selected = TRUE),
-                            selectInput("predict_pred_type", label = "Type of response",
-                                        c("Link" = "link", "Exponential" = "exponential", "Cloglog" = "cloglog", "Logistic" = "logistic"),
-                                        selected = "Cloglog"),
-                            actionButton("predict", "Predict", icon = icon("qrcode", lib = "glyphicon")),
-                            hr(),
-                            actionButton("merge_model_perf", "Merge performance", icon = icon("resize-small", lib = "glyphicon"))
-                            )
-                     ),
+            fluidPage(
+              fluidRow(column(8,
+                              DT::DTOutput("st_fitted_model_list_dt"),
+                              DT::DTOutput("es_fitted_model_list_dt"),
+                              div(style = "height:450px",
+                                  DT::DTOutput("model_perf_merged")),
+                              shinySaveButton("save_model_perf_merged", "Export",
+                                              title = "Save models performance table",
+                                              filename = "model_performance", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
+              ),
+              column(4,
+                     selectInput("model_category", "Model category",
+                                 choices = c("Standard models", "Ensemble")),
+                     selectInput("predict_thr", "Threshol", choices = thr, multiple = T),
+                     conditionalPanel("input.predict_thr.includes('sensitivity')",
+                                      numericInput("predict_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
+                     shinyFilesButton("predict_area", label = "Add", title = "Select spatial polygon to restrict prediction", icon = icon("plus"), multiple = F),
+                     br(), br(),
+                     selectInput("predict_clamp", "Clamp", choices = c("No" = FALSE, "Yes" = TRUE),
+                                 selected = TRUE),
+                     selectInput("predict_pred_type", label = "Type of response",
+                                 c("Link" = "link", "Exponential" = "exponential", "Cloglog" = "cloglog", "Logistic" = "logistic"),
+                                 selected = "Cloglog"),
+                     actionButton("predict", "Predict", icon = icon("qrcode", lib = "glyphicon")),
+                     hr(),
+                     actionButton("merge_model_perf", "Merge performance", icon = icon("resize-small", lib = "glyphicon"))
+              )
+              )
             ),
-    tabItem("interpolation",
+            ),
+    tabItem("extrapolation",
             fluidRow()),
 
     tabItem("configuration",

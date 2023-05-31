@@ -1,3 +1,18 @@
 .fit_model_btn_icon {
   color: green;
 }
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('../R/www/fonts/Montserrat-Black.ttf') format('truetype');
+}
+
+p{
+  font-family: "Montserrat", sans-serif;
+  color: red;
+}
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  color: red
+}
