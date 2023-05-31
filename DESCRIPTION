@@ -4,16 +4,17 @@ Title: GUI for Ecological niche modeling.
 Version: 0.1.0
 Author: Stanislas Mahussi GANDAHO
 Maintainer: The package maintainer <stangandaho@gmail.com>
-Description: The "nimo" R package, based on flexsdm and powered by Shiny, 
-offers users the flexibility to manipulate and parameterize models according to 
-their unique research needs. It provides a user-friendly graphical interface that 
-enables users to define complete or partial modeling procedures, including 
-variables, records, algorithms, ensemble methods, and algorithm tuning. 
-    Additionally, nimo seamlessly integrates with the Global Biodiversity Information Facility 
-(GBIF), allowing users to easily query occurrence data for biodiversity research 
-and incorporate it into their modeling analyses. This comprehensive package 
-empowers researchers to explore, customize, and model their data effectively, 
-with the added benefit of accessing real-world biodiversity data through GBIF.
+Description: The nimo (niche modeler) R package, based on flexsdm and powered by 
+    Shiny, offers users the flexibility to manipulate and parameterize models 
+    according to their unique research needs. It provides a user-friendly graphical 
+    interface that enables users to define complete or partial modeling procedures, 
+    including variables, records, algorithms, ensemble methods, and algorithm tuning. 
+    Additionally, nimo seamlessly integrates with the Global Biodiversity Information 
+    Facility (GBIF), allowing users to easily query occurrence data for biodiversity 
+    research and incorporate it into their modeling analyses. This comprehensive 
+    package empowers researchers to explore, customize, and model their data 
+    effectively, with the added benefit of accessing real-world biodiversity 
+    data through GBIF.
 License: GPL-2.0
 Encoding: UTF-8
 LazyData: true
