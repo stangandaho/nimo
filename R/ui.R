@@ -1,4 +1,5 @@
 ## load necessaries packages
+
 suppressPackageStartupMessages(
   source("./R/src/packages.R")
 )
@@ -7,13 +8,16 @@ thr <- c("No omission" = "lpt", "Sensitivity = specificity" = "equal_sens_spec",
          "Sorensen" = "max_sorensen", "FPB" = "max_fpb",
          "Sensitivity" = "sensitivity")
 bttn_primary_style <-  paste0("background-color:", "#39198a;", "color:#ffffff;")
+loader_color <- "#1b105a"; loader_type  <- 7
+
 ##Include the custom CSS file in your Shiny app's UI:
 
 git_repo <- "https://github.com/stangandaho/nimo"
 git_issues <- "https://github.com/insta-s/Niche-Modeler/issues"
-mytitle <- tags$link(tags$a(href = git_repo, target="_blank",
-                            tags$img(src= "../R/www/nimo_logo.png", height = '30',width='80')),
-                     strong(""))
+mytitle <- tags$img(src= "www/nimo_logo.png", height = '30',width='80')
+  # tags$link(tags$a(href = git_repo, target="_blank",
+  #                           tags$img(src= "./R/www/nimo_logo.png", height = '30',width='80')),
+  #                    strong("NIMO"))
 
 colinearity_method <- c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
                         "Principal component analysis" = "pca", "Factorial analysis" = "fa")
@@ -82,11 +86,16 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
              ),
     menuItem("Post-Modeling", tabName = "post_modeling", icon = icon("arrow-right", lib = "glyphicon"),
              menuSubItem("Spatial predictions", tabName = "spatial_predict", icon = NULL),
-             menuSubItem("Extrapolation ", tabName = "extrapolation", icon = NULL)
+             menuSubItem("Extrapolation ", tabName = "extrapolation", icon = NULL),
+             menuSubItem("Overprediction correction", tabName = "overpredict_correct", icon = NULL)
              ),
     ## CONFIGURATION
     div(
-      menuItem("", tabName = "configuration", icon = icon("wrench")),
+      menuItem(tags$span(
+        tags$img(src = "www/gbif_white_logo.png", height = '26',width='75'),
+        style = "display: inline; position: relative; z-index: -1;"
+      ),
+               tabName = "gbif_access", icon = NULL),
       style = "position:absolute; bottom:0; left:0; right:0; margin:15px 15px"
     )
   ),
@@ -94,8 +103,7 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
   width = 300
 )
 
-# Add resource path for the 'www' directory
-addResourcePath(prefix = "www", directoryPath = "R/www")
+
 
 ## Body ####
 ### Theme ----
@@ -103,7 +111,7 @@ addResourcePath(prefix = "www", directoryPath = "R/www")
 nimo_body <- shinydashboard::dashboardBody(
  # customTheme,
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "style.css"),
+    tags$link(rel = "stylesheet", type = "text/css", href = "www/style.css"),
     tags$style(".scrolling-container {
       display: flex;
       flex-wrap: nowrap;
@@ -152,7 +160,7 @@ nimo_body <- shinydashboard::dashboardBody(
                        hr()
                 ),
                 column(12,
-                       div(shiny::img(src = "./R/www/nimo_logo.png", height = "35%",width = "40%"), style="text-align: center;")
+                       div(shiny::img(src = "www/nimo_logo.png", height = "35%",width = "40%"), style="text-align: center;")
                 ),
                 br(),
                 column(12,
@@ -386,9 +394,11 @@ nimo_body <- shinydashboard::dashboardBody(
             fluidPage(
               fluidRow(column(8,
                               DT::DTOutput("st_fitted_model_list_dt"),
+                              tags$hr(),
                               DT::DTOutput("es_fitted_model_list_dt"),
-                              div(style = "height:450px",
-                                  DT::DTOutput("model_perf_merged")),
+                              div(style = "height:400px",
+                                  DT::DTOutput("model_perf_merged", height = "90%")),
+                              tags$hr(),
                               shinySaveButton("save_model_perf_merged", "Export",
                                               title = "Save models performance table",
                                               filename = "model_performance", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
@@ -399,7 +409,7 @@ nimo_body <- shinydashboard::dashboardBody(
                      selectInput("predict_thr", "Threshol", choices = thr, multiple = T),
                      conditionalPanel("input.predict_thr.includes('sensitivity')",
                                       numericInput("predict_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
-                     shinyFilesButton("predict_area", label = "Add", title = "Select spatial polygon to restrict prediction", icon = icon("plus"), multiple = F),
+                     shinyFilesButton("predict_area", label = "Add area", title = "Select spatial polygon to restrict prediction", icon = icon("plus"), multiple = F),
                      br(), br(),
                      selectInput("predict_clamp", "Clamp", choices = c("No" = FALSE, "Yes" = TRUE),
                                  selected = TRUE),
@@ -414,11 +424,47 @@ nimo_body <- shinydashboard::dashboardBody(
             ),
             ),
     tabItem("extrapolation",
-            fluidRow()),
+            fluidPage(
+              fluidRow(column(8,
+                              shinycssloaders::withSpinner(plotOutput("extrapo_raster"),
+                                                           color = loader_color, type = loader_type)),
+                       column(4,
+                              numericInput("n_cores", "Number of cores", min = 1, step = 1, value = 1),
+                              numericInput("aggreg_factor", "Aggregation factor", min = 1, step = 1, value = 1),
+                              actionButton("extrapo_model", "Extrapolate")))
+            )),
+    tabItem("overpredict_correct",
+            fluidPage(
+              fluidRow(
+                column(8,
+                       shinycssloaders::withSpinner(plotOutput("ov_p_raster"),
+                                                    color = loader_color, type = loader_type)),
+                column(4,
+                       selectInput("ov_p_cont_suit", "Suitability", choices = c()),
+                       selectInput("ov_p_method", "Methode",
+                                   choices = c("Occurrences Based Restriction" = "obr",
+                                               "Presence" = "pres",
+                                               "Lower Quantile" = "lq",
+                                               "Minimum Convex Polygon" = "mcp",
+                                               "Buffered Minimum Convex Polygon" = "bmcp")),
+                       selectInput("ov_p_thr", "Threshold", choices = thr),
+                       conditionalPanel("input.ov_p_method == 'bmcp'",
+                                        numericInput("ov_p_buffer", "Buffer (m)", min = 1, value = 1500)),
+                       actionButton("ov_p_correct", "Correct")
+                       )
+              )
+            )),
 
-    tabItem("configuration",
-            tableOutput("config_table"))
+    tabItem("gbif_access",
+            fluidPage(
+              fluidRow(
+                column(7),
+                column(5, selectInput("gbif_sci_name", "Specie name", choices = c()))
+              )
+            )
+              #leafletOutput("occ_data_access", height = 400),
 
+            )
 
 )
 )
@@ -437,3 +483,11 @@ ui <- shinydashboardPlus::dashboardPage(
 #
 # skin = “blue”, “blue-light”, “black”, “black-light”, “purple”, “purple-light”,
 # “green”, “green-light”, “red”, “red-light”, “yellow”, “yellow-light”, “midnight”
+# selectInput("occ_database", "Database",
+#             choices = c("GBIF" = "gbif",
+#                         "iNaturalist" = "inat",
+#                         "eBird" = "ebird",
+#                         "VertNet" = "vertnet",
+#                         "iDigBio" = "idigbio",
+#                         "OBIS" = "obis",
+#                         "ALA" = "ala"))

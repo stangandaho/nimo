@@ -11,24 +11,28 @@ bg_metho <- c("Random" = "random", "Thickening" = "thickening")
 pseudo_abs_method <- c("Random" = "random", "Env constrained" = "env_const",
                 "Geo contrained" = "geo_const", "Env & Geo contrained" = "geo_env_const",
                 "Env clustering" = "geo_env_km_const")
-loader_color <- "#1b105a"; loader_type  <- 7
 
+## Add ressource
+shiny::addResourcePath("www", system.file("www", package = "nimo"))
 
 server <- function(input, output, session) {
-  source("./R/src/cust_functions.R", local = TRUE)#[1]
-  source("./R/src/find_highly_coor_var.R", local = TRUE)#[1]
-  source("./R/src/predictors_selection_update.R", local = TRUE)#[1]
-  source("./R/src/render_model_fitting.R", local = TRUE)#[1]
-  source("./R/src/cust_functions.R", local = T)#[1]
-  source("./R/src/model_fitting.R", local = TRUE)#[1]
-  source("./R/src/esm_model_fitting.R", local = TRUE)#[1]
+
+  source("./R/src/cust_functions.R", local = TRUE)
+  source("./R/src/find_highly_coor_var.R", local = TRUE)
+  source("./R/src/predictors_selection_update.R", local = TRUE)
+  source("./R/src/render_model_fitting.R", local = TRUE)
+  source("./R/src/cust_functions.R", local = T)
+  source("./R/src/model_fitting.R", local = TRUE)
+  source("./R/src/esm_model_fitting.R", local = TRUE)
+  source("./R/src/occ_data_access.R", local = TRUE)
+
   # DIRECTORY SET UP ----
   set_dir_modal <- function() {
     modalDialog(
       title = "Project Directory Setup", size = "l",
       footer = tagList(
         actionButton("dir_setup", "Set up", icon("wrench")),
-        modalButton("Quit", icon("cancel", "fa-awesome"))),
+        modalButton("Ok", icon("glyphicon-ok", "glyphicon"))),
       fluidRow(column(6, shinyFiles::shinyDirButton("browse_dir", "Directory",
                                                     title = "Project Directory",
                                                     icon = icon("folder", "fa-awesom"))),
@@ -81,7 +85,7 @@ server <- function(input, output, session) {
     modalDialog(title = "Caracterize the species data",
                 footer = tagList(
                   actionButton("valid_data", "Valid", icon("check", "font-awesome")),
-                  modalButton("Quit", icon("cancel", "fa-awesome"))),
+                  modalButton("Ok", icon("glyphicon-ok", "glyphicon"))),
                 fluidRow(
                   column(6, selectInput("species_var", "Sepcies column",
                                         choices = colnames(species_data()))),
@@ -106,7 +110,7 @@ server <- function(input, output, session) {
 
   error_modal <- function(){
     modalDialog(title = strong(h2("Error", style = "color:#c52323")),
-                textOutput("error_modal"), footer = modalButton("Ok"))
+                textOutput("error_modal"), footer = modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon")))
   }
   ## import data
   observeEvent(input$choose_data_file, {
@@ -172,8 +176,8 @@ server <- function(input, output, session) {
     return(list(w_df_uni, w_df_dupl))
   })
   # display data
-  output$unique_data <- DT::renderDT({ wrangle_data()[[1]] })
-  output$duplicate_data <- DT::renderDT({ wrangle_data()[[2]] })
+  output$unique_data <- st_render_dt({ wrangle_data()[[1]] })
+  output$duplicate_data <- st_render_dt({ wrangle_data()[[2]] })
 
   ## plot geographic distribution
   observeEvent(input$valid_data, {
@@ -217,7 +221,7 @@ server <- function(input, output, session) {
   calib_area_modal <- function(){
     modalDialog("Area Calibration",
                 footer = tagList(actionButton("valid_calib_area", "Calibrate"),
-                                 modalButton("Quit", icon = icon("cancel", "font-awesome"))),
+                                 modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon"))),
                 fluidRow(
                   column(8, plotOutput("calib_area_plot")),
                   column(4,
@@ -348,7 +352,7 @@ server <- function(input, output, session) {
     output$colin_corr <- renderPlot(terra::pairs(preds))
   })
   colin_modal <- function(){
-    modalDialog(title = "", footer = modalButton("Quit", icon = icon("cancel")),
+    modalDialog(title = "", footer = modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon")),
                 shinycssloaders::withSpinner(plotOutput("colin_corr"),
                                              color = loader_color, type = loader_type))
   }
@@ -391,15 +395,33 @@ server <- function(input, output, session) {
     return(list(cr_df, enlayer, rm_enlayer, colin_var))
   })
 
-  output$cr_df <- DT::renderDT({reduce_colin()[[1]]})
-  output$cr_layer <- renderPrint({reduce_colin()[[2]]})
-  output$cr_remove <- renderPrint({reduce_colin()[[3]]})
+  cr_env <- eventReactive(input$reduce_collin, {
+    switch(input$coli_method,
+           "pearson" = cat("Pairwise relations that exceeded the correlation threshold for each one of the environmental variables:\n\n"),
+           "vif" = cat("SpatRaster object with selected environmental variables:\n\n"),
+           "pca" = cat("SpatRaster with scores of selected principal component (PC)\nthat sum up 95% of the whole variation or original environmental variables:\n\n"),
+           "fa" = cat("Selected variables due to correlation to factors:\n\n"))
+  })
+  cr_rm_env <- eventReactive(input$reduce_collin, {
+    switch(input$coli_method,
+           "pearson" = cat("Removed predictor:\n\n"),
+           "vif" = cat("Removed predictor:\n\n"),
+           "pca" = cat("Cumulative variance explained in selected (PC):\n\n"),
+           "fa" = cat("Removed predictor:\n\n"))
+  })
+  output$cr_df <- st_render_dt({reduce_colin()[[1]]})
+  output$cr_layer <- renderPrint({
+    cr_env()
+    reduce_colin()[[2]]})
+  output$cr_remove <- renderPrint({
+    cr_rm_env()
+    reduce_colin()[[3]]})
 
   # OCCURENCE FILTERING --------
   occ_filt_modal <- function(){
     modalDialog(title = "Occurence data filtering", size = "l",
                 footer = tagList(actionButton("valid_occ_filt", "Filter", icon = icon("check")),
-                                 modalButton("Quit", icon = icon("cancel"))),
+                                 modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon"))),
                 fluidRow(column(8,
                                 tabsetPanel(
                                   tabPanel("Distribution",
@@ -614,7 +636,7 @@ server <- function(input, output, session) {
   bpas_modal <- function(){
     modalDialog(title = "Generate background or psdeudo-absence points", size = "l",
                 footer = tagList(actionButton("generate_bpas", "Generate"),
-                                 modalButton("Quit", icon = icon("cancel"))),
+                                 modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon"))),
                 fluidRow(column(8,
                                 tabsetPanel(
                                   tabPanel("New distribution", plotOutput("pbas_plot")),
@@ -716,8 +738,8 @@ server <- function(input, output, session) {
           calibarea = calib_area_nimo()
         )
       }) %>%
-        bind_rows() %>%
-        mutate(pr_ab = 0)
+        dplyr::bind_rows() %>%
+        dplyr::mutate(pr_ab = 0)
     }else if(input$bpas_type == "Pseudo-absence" && !input$partition_type %in% c("part_sband", "part_sblock")){
       w <- as.character(input$pseudo_abs_width)
       bg <- lapply(1:n, function(x) {
@@ -737,15 +759,15 @@ server <- function(input, output, session) {
           calibarea = calib_area_nimo()
         )
       }) %>%
-        bind_rows() %>%
-        mutate(pr_ab = 0)
+        dplyr::bind_rows() %>%
+        dplyr::mutate(pr_ab = 0)
     }
     return(bg)
   })
 
   c_occ_data <- reactive({dplyr::bind_rows(wrangle_data()[[1]], sd_occ_data())})
-  output$new_points <- DT::renderDT({sd_occ_data()})
-  output$complete_occ_data <- DT::renderDT({c_occ_data()})
+  output$new_points <- st_render_dt({sd_occ_data()})
+  output$complete_occ_data <- st_render_dt({c_occ_data()})
   output$pbas_plot <- renderPlot({
     req(c_occ_data())
     ggplot()+
@@ -833,7 +855,7 @@ server <- function(input, output, session) {
       filter_na = TRUE
     )
   })
-  output$extracted_data <- DT::renderDT({extracted_df()}, width = "50%")
+  output$extracted_data <- st_render_dt({extracted_df()}, width = "50%")
   ### Download setting
   shinyFiles::shinyFileSave(input, "save_extracted_data", roots = root, session = session)
   save_extracted_data_path <- reactive({
@@ -885,7 +907,7 @@ server <- function(input, output, session) {
   models_modals <- function(tle = "")({
     modalDialog(
       title = tle,
-      footer = modalButton("Ok"), size = "l",
+      footer = modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon")), size = "l",
       tabsetPanel(
         tabPanel("Model",
                  div(
@@ -916,10 +938,10 @@ ens_fitting <- eventReactive(input$fit_ens, {
       ens_method = input$ens_method,
       thr = if(any(input$ens_thr %in% c("sensitivity"))) {
         c(input$ens_thr, "sens" = as.character(input$ens_sens))
-      } else{input$ens_thr},
+      } else {input$ens_thr},
       thr_model = if(any(input$ens_thr_model %in% c("sensitivity"))) {
         c(input$ens_thr_model, "sens" = as.character(input$ens_sens_model))
-      } else{input$ens_thr_model},
+      } else {input$ens_thr_model},
       metric = input$ens_metric)
   }, error = error)
 })
@@ -946,18 +968,20 @@ observeEvent(input$model_category, {
   }
 })
 predict_models <- reactive(
-  if(input$esm == TRUE){
-    req(es_selected())
-    es_model_list$models[[es_models_names_df()[es_selected(), ]]]
-  } else if(input$esm == FALSE && input$model_category == "Ensemble"){
-    req(ens_fitting())
-    ens_fitting()
-  } else if(input$esm == FALSE && input$model_category == "Standard models"){
-    req(st_selected())
-    lapply(st_selected(), function(x){
-      concat_model(model_list$models, x)
-    })
-  }
+  tryCatch({
+    if(input$esm == TRUE){
+      req(es_selected())
+      es_model_list$models[[es_models_names_df()[es_selected(), ]]]
+    } else if(input$esm == FALSE && input$model_category == "Ensemble"){
+      req(ens_fitting())
+      ens_fitting()
+    } else if(input$esm == FALSE && input$model_category == "Standard models"){
+      req(st_selected())
+      lapply(st_selected(), function(x){
+        concat_model(model_list$models, x)
+      })
+    }
+  }, error = error)
 
 )
 ## set layer files path
@@ -973,6 +997,7 @@ predict_area <- reactive({
 })
 #
 prediction <- eventReactive(input$predict, {
+  req(env_layers())
   tryCatch({
     sdm_predict(
       models = predict_models(),
@@ -989,7 +1014,7 @@ prediction <- eventReactive(input$predict, {
 ## Modal to show predict ouput
 predict_modal <- function(){
   modalDialog(title = "Spatial predictions",
-              footer = modalButton("Ok"), size = "l",
+              footer = modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon")), size = "l",
               fluidRow(column(9,plotOutput("predict_raster_plot")),
                        column(3,
                               selectInput("pred_rasters", "Prediction", choices = c()),
@@ -998,13 +1023,19 @@ predict_modal <- function(){
 }
 
 pred_rst <- eventReactive(input$predict, {
-  predict_rasters(prediction = prediction())
+  tryCatch({
+    predict_rasters(prediction = prediction())
+  }, error = error)
 })
 
 observeEvent(input$predict, {
   showModal(predict_modal())
   updateSelectInput(inputId = "pred_rasters", choices = names(pred_rst()))
+  ### add from posteriori - overprediction correction
+  updateSelectInput(inputId = "ov_p_cont_suit", choices = names(pred_rst()),
+                    selected = names(pred_rst())[1])
 })
+
 observeEvent(input$reload_pred_out, {
   tryCatch({
     output$predict_raster_plot <- renderPlot({
@@ -1043,8 +1074,7 @@ observe({
     show("save_model_perf_merged")
   }
 })
-shinyFiles::shinyFileSave(input, "save_model_perf_merged", roots = root,
-                          session = session)
+shinyFiles::shinyFileSave(input, "save_model_perf_merged", roots = root, session = session)
 save_perf_path <- reactive({
   req(input$save_model_perf_merged)
   shinyFiles::parseSavePath(roots = root, selection = input$save_model_perf_merged)
@@ -1056,16 +1086,102 @@ observe({
   }
 })
 
+## MODEL EXTRAPOLATION ----
+# env_cond_for_calib_area <- eventReactive(input$extrapo_model, {
+#   req(reduce_colin())
+#   if (!any(reduce_colin()[[3]] %in% "")) {
+#     env_layers <- env_layers()[[!names(env_layers()) %in% reduce_colin()[[3]]]]
+#   } else {
+#     env_layers <- env_layers()
+#   }
+#   req(calib_area_nimo())
+#   calib_area_nimo <- sf::st_as_sf(calib_area_nimo())
+#   sf::st_crs(calib_area_nimo) <- terra::crs(env_layers)
+#   calib_area_nimo <- terra::vect(calib_area_nimo)
+#   env <- env_layers %>%
+#     terra::crop(., calib_area_nimo) %>%
+#     terra::mask(., calib_area_nimo)
+#   return(env)
+# })
 
-## CONFIGUATION INVOLVING ----
-  config_df <- reactive({
-    config_df <- data.frame(step = "", status = strong("", style = "color:red;"))
-    if (is.data.frame(wrangle_data()[[1]])) {
-      config_df <- rbind(config_df, data.frame(step = "Ocurence data imported", status = "ok"))
+model_extrapo <- eventReactive(input$extrapo_model, {
+  req(reduce_colin())
+  tryCatch({
+    if (!any(reduce_colin()[[3]] %in% "")) {
+      env_layers <- env_layers()[[!names(env_layers()) %in% reduce_colin()[[3]]]]
+    } else {
+      env_layers <- env_layers()
     }
-  })
-  output$config_table <- renderTable({config_df()})
-## END SERVER
-}
+    extra_eval(
+      training_data = ready_df_mod(),
+      projection_data = env_layers,
+      n_cores = input$n_cores,
+      aggreg_factor = input$aggreg_factor
+    )
+  }, error = error)
+})
+output$extrapo_raster <- renderPlot({
+  req(model_extrapo())
+  terra::plot(model_extrapo())})
 
+## POSTERIORI - CORRECTION
+
+over_correct <- eventReactive(input$ov_p_correct, {
+  if (input$reduce_collin > 0 && !any(reduce_colin()[[3]] %in% "")) {
+    env_layers <- env_layers()[[!names(env_layers()) %in% reduce_colin()[[3]]]]
+  } else {
+    env_layers <- env_layers()
+  }
+  cont_suit <- pred_rst()[[input$ov_p_cont_suit]]
+  msdm_posteriori(
+    records = ready_df_mod(),
+    x = "x",
+    y = "y",
+    pr_ab = "pr_ab",
+    cont_suit = cont_suit,
+    method = input$ov_p_method,
+    thr = if(any(input$ov_p_thr %in% c("sensitivity"))) {
+      c(input$ov_p_thr, "sens" = as.character(input$predict_sens))
+    } else{input$ov_p_thr},
+    buffer = if(input$ov_p_method == "bmcp"){input$ov_p_buffer} else {NULL},
+    crs = terra::crs(cont_suit)
+  )
+})
+
+
+output$ov_p_raster <- renderPlot({
+  req(input$ov_p_correct)
+  terra::plot(over_correct())
+})
+
+## GBIF ACCESS
+
+observe({
+  tryCatch({
+    dd <- rgbif::name_suggest(q = input$gbif_sci_name, rank = "species")
+    updateSelectInput(inputId = "gbif_sci_name", choices = dd$canonicalName)
+    print(dd$canonicalName)
+  })
+})
+
+
+output$occ_data_access <- renderLeaflet({
+  llf
+})
+# Get the drawn polygon
+polyg <- reactiveValues(
+  point = data.frame(lon = c(), lat = c())
+)
+
+observeEvent(input$occ_data_access_click, {
+  coord <- input$occ_data_access_click
+  df <- data.frame(lon = coord[["lng"]], lat = coord[["lat"]])
+  polyg$point <- rbind(polyg$point, df)
+
+  print(polyg$point)
+})
+
+## END SERVER
+
+}
 
