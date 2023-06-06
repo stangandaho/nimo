@@ -1,0 +1,23 @@
+.fit_model_btn_icon {
+  color: green;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
+}
+
+p{
+  font-family: "Montserrat", sans-serif;
+  color: red;
+}
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  color: red
+  height:100%
+}
+
+.skin-blue .sidebar a {
+  font-family: "Montserrat", sans-serif;
+}
