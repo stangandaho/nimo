@@ -4,6 +4,10 @@ render_dt <- function(...) {
                options = list(scrollX = TRUE, paging = FALSE,
                               ordering = FALSE, searching = FALSE))
 }
+st_render_dt <- function(...) {
+  DT::renderDT(..., options = list(scrollX = TRUE, lengthChange = FALSE),
+               selection = "single")
+}
 
 ## error modal showing
 error <- function(e){
