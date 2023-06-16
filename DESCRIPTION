@@ -1,6 +1,6 @@
 Package: nimo
 Type: Package
-Title: GUI for Ecological niche modeling.
+Title: GUI for Ecological Niche Modeling.
 Version: 0.1.0
 Depends: R (>= 3.5.0)
 Imports: flexsdm, shiny, shinyFiles, shinydashboard, shinydashboardPlus, shinyjs,
