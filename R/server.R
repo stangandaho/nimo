@@ -25,6 +25,8 @@ server <- function(input, output, session) {
   source("./R/src/model_fitting.R", local = TRUE)
   source("./R/src/esm_model_fitting.R", local = TRUE)
   source("./R/src/occ_data_access.R", local = TRUE)
+  source("./R/src/handle_sf.R", local = TRUE)
+  source("./R/src/query_gbif_occ_data.R", local = TRUE)
 
   # DIRECTORY SET UP ----
   set_dir_modal <- function() {
@@ -78,7 +80,8 @@ server <- function(input, output, session) {
   ## import data
   species_data <- reactive({
     req(data_file_path())
-    read.csv(file = data_file_path())
+    read.csv(file = data_file_path(), header = TRUE) %>%
+      dplyr::select(-1)
   })
   ## set nodal to customize data importing
   data_customize_modal <- function(){
@@ -1155,19 +1158,107 @@ output$ov_p_raster <- renderPlot({
 })
 
 ## GBIF ACCESS
+# Function to fetch species suggestions from GBIF API
+fetchSpeciesSuggestions <- function(search_term) {
+  tryCatch({
+    url <- paste0("https://api.gbif.org/v1/species/suggest?q=", URLencode(search_term))
+    response <- httr::GET(url)
+    species_list <- jsonlite::fromJSON(httr::content(response, "text", encoding = "UTF-8"))
+    if (!is.null(species_list)) {
+      return(species_list)
+    }
+  }, error = function(e){return(e)})
+}
+
+# Update species suggestions as user types
+observeEvent(input$search_by, {
+  updateTextInput(inputId = "species_input",
+                  placeholder = paste("Enter the", tolower(names(gbif_q[gbif_q == input$search_by]))))
+  shinyWidgets::updatePickerInput(inputId = "species_suggestions", session = session,
+                                  label = paste("Select the", tolower(names(gbif_q[gbif_q == input$search_by])))
+                                  )
+})
+observeEvent(input$species_input, {
+  search_term <- input$species_input
+  search_by <- input$search_by
+  species_suggestions <- fetchSpeciesSuggestions(search_term)
+  tryCatch({
+    shinyWidgets::updatePickerInput(inputId = "species_suggestions", session = session,
+                      choices = species_suggestions[, search_by])
+  }, error = function(e){return(e)})
+})
+
+gbif_data <- eventReactive(input$load_gbif_data, {
+  if (input$use_geom_gbif == TRUE) {
+    mult_geom()
+  } else {
+    query_occ(query_params = query_params())
+  }
+})
+## Hide country if geometry is defined
+observe({
+  if (input$use_geom_gbif == TRUE) {
+    shinyjs::hide("country_filter")
+  } else {
+    shinyjs::show("country_filter")
+  }
+})
+
+### Modal to show data queried
+observeEvent(input$acces_gbif_data, {
+  showModal(
+    modalDialog(
+      footer = NULL,
+      title = tagList(
+        actionButton("load_gbif_data", "Load", icon = icon("refresh", lib = "glyphicon"), style = bttn_second_style),
+        shinySaveButton(id = "export_occ", label = "Export", title = "Save occurrence data",
+                        filename = gsub("\\s", "_", paste0(input$species_suggestions, "_occurrence")),
+                        filetype = list(CSV = "csv", `Plain text` = "txt"),
+                        icon = icon("save")),
+        actionButton("add_to_map", "Add to map", icon = icon("plus")),
+        modalButton("Close", icon = icon("remove-circle", lib = "glyphicon"))),
+      size = "l",
+      tags$div(
+        shinycssloaders::withSpinner(
+          DTOutput("gbif_occ_data"),
+          color = loader_color, type = loader_type
+        )
+      )
+    )
+  )
+})
+
+output$gbif_occ_data <- DT::renderDT({
+  input$acces_gbif_data
+  gbif_data()
+}, options = list(scrollX = TRUE, scrollY = TRUE, searching = FALSE, lengthMenu = c(10, 50, 100, 300, 500)),
+selection = "single", editable = TRUE)
+
+
+## Save occ data
+shinyFiles::shinyFileSave(id = "export_occ", input = input, session = session, roots = root)
+export_occ_path <- reactive({
+  req(input$export_occ)
+  shinyFiles::parseSavePath(roots = root, selection = input$export_occ)
+})
 
 observe({
-  tryCatch({
-    dd <- rgbif::name_suggest(q = input$gbif_sci_name, rank = "species")
-    updateSelectInput(inputId = "gbif_sci_name", choices = dd$canonicalName)
-    print(dd$canonicalName)
-  })
+  req(export_occ_path(), gbif_data())
+  if (nrow(export_occ_path()) > 0 ) {
+    write.csv(x = gbif_data(), file = as.character(export_occ_path()$datapath))
+  }
+})
+## leaflet
+output$occ_map <- renderLeaflet({ llf() })
+observeEvent(input$add_to_map, {lft_proxy()})
+observe({
+  req(geom())
+  lft_geom()
+})
+observeEvent(input$clear_map, {
+  output$occ_map <- renderLeaflet({ llf() })
 })
 
-
-output$occ_data_access <- renderLeaflet({
-  llf
-})
 # Get the drawn polygon
 polyg <- reactiveValues(
   point = data.frame(lon = c(), lat = c())
