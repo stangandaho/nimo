@@ -7,13 +7,16 @@ thr <- c("No omission" = "lpt", "Sensitivity = specificity" = "equal_sens_spec",
          "TSS" = "max_sens_spec", "Jaccard" = "max_jaccard",
          "Sorensen" = "max_sorensen", "FPB" = "max_fpb",
          "Sensitivity" = "sensitivity")
-bttn_primary_style <-  paste0("background-color:", "#39198a;", "color:#ffffff;")
+
+bttn_primary_style <-  paste0("background-color:", "#58126b;", "color:#ffffff;")
+bttn_second_style <- paste0("background-color:", "#ff9e15;", "color:#ffffff;")
 loader_color <- "#1b105a"; loader_type  <- 7
 
-##Include the custom CSS file in your Shiny app's UI:
+## GBIF Queries fields
+source("R/src/query_gbif_occ_data.R", local = TRUE)
 
 git_repo <- "https://github.com/stangandaho/nimo"
-git_issues <- "https://github.com/insta-s/Niche-Modeler/issues"
+git_issues <- "https://github.com/stangandaho/nimo/issues"
 mytitle <- tags$img(src= "www/nimo_logo.png", height = '30',width='80')
   # tags$link(tags$a(href = git_repo, target="_blank",
   #                           tags$img(src= "./R/www/nimo_logo.png", height = '30',width='80')),
@@ -69,10 +72,15 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
   useShinyjs(),
   sidebarMenu(
     id="sidebar_menu",
-    menuItem("Niche Modeler",tabName = "nimo_home_page",icon = icon("house-chimney")),
+    menuItem("Niche Modeler", tabName = "nimo_home_page", icon = icon("house-chimney")),
+    menuItem(
+        tags$span(
+        tags$img(src = "www/gbif_white_logo.png", height = '26',width='75')),
+        tabName = "gbif_access", icon = NULL),
+    #menuItem("GBIF Data", tabName = "gbif_access", icon = NULL),
     menuItem("Pre-Modeling",tabName = "pre_modeling", icon = icon("arrow-left", lib = "glyphicon"),
              br(),
-             actionButton("set_directory", "Set Directory", icon = icon("folder", "font-awesome")),
+             actionButton("set_directory", "Set Directory", icon = icon("folder")),
              menuSubItem("Calibration", tabName = "calibration", icon = NULL),
              menuSubItem("Predictors", tabName = "predictors", icon = NULL), # to move
              menuSubItem("Partition", tabName = "data_partition", icon = NULL),
@@ -88,16 +96,16 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
              menuSubItem("Spatial predictions", tabName = "spatial_predict", icon = NULL),
              menuSubItem("Extrapolation ", tabName = "extrapolation", icon = NULL),
              menuSubItem("Overprediction correction", tabName = "overpredict_correct", icon = NULL)
-             ),
+             )
     ## CONFIGURATION
-    div(
-      menuItem(tags$span(
-        tags$img(src = "www/gbif_white_logo.png", height = '26',width='75'),
-        style = "display: inline; position: relative; z-index: -1;"
-      ),
-               tabName = "gbif_access", icon = NULL),
-      style = "position:absolute; bottom:0; left:0; right:0; margin:15px 15px"
-    )
+    # div(
+    #   menuItem(
+    #     tags$span(
+    #     tags$img(src = "www/gbif_white_logo.png", height = '26',width='75'),
+    #     style = "display: inline; position: relative; z-index: -1;"),
+    #     tabName = "gbif_access", icon = NULL),
+    #   style = "position:absolute; bottom:0; left:0; right:0; margin:15px 15px"
+    # )
   ),
   textOutput("res"),
   width = 300
@@ -111,6 +119,7 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
 nimo_body <- shinydashboard::dashboardBody(
  # customTheme,
   tags$head(
+    tags$script(src = "www/leaflet_base.js"),
     tags$link(rel = "stylesheet", type = "text/css", href = "www/style.css"),
     tags$style(".scrolling-container {
       display: flex;
@@ -195,7 +204,7 @@ nimo_body <- shinydashboard::dashboardBody(
               fluidRow(column(8,
                               tabsetPanel(
                                 tabPanel(title = "Unique Occurence", icon = icon("database", "font-awesome"),
-                                         DT::DTOutput("unique_data")),
+                                         DT::DTOutput("unique_data", height = "50%")),
                                 tabPanel(title = "Duplicate Occurence", icon = icon("clone", "font-awesome"),
                                          DT::DTOutput("duplicate_data")),
                                 tabPanel(title = "Geographic", icon = icon("globe", "font-awesome"),
@@ -211,8 +220,10 @@ nimo_body <- shinydashboard::dashboardBody(
                                                   choices = c("Presence", "Presence - Absence"),
                                                   selected = "Presence"),
                                       shinyFilesButton("choose_data_file", "Load data",
-                                                       "Select Species data", multiple = FALSE,
-                                                       icon = icon("file-upload"))),
+                                                       "Select Species occurrence data", multiple = FALSE,
+                                                       icon = icon("file-upload")),
+                                      actionButton("area_calibration", "Calibrate area",
+                                                   icon = icon("draw-polygon"), style = bttn_primary_style)),
                      hr(),
                      conditionalPanel("output.geo_distribution != null",
                                       shinyFilesButton("add_layer", "Add layer",
@@ -220,9 +231,7 @@ nimo_body <- shinydashboard::dashboardBody(
                                                        icon = icon("plus"),
                                                        multiple = FALSE)
                      ),
-                     hr(),
-                     actionButton("area_calibration", "Calibrate area",
-                                  icon = icon("draw-polygon"))
+
               )
               )
             )
@@ -250,9 +259,9 @@ nimo_body <- shinydashboard::dashboardBody(
                                              title = "Select folder containing predictors"),
                               hr(),
                               selectInput("pred_single", "Predictors", choices = c()),
-                              fluidRow(column(3, actionButton("pred_load", "Show", icon = icon("eye"))),
-                                       column(4, actionButton("colinearize", "Colinearize", icon = icon("poll-h"))),
-                                       column(3, actionButton("occ_filt", "", icon = icon("braille")))),
+                              fluidRow(column(3, actionButton("pred_load", "Show", icon = icon("eye"), style = bttn_primary_style)),
+                                       column(4, actionButton("colinearize", "Colinearize", icon = icon("poll-h"), style = bttn_primary_style)),
+                                       column(3, actionButton("occ_filt", "", icon = icon("braille"), style = bttn_second_style))),
                               tags$hr(),
                               tags$h4("Reduce colinearity"),
                               selectInput("coli_method", "Method", choices = colinearity_method),
@@ -260,7 +269,8 @@ nimo_body <- shinydashboard::dashboardBody(
                                                numericInput("pearson_threshold", "Threshold", value = 0.8, min = 0, step = 0.1)),
                               conditionalPanel("input.coli_method == 'vif'",
                                                numericInput("vif_threshold", "Threshold", value = 10, min = 1)),
-                              fluidRow(column(7, actionButton("reduce_collin", "Reduce colinearity", icon = icon("sort-amount-down")))
+                              fluidRow(column(7, actionButton("reduce_collin", "Reduce colinearity",
+                                                              icon = icon("sort-amount-down"), style = bttn_second_style))
                               )
                        ))
             )
@@ -313,8 +323,8 @@ nimo_body <- shinydashboard::dashboardBody(
                                       numericInput("senv_min_occ", "Min occurence", value = 10, min = 1),
                                       numericInput("senv_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
                      ),
-                     fluidRow(column(4, actionButton("divvy_data", "Divvy", icon = icon("project-diagram"))),
-                              column(4, actionButton("valided_dp", "Validate", icon = icon("check-circle")))
+                     fluidRow(column(4, actionButton("divvy_data", "Divvy", icon = icon("project-diagram"), style = bttn_primary_style)),
+                              column(4, actionButton("valided_dp", "Validate", icon = icon("check-circle"), style = bttn_primary_style))
                      ),
                      hr(),
                      conditionalPanel("input.occ_type == 'Presence'",
@@ -339,7 +349,7 @@ nimo_body <- shinydashboard::dashboardBody(
                        column(4,
                               selectInput("extract_variables", label = "Predictors to use",
                                           choices = c(), multiple = T, selected = c()),
-                              actionButton("extract_data", "Extract data", icon = icon("table")),
+                              actionButton("extract_data", "Extract data", icon = icon("table"), style = bttn_primary_style),
                               shinySaveButton(id = "save_extracted_data", label = "Save",  title = "Save occurence data filtered",
                                               filename = "", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
                        )
@@ -385,7 +395,7 @@ nimo_body <- shinydashboard::dashboardBody(
                      conditionalPanel("input.ens_thr_model.includes('sensitivity')",
                                       numericInput("ens_sens_model", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
                      selectInput("ens_metric", "Metric", choices = c("SORENSEN", "JACCARD", "FPB", "TSS", "KAPPA", "AUC", "IMAE", "BOYCE"), selected = "TSS"),
-                     actionButton("fit_ens", "Ensemble")
+                     actionButton("fit_ens", "Ensemble", style = bttn_primary_style)
               )
               )
             )
@@ -409,16 +419,19 @@ nimo_body <- shinydashboard::dashboardBody(
                      selectInput("predict_thr", "Threshol", choices = thr, multiple = T),
                      conditionalPanel("input.predict_thr.includes('sensitivity')",
                                       numericInput("predict_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
-                     shinyFilesButton("predict_area", label = "Add area", title = "Select spatial polygon to restrict prediction", icon = icon("plus"), multiple = F),
+                     shinyFilesButton("predict_area", label = "Add area",
+                                      title = "Select spatial polygon to restrict prediction",
+                                      icon = icon("plus"), multiple = F),
                      br(), br(),
                      selectInput("predict_clamp", "Clamp", choices = c("No" = FALSE, "Yes" = TRUE),
                                  selected = TRUE),
                      selectInput("predict_pred_type", label = "Type of response",
                                  c("Link" = "link", "Exponential" = "exponential", "Cloglog" = "cloglog", "Logistic" = "logistic"),
                                  selected = "Cloglog"),
-                     actionButton("predict", "Predict", icon = icon("qrcode", lib = "glyphicon")),
+                     actionButton("predict", "Predict", icon = icon("qrcode", lib = "glyphicon"), style = bttn_primary_style),
                      hr(),
-                     actionButton("merge_model_perf", "Merge performance", icon = icon("resize-small", lib = "glyphicon"))
+                     actionButton("merge_model_perf", "Merge performance",
+                                  icon = icon("resize-small", lib = "glyphicon"), style = bttn_primary_style)
               )
               )
             ),
@@ -431,7 +444,7 @@ nimo_body <- shinydashboard::dashboardBody(
                        column(4,
                               numericInput("n_cores", "Number of cores", min = 1, step = 1, value = 1),
                               numericInput("aggreg_factor", "Aggregation factor", min = 1, step = 1, value = 1),
-                              actionButton("extrapo_model", "Extrapolate")))
+                              actionButton("extrapo_model", "Extrapolate", style = bttn_primary_style)))
             )),
     tabItem("overpredict_correct",
             fluidPage(
@@ -450,24 +463,67 @@ nimo_body <- shinydashboard::dashboardBody(
                        selectInput("ov_p_thr", "Threshold", choices = thr),
                        conditionalPanel("input.ov_p_method == 'bmcp'",
                                         numericInput("ov_p_buffer", "Buffer (m)", min = 1, value = 1500)),
-                       actionButton("ov_p_correct", "Correct")
+                       actionButton("ov_p_correct", "Correct", style = bttn_primary_style)
                        )
               )
             )),
 
     tabItem("gbif_access",
-            fluidPage(
-              fluidRow(
-                column(7),
-                column(5, selectInput("gbif_sci_name", "Specie name", choices = c()))
-              )
+            tabsetPanel(
+              tabPanel("Query",
+                       fluidPage(
+                         column(8,
+                                shinycssloaders::withSpinner(
+                                leafletOutput("occ_map", height = "80vh"),
+                                color = loader_color, type = loader_type),
+                                absolutePanel(bottom = 20, right = 0,
+                                              tags$div(
+                                                id = "gt", style = "background-color:#a8b8ea;
+                                                border-radius:10px; padding: 8px 8px; width:60%; margin-right:10px",
+                                                conditionalPanel("input.acces_gbif_data",
+                                                                 actionButton("clear_map", "Clear", icon = icon("trash", lib = "glyphicon"), style = bttn_primary_style),
+                                                                 hr()),
+                                                checkboxInput("use_geom_gbif", "Use defined area"),
+                                                conditionalPanel("input.use_geom_gbif",
+                                                                 shinyFilesButton("location_filter", "Add area", "Choose external area",
+                                                                                  multiple = F, icon = icon("upload")))
+                                              )
+
+                                )
+                         ),
+                         column(4,
+                                span(
+                                  style = "width:100%; display: flex;",
+                                  selectInput("search_by", "", choices = gbif_q, selected = "scientificName"),
+                                  textInput("species_input", "", placeholder = "Enter ...")
+                                ),
+                                shinyWidgets::pickerInput("species_suggestions", "Select species", choices = NULL, multiple = FALSE),
+
+                                span(
+                                  id = "date", style = "width:100%; display: flex;",
+                                  shinyWidgets::airDatepickerInput("date_filter_from", "Date from",
+                                                                   minView = "years", maxDate = Sys.Date(), multiple = TRUE,
+                                                                   clearButton = TRUE, view = "years", value = ""),
+                                ),
+                                span(
+                                  id = "location", style = "width:100%; display: flex;",
+                                  selectInput("country_filter", "Country", choices = countries, selected = NULL)
+
+                                ),
+
+                                actionButton("acces_gbif_data", "Access data", icon = icon("data"), style = bttn_primary_style)
+                         )
+                       )
+                       ),
+              tabPanel("Occurence"
+                       )
             )
-              #leafletOutput("occ_data_access", height = 400),
 
             )
 
 )
 )
+
 
 ## UI ####
 ui <- shinydashboardPlus::dashboardPage(
