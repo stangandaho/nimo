@@ -21,3 +21,12 @@ body {
 .skin-blue .sidebar a {
   font-family: "Montserrat", sans-serif;
 }
+
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+    height: 100vh;
+}
+
+/**TABLE BODY**/
+.dataTables_scrollBody{
+  height: 50vh;
+}
