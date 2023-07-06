@@ -1321,6 +1321,16 @@ output$occ_citation <- renderPrint({
   cat(gbif_citation(), sep = "\n\n")
 })
 
+observe({
+  req(input$copy_citation_btn)
+  copy_button_update(session,
+                   id = "copy_citation_btn",
+                   label = "Copy",
+                   icon = icon("copy"),
+                   text = gbif_citation()
+  )
+
+})
 
 
 
