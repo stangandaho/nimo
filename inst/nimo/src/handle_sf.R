@@ -9,18 +9,19 @@ geom_vect <- reactive({
   req(lf_path())
   geom_vect <- sf::st_make_valid(sf::read_sf(lf_path()))
   if(is.na(sf::st_crs(geom_vect))){
-    geom_vect <- sf::st_set_crs(geom_vect, 4326)
+    geom_vect <- sf::st_set_crs(geom_vect, 4326); geom_vect
   } else {
     geom_vect <- geom_vect %>%
       sf::st_transform(crs = st_crs(4326))
+    geom_vect
   }
   })
 
 ## Get geometry
-geom_gbif <- function() {
+geom_gbif <- reactive({
   geom_vect <- geom_vect()
   if (sf::st_geometry_type(geom_vect, by_geometry = F) %in% c("MULTIPOLYGON", "POLYGON")) {
-    return(geom_vect)
+    geom_vect <- geom_vect(); geom_vect
   } else {
     showModal(
       modalDialog(title = "", footer = modalButton("Ok"),
@@ -28,10 +29,10 @@ geom_gbif <- function() {
     )
   }
 
-}
+})
 
 ## Local vector
-loc_geom <- function(){
+loc_geom <- reactive({
   query_params <- query_params()
   if (nrow(geom_gbif()) > 1) {
     g <- sf::st_union(geom_gbif()) %>% sf::st_as_sf()
@@ -39,18 +40,20 @@ loc_geom <- function(){
   } else {
     geom_wkt <- sf::st_as_text(geom_gbif()$geometry)
   }
+
   if (!is.null(query_params[["country"]])) {
     qp <- query_params[names(query_params) != "country"]
   } else {
     qp <- query_params
   }
 
-  qp[["geometry"]] <- geom_wkt
+  qp[["geometry"]] <- noquote(geom_wkt)
   all_occurrences_df <- query_occ(query_params = qp)
-  return(all_occurrences_df)
-}
+  all_occurrences_df
+  #return(all_occurrences_df)
+})
 
-inside_drawn_ply <- function(){
+inside_drawn_ply <- reactive({
   query_params <- query_params()
   pl <- sf::st_cast(x = st_union(drawn_poly()), to = "POLYGON")
     drawn_poly_wkt <- sf::st_as_text(pl)
@@ -60,8 +63,8 @@ inside_drawn_ply <- function(){
       qp <- query_params
     }
 
-    qp[["geometry"]] <- drawn_poly_wkt
-    print(qp)
+    qp[["geometry"]] <- noquote(drawn_poly_wkt)
     all_occurrences_df <- query_occ(query_params = qp)
-    return(all_occurrences_df)
-}
+    all_occurrences_df
+    #return(all_occurrences_df)
+})

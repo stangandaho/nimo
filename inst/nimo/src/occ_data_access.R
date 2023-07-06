@@ -44,7 +44,6 @@ lft_proxy <- function() {
 
 lft_geom <- function() {
   geom_vect <- geom_vect(); req(geom_vect)
-  print(geom_vect)
   if (all(sf::st_is_valid(geom_vect))) {
   centro <- sf::st_centroid(st_union(geom_vect))[[1]]
     if (sf::st_geometry_type(geom_vect, by_geometry = F) %in% c("MULTIPOLYGON", "POLYGON")) {

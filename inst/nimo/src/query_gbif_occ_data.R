@@ -10,7 +10,8 @@ gbif_q <- c(
 )
 
 ## Set country iso code
-ccode <- read.csv("./inst/data/country_code.txt") %>%
+cc <- paste0(system.file("", package = "nimo"), "/data")
+ccode <- read.csv(paste0(cc, "/country_code.txt")) %>%
   dplyr::select(country, iso) %>%
   dplyr::mutate(iso = dplyr::case_when(is.na(iso) ~ "NA",
                                        TRUE ~ iso))
@@ -63,6 +64,22 @@ query_occ <- function(query_params) {
         more_results <- json_data$endOfRecords == FALSE # Check if there are more results
         offset <- offset + query_params$limit # Update the offset for the next request
         all_occurrences <- append(all_occurrences, list(occurrences))
+
+        # Get dataset keys for metadata retrieval
+        dataset_keys <- unique(occurrences$datasetKey)
+        # Fetch metadata for each dataset
+        metadata_list <- list()
+        for (dataset_key in dataset_keys) {
+          metadata_url <- paste0("https://api.gbif.org/v1/dataset/", dataset_key)
+          metadata_response <- GET(metadata_url)
+          # Check if the request for dataset metadata was successful
+          if (metadata_response$status_code == 200) {
+            metadata <- content(metadata_response, "parsed")
+            metadata_list[[dataset_key]] <- metadata$citation$text
+          }
+
+        }
+          markdown_text <- sub("accessed via GBIF.org", "accessed via nimo 10.15468/22lope", paste(metadata_list))
       }
     }
     # Combine all_occurrences list into a single data frame
@@ -74,7 +91,7 @@ query_occ <- function(query_params) {
                    "recordedBy", "institutionCode", "samplingProtocol", "habitat", "license")
     col <- basic_col[which(basic_col %in% occdt_col)]
     occ <- all_occurrences_df %>% dplyr::select(dplyr::all_of(col))
-    return(occ)
+    return(list(occ, markdown_text))
 }
 
 

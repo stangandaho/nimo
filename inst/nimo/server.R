@@ -13,21 +13,19 @@ pseudo_abs_method <- c("Random" = "random", "Env constrained" = "env_const",
                 "Env clustering" = "geo_env_km_const")
 
 ## Add ressource
-shiny::addResourcePath("www", system.file("www", package = "nimo"))
+addResourcePath("nimo", "./inst/nimo/www")
 
 server <- function(input, output, session) {
-
-  source("inst/nimo/src/cust_functions.R", local = TRUE)
-  source("inst/nimo/src/find_highly_coor_var.R", local = TRUE)
-  source("inst/nimo/predictors_selection_update.R", local = TRUE)
-  source("inst/nimo/src/render_model_fitting.R", local = TRUE)
-  source("inst/nimo/src/cust_functions.R", local = T)
-  source("inst/nimo/src/model_fitting.R", local = TRUE)
-  source("inst/nimo/src/esm_model_fitting.R", local = TRUE)
-  source("inst/nimo/src/occ_data_access.R", local = TRUE)
-  source("inst/nimo/src/handle_sf.R", local = TRUE)
-  source("inst/nimo/src/query_gbif_occ_data.R", local = TRUE)
-
+  pkg_root <- "./inst/nimo/src/"
+  source(paste0(pkg_root, "cust_functions.R"), local = TRUE)[1]
+  source(paste0(pkg_root, "find_highly_coor_var.R"), local = TRUE)[1]
+  source(paste0(pkg_root, "predictors_selection_update.R"), local = TRUE)[1]
+  source(paste0(pkg_root, "render_esm_model_fitting.R"), local = TRUE)[1]
+  source(paste0(pkg_root, "model_fitting.R"), local = TRUE)[1]
+  source(paste0(pkg_root, "esm_model_fitting.R"), local = TRUE)[1]
+  source(paste0(pkg_root, "occ_data_access.R"), local = TRUE)[1]
+  source(paste0(pkg_root, "handle_sf.R"), local = TRUE)[1]
+  source(paste0(pkg_root, "query_gbif_occ_data.R"), local = TRUE)[1]
   # DIRECTORY SET UP ----
   set_dir_modal <- function() {
     modalDialog(
@@ -1189,14 +1187,12 @@ observeEvent(input$species_input, {
 })
 
 gbif_data <- eventReactive(input$load_gbif_data, {
-  if (input$use_geom_gbif == TRUE) {
-    loc_geom()
-  }
-  else if (nrow(drawn_poly()) > 2 & input$use_geom_gbif == FALSE) {
-    inside_drawn_ply()
-  }
-  else {
-    query_occ(query_params = query_params())
+  if (input$use_geom_gbif == FALSE) {
+    query_occ(query_params = query_params())[[1]]}
+  else if (nrow(drawn_poly()) > 2 && input$use_geom_gbif == FALSE) {
+    inside_drawn_ply()[[1]]}
+  else if (input$use_geom_gbif == TRUE) {
+    loc_geom()[[1]]
   }
 })
 ## Hide country if geometry is defined
@@ -1219,7 +1215,6 @@ observeEvent(input$acces_gbif_data, {
                         filename = gsub("\\s", "_", paste0(input$species_suggestions, "_occurrence")),
                         filetype = list(CSV = "csv", `Plain text` = "txt"),
                         icon = icon("save")),
-        actionButton("add_to_map", "Add to map", icon = icon("plus")),
         modalButton("Close", icon = icon("remove-circle", lib = "glyphicon"))),
       size = "l",
       tags$div(
@@ -1235,10 +1230,14 @@ observeEvent(input$acces_gbif_data, {
 output$gbif_occ_data <- DT::renderDT({
   input$acces_gbif_data
   gbif_data()
-}, options = list(scrollX = TRUE, scrollY = TRUE, searching = FALSE, lengthMenu = c(10, 50, 100, 300, 500)),
+}, options = list(scrollX = TRUE, scrollY = TRUE, searching = FALSE, lengthMenu = c(5, 10, 50, 100, 300, 500)),
 selection = "single", editable = TRUE)
 
-
+output$occ_gbif_dataset<- DT::renderDT({
+  input$acces_gbif_data
+  gbif_data()
+}, options = list(scrollX = TRUE, scrollY = TRUE, searching = FALSE, lengthMenu = c(5, 10, 50, 100, 300, 500)),
+selection = "single", editable = TRUE)
 ## Save occ data
 shinyFiles::shinyFileSave(id = "export_occ", input = input, session = session, roots = root)
 export_occ_path <- reactive({
@@ -1272,6 +1271,10 @@ observeEvent(input$occ_map_click,{
   coord <- input$occ_map_click
   df <- data.frame(lon = coord[["lng"]], lat = coord[["lat"]])
   polyg$point <- rbind(polyg$point, df)
+  print(polyg$point)
+  if (nrow(polyg$point) > 2) {
+    shinyjs::show("clear_map")
+  }
 })
 observeEvent(input$clear_map, {polyg$point <- data.frame(lon = c(), lat = c())})
 
@@ -1281,6 +1284,45 @@ drawn_poly <- eventReactive(input$acces_gbif_data, {
   }
 })
 observe({req(drawn_poly()); print(nrow(drawn_poly()))})
+
+## clear button
+observe({
+  shinyjs::hide("clear_map")
+
+  if (input$clear_map) {
+    shinyjs::hide("clear_map")
+    updateCheckboxInput(session, "use_geom_gbif", value = FALSE)
+  }
+})
+observe({
+  req(input$add_to_map)
+  if (input$add_to_map) {
+    shinyjs::show("clear_map")
+  }
+})
+observe({
+  req(geom_gbif())
+  if (nrow(geom_gbif())) {
+    shinyjs::show("clear_map")
+  }
+})
+
+## copy citation button
+gbif_citation <- eventReactive(input$load_gbif_data, {
+  if (input$use_geom_gbif == FALSE) {
+    markdown_text <- query_occ(query_params = query_params())[[2]]}
+  else if (nrow(drawn_poly()) > 2 && input$use_geom_gbif == FALSE) {
+    markdown_text <- inside_drawn_ply()[[2]]}
+  else if (input$use_geom_gbif == TRUE) {
+    markdown_text <- loc_geom()[[2]]
+  }
+})
+output$occ_citation <- renderPrint({
+  cat(gbif_citation(), sep = "\n\n")
+})
+
+
+
 
 ## END SERVER
 

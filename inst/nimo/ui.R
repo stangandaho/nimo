@@ -1,7 +1,8 @@
 ## load necessaries packages
-
+pkg_root <- "./src"#paste0(system.file("", package = "nimo"), "/nimo/src")
+nimo_logo <- "nimo/nimo_logo.png"; gbif_white_logo <- "nimo/gbif_white_logo.png"
 suppressPackageStartupMessages(
-  source("inst/nimo/src/packages.R")
+  source("./inst/nimo/src/packages.R")
 )
 thr <- c("No omission" = "lpt", "Sensitivity = specificity" = "equal_sens_spec",
          "TSS" = "max_sens_spec", "Jaccard" = "max_jaccard",
@@ -13,11 +14,11 @@ bttn_second_style <- paste0("background-color:", "#ff9e15;", "color:#ffffff;")
 loader_color <- "#1b105a"; loader_type  <- 7
 
 ## GBIF Queries fields
-source("inst/nimo/src/query_gbif_occ_data.R", local = TRUE)
+source("./inst/nimo/src/query_gbif_occ_data.R")
 
 git_repo <- "https://github.com/stangandaho/nimo"
 git_issues <- "https://github.com/stangandaho/nimo/issues"
-mytitle <- tags$img(src= "inst/nimo/www/nimo_logo.png", height = '30',width='80')
+mytitle <- tags$img(src= nimo_logo, height = '30',width='80')
   # tags$link(tags$a(href = git_repo, target="_blank",
   #                           tags$img(src= "./R/www/nimo_logo.png", height = '30',width='80')),
   #                    strong("NIMO"))
@@ -75,7 +76,7 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
     menuItem("Niche Modeler", tabName = "nimo_home_page", icon = icon("house-chimney")),
     menuItem(
         tags$span(
-        tags$img(src = "inst/nimo/www/gbif_white_logo.png", height = '26',width='75')),
+        tags$img(src = gbif_white_logo, height = '26',width='75')),
         tabName = "gbif_access", icon = NULL),
     #menuItem("GBIF Data", tabName = "gbif_access", icon = NULL),
     menuItem("Pre-Modeling",tabName = "pre_modeling", icon = icon("arrow-left", lib = "glyphicon"),
@@ -97,15 +98,6 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
              menuSubItem("Extrapolation ", tabName = "extrapolation", icon = NULL),
              menuSubItem("Overprediction correction", tabName = "overpredict_correct", icon = NULL)
              )
-    ## CONFIGURATION
-    # div(
-    #   menuItem(
-    #     tags$span(
-    #     tags$img(src = "www/gbif_white_logo.png", height = '26',width='75'),
-    #     style = "display: inline; position: relative; z-index: -1;"),
-    #     tabName = "gbif_access", icon = NULL),
-    #   style = "position:absolute; bottom:0; left:0; right:0; margin:15px 15px"
-    # )
   ),
   textOutput("res"),
   width = 300
@@ -169,7 +161,7 @@ nimo_body <- shinydashboard::dashboardBody(
                        hr()
                 ),
                 column(12,
-                       div(shiny::img(src = "www/nimo_logo.png", height = "35%",width = "40%"), style="text-align: center;")
+                       div(shiny::img(src = nimo_logo, height = "35%",width = "40%"), style="text-align: center;")
                 ),
                 br(),
                 column(12,
@@ -480,9 +472,9 @@ nimo_body <- shinydashboard::dashboardBody(
                                               tags$div(
                                                 id = "gt", style = "background-color:#a8b8ea;
                                                 border-radius:10px; padding: 8px 8px; width:60%; margin-right:10px",
-                                                conditionalPanel("input.acces_gbif_data",
+                                                #conditionalPanel("input.acces_gbif_data",
                                                                  actionButton("clear_map", "Clear", icon = icon("trash", lib = "glyphicon"), style = bttn_primary_style),
-                                                                 hr()),
+                                                                 #hr()),
                                                 checkboxInput("use_geom_gbif", "Use defined area"),
                                                 conditionalPanel("input.use_geom_gbif",
                                                                  shinyFilesButton("location_filter", "Add area", "Choose external area",
@@ -501,7 +493,7 @@ nimo_body <- shinydashboard::dashboardBody(
 
                                 span(
                                   id = "date", style = "width:100%; display: flex;",
-                                  shinyWidgets::airDatepickerInput("date_filter_from", "Date from",
+                                  shinyWidgets::airDatepickerInput("date_filter_from", "Date range",
                                                                    minView = "years", maxDate = Sys.Date(), multiple = TRUE,
                                                                    clearButton = TRUE, view = "years", value = ""),
                                 ),
@@ -515,7 +507,23 @@ nimo_body <- shinydashboard::dashboardBody(
                          )
                        )
                        ),
-              tabPanel("Occurence"
+              tabPanel("Occurence",
+                       fluidPage(
+                         tagList(
+                           #actionButton("load_gbif_data", "Load", icon = icon("refresh", lib = "glyphicon"), style = bttn_second_style),
+                           shinySaveButton(id = "export_occ", label = "Export", title = "Save occurrence data",
+                                           filename = gsub("\\s", "_", paste0("occurrence")),
+                                           filetype = list(CSV = "csv", `Plain text` = "txt"),
+                                           icon = icon("save")),
+                           actionButton("add_to_map", "Add to map", icon = icon("plus")),
+                           ), hr(),
+                         DT::DTOutput("occ_gbif_dataset", height = "500px", fill = FALSE)
+                       )
+              ),
+              tabPanel("Citation",
+                       fluidPage(
+                         shiny::verbatimTextOutput("occ_citation"),
+                       )
                        )
             )
 

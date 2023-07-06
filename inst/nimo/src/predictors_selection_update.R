@@ -11,11 +11,11 @@ observe({
 observe({
   req(ready_df_mod())
   if (!is.null(input$gam_predictors_f)) {
-    formula_str <- paste("pr_ab", "~", 
-                         paste("s(", input$gam_predictors, ")", collapse=" + ", sep = ""), 
+    formula_str <- paste("pr_ab", "~",
+                         paste("s(", input$gam_predictors, ")", collapse=" + ", sep = ""),
                          "+", paste(input$gam_predictors_f, collapse = " + ", sep = ""))
   }else{
-    formula_str <- paste("pr_ab", "~", 
+    formula_str <- paste("pr_ab", "~",
                          paste("s(", input$gam_predictors, ")", collapse=" + ", sep = ""))
   }
   updateTextInput(inputId = "gam_fit_formula", value = formula_str)
@@ -48,11 +48,11 @@ observe({
 observe({
   req(ready_df_mod())
   if (!is.null(input$gbm_predictors_f)) {
-    formula_str <- paste("pr_ab", "~", 
-                         paste(input$gbm_predictors, collapse = " + ", sep = ""), 
+    formula_str <- paste("pr_ab", "~",
+                         paste(input$gbm_predictors, collapse = " + ", sep = ""),
                          "+", paste(input$gbm_predictors_f, collapse = " + ", sep = ""))
   }else{
-    formula_str <- paste("pr_ab", "~", 
+    formula_str <- paste("pr_ab", "~",
                          paste(input$gbm_predictors, collapse = " + ", sep = ""))
   }
   updateTextInput(inputId = "gbm_fit_formula", value = formula_str)
@@ -71,11 +71,11 @@ observe({
 observe({
   req(ready_df_mod())
   if (!is.null(input$glm_predictors_f)) {
-    formula_str <- paste("pr_ab", "~", 
-                         paste(input$glm_predictors, collapse = " + ", sep = ""), 
+    formula_str <- paste("pr_ab", "~",
+                         paste(input$glm_predictors, collapse = " + ", sep = ""),
                          "+", paste(input$glm_predictors_f, collapse = " + ", sep = ""))
   }else{
-    formula_str <- paste("pr_ab", "~", 
+    formula_str <- paste("pr_ab", "~",
                          paste(input$glm_predictors, collapse = " + ", sep = ""))
   }
   updateTextInput(inputId = "glm_fit_formula", value = formula_str)
@@ -93,12 +93,12 @@ observe({
 })
 observe({
   if ("default" %in% input$max_classes) {
-    updateSelectInput(inputId = "max_classes", 
+    updateSelectInput(inputId = "max_classes",
                       choices = c("Default" = "default"),
                       selected = "default"
     )
   } else {
-    updateSelectInput(inputId = "max_classes", 
+    updateSelectInput(inputId = "max_classes",
                       choices = c("Default" = "default", "Linear" = "l", "Quadratic" = "q", "Hinge" = "h", "Product" = "p", "Threshold" = "t"),
                       selected = input$max_classes
     )
@@ -116,11 +116,11 @@ observe({
 observe({
   req(ready_df_mod())
   if (!is.null(input$net_predictors_f)) {
-    formula_str <- paste("pr_ab", "~", 
-                         paste(input$net_predictors, collapse = " + ", sep = ""), 
+    formula_str <- paste("pr_ab", "~",
+                         paste(input$net_predictors, collapse = " + ", sep = ""),
                          "+", paste(input$net_predictors_f, collapse = " + ", sep = ""))
   }else{
-    formula_str <- paste("pr_ab", "~", 
+    formula_str <- paste("pr_ab", "~",
                          paste(input$net_predictors, collapse = " + ", sep = ""))
   }
   updateTextInput(inputId = "net_fit_formula", value = formula_str)
