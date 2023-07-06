@@ -1,6 +1,7 @@
 ## load necessaries packages
 pkg_root <- "./src"#paste0(system.file("", package = "nimo"), "/nimo/src")
 nimo_logo <- "nimo/nimo_logo.png"; gbif_white_logo <- "nimo/gbif_white_logo.png"
+
 suppressPackageStartupMessages(
   source("./inst/nimo/src/packages.R")
 )
@@ -13,8 +14,10 @@ bttn_primary_style <-  paste0("background-color:", "#58126b;", "color:#ffffff;")
 bttn_second_style <- paste0("background-color:", "#ff9e15;", "color:#ffffff;")
 loader_color <- "#1b105a"; loader_type  <- 7
 
-## GBIF Queries fields
-source("./inst/nimo/src/query_gbif_occ_data.R")
+
+source("./inst/nimo/src/query_gbif_occ_data.R") ## GBIF Queries fields
+source("./inst/nimo/src/copy.R") # CopyClipboard
+
 
 git_repo <- "https://github.com/stangandaho/nimo"
 git_issues <- "https://github.com/stangandaho/nimo/issues"
@@ -71,6 +74,7 @@ header <- shinydashboardPlus::dashboardHeader(title = mytitle,
 ## Side Bar ----
 sidebar <- shinydashboardPlus::dashboardSidebar(
   useShinyjs(),
+  usecopy(),
   sidebarMenu(
     id="sidebar_menu",
     menuItem("Niche Modeler", tabName = "nimo_home_page", icon = icon("house-chimney")),
@@ -111,8 +115,7 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
 nimo_body <- shinydashboard::dashboardBody(
  # customTheme,
   tags$head(
-    tags$script(src = "www/leaflet_base.js"),
-    tags$link(rel = "stylesheet", type = "text/css", href = "www/style.css"),
+    tags$link(rel = "stylesheet", type = "text/css", href = "nimo/style.css"),
     tags$style(".scrolling-container {
       display: flex;
       flex-wrap: nowrap;
@@ -522,7 +525,13 @@ nimo_body <- shinydashboard::dashboardBody(
               ),
               tabPanel("Citation",
                        fluidPage(
-                         shiny::verbatimTextOutput("occ_citation"),
+                         shiny::verbatimTextOutput("occ_citation", placeholder = TRUE),
+                         copy_button(
+                           "copy_citation_btn",
+                           "Copy",
+                           icon = icon("copy"),
+                           text = "No citation copied"
+                         )
                        )
                        )
             )
