@@ -23,5 +23,10 @@ remotes::install_github("stangandaho/nimo@HEAD")
 ```
 
 # Get started
+Once **nimo** is installed, load the package and call `nimo()` function.
+```r
+library(nimo)
+nimo()
+```
 The **nimo** [website](https://nimo.re-agro.org) provides to users the resources to get started. 
 All necessaries concept and part of **nimo** are explained with screenshot and example. 
