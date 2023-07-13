@@ -12,7 +12,7 @@ The `{nimo}` is R package seamlessly integrates with the Global Biodiversity Inf
 # Install remotes if it is not already installed
 
 if (!require("remotes", character.only = TRUE)) {
-  install.packages("package_name")
+  install.packages("remotes")
 }
 
 # For Windows and Mac OS operating systems
