@@ -21,10 +21,11 @@ source("./inst/nimo/src/copy.R") # CopyClipboard
 
 git_repo <- "https://github.com/stangandaho/nimo"
 git_issues <- "https://github.com/stangandaho/nimo/issues"
-mytitle <- tags$img(src= nimo_logo, height = '30',width='80')
-  # tags$link(tags$a(href = git_repo, target="_blank",
-  #                           tags$img(src= "./R/www/nimo_logo.png", height = '30',width='80')),
-  #                    strong("NIMO"))
+nimo_site <- "https://nimo.re-agro.org/"
+#tags$img(src= nimo_logo, height = '40',width='50')
+mytitle <-   tags$link(tags$a(href = nimo_site,
+                            tags$img(src= nimo_logo, height = '45',width='50')),
+                     strong("nimo", style = "font-size: 1.8em;     font-family: 'Montserrat-Bold';"))
 
 colinearity_method <- c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
                         "Principal component analysis" = "pca", "Factorial analysis" = "fa")
@@ -159,7 +160,8 @@ nimo_body <- shinydashboard::dashboardBody(
             fluidPage(
               fluidRow(
                 column(12,
-                       div(h1("Species distribution modeling (SDM) App",
+                       div(id = "main_title",
+                           h1("Species distribution modeling (SDM) App",
                               style="text-align:center; font-size:50px;")),
                        hr()
                 ),
@@ -168,26 +170,22 @@ nimo_body <- shinydashboard::dashboardBody(
                 ),
                 br(),
                 column(12,
-                       div(p("To start quickly with NIMO, please visite the start page ",
+                       div(p(strong("To start quickly with NIMO, please visite the start page "),
                              em(a("here",
                                   href = "#", target="_blank")),
-                             style="text-align:center; font-size:18px;")),
+                             style="text-align:center; font-size:2.5rem; color:#00910a")),
                 ),
                 hr(),
                 column(12,
-                       div(h6("nimo is open-source and freely available for use, distributed under the GPL license.",
-                              style="text-align:center; font-size:19px;")),
-                       div(h6("When they are used in a publication, we ask that authors to cite the following reference:",
-                              style="text-align:center; font-size:19px;")),
-                       br(),
-                       div(h6("GANDAHO, S.M. . (2023).", strong(" nimo: A GUI for flexible"),
-                              style="text-align:center; font-size:19px;")),
-                       div(h6(strong("species distribution modeling."),
-                              em("Journal of ..."),", xx(6), xxx-xxx.",
-                              style="text-align:center; font-size:19px;")),
-                       br(),
-                       div(h6("Failure to properly cite the software is considered a violation of the license.",
-                              style="text-align:center; font-size:19px;"))
+                       div(id = "main_page",
+                           div(h5("nimo is open-source and freely available for use, distributed under the GPL license.")),
+                           div(h5("When they are used in a publication, we ask that authors to cite the following reference:")),
+                           br(),
+                           div(h5("GANDAHO, S.M. . (2023).", strong(" nimo: A GUI for flexible"))),
+                           div(h5(strong("species distribution modeling."), em("Journal of ..."),", xx(6), xxx-xxx.")),
+                           br(),
+                           div(h5(strong("Failure to properly cite the software is considered a violation of the license🥺"),
+                                  style = "color:red;")))
                 )
 
               )
@@ -514,10 +512,6 @@ nimo_body <- shinydashboard::dashboardBody(
                        fluidPage(
                          tagList(
                            #actionButton("load_gbif_data", "Load", icon = icon("refresh", lib = "glyphicon"), style = bttn_second_style),
-                           shinySaveButton(id = "export_occ", label = "Export", title = "Save occurrence data",
-                                           filename = gsub("\\s", "_", paste0("occurrence")),
-                                           filetype = list(CSV = "csv", `Plain text` = "txt"),
-                                           icon = icon("save")),
                            actionButton("add_to_map", "Add to map", icon = icon("plus")),
                            ), hr(),
                          DT::DTOutput("occ_gbif_dataset", height = "500px", fill = FALSE)

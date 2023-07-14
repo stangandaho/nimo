@@ -31,8 +31,9 @@ server <- function(input, output, session) {
     modalDialog(
       title = "Project Directory Setup", size = "l",
       footer = tagList(
-        actionButton("dir_setup", "Set up", icon("wrench")),
-        modalButton("Ok", icon("glyphicon-ok", "glyphicon"))),
+        modalButton("Ok", icon("glyphicon-ok", "glyphicon")),
+        actionButton("dir_setup", "Set up", icon("wrench"), style = bttn_primary_style)
+        ),
       fluidRow(column(6, shinyFiles::shinyDirButton("browse_dir", "Directory",
                                                     title = "Project Directory",
                                                     icon = icon("folder", "fa-awesom"))),
@@ -85,8 +86,10 @@ server <- function(input, output, session) {
   data_customize_modal <- function(){
     modalDialog(title = "Caracterize the species data",
                 footer = tagList(
-                  actionButton("valid_data", "Valid", icon("check", "font-awesome")),
-                  modalButton("Ok", icon("glyphicon-ok", "glyphicon"))),
+                  modalButton("Ok"),
+                  actionButton("valid_data", "Valid", icon("check", "font-awesome"),
+                               tyle = bttn_primary_style)
+                  ),
                 fluidRow(
                   column(6, selectInput("species_var", "Sepcies column",
                                         choices = colnames(species_data()))),
@@ -111,7 +114,7 @@ server <- function(input, output, session) {
 
   error_modal <- function(){
     modalDialog(title = strong(h2("Error", style = "color:#c52323")),
-                textOutput("error_modal"), footer = modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon")))
+                textOutput("error_modal"), footer = modalButton("Ok"))
   }
   ## import data
   observeEvent(input$choose_data_file, {
@@ -150,7 +153,7 @@ server <- function(input, output, session) {
       dplyr::select(-uni) %>%
       dplyr::rename("pr_ab" = input$occ_var) %>%
       dplyr::filter(!is.na(pr_ab)) %>%
-      dplyr::mutate(pr_ab = case_when(pr_ab == input$presence ~ 1,
+      dplyr::mutate(pr_ab = dplyr::case_when(pr_ab == input$presence ~ 1,
                                       pr_ab == input$abscence ~ 0))
 
       ## duplicate
@@ -183,9 +186,13 @@ server <- function(input, output, session) {
   ## plot geographic distribution
   observeEvent(input$valid_data, {
     # point distribution
-    occ_plot <- ggplot(data = wrangle_data()[[1]])+
-      geom_point(aes_string(input$long_var, input$lat_var))+
-      labs(x = "Longitude\n", y = "Latitude\n")
+    wdt <- wrangle_data()[[1]] %>% mutate(pr_ab = as.character(pr_ab))
+    occ_plot <- ggplot(data = wdt)+
+      geom_point(aes(!!dplyr::sym(input$long_var), !!dplyr::sym(input$lat_var),
+                     color = if(length(unique(pr_ab)) > 1) {pr_ab} ))+
+      labs(x = "Longitude\n", y = "Latitude\n")+
+      scale_color_manual(values = c("#878787", "#323232"))+
+      guides(color = guide_legend(title = ""))
 
       output$geo_distribution <- renderPlotly({
         ggplotly(occ_plot, tooltip = c("x", "|", "y"), originalData = TRUE, dynamicTicks = TRUE)
@@ -204,16 +211,21 @@ server <- function(input, output, session) {
     req(layer_file_path())
     sf::read_sf(layer_file_path())})
   occ_data <- reactive({sf::st_as_sf(x = wrangle_data()[[1]], coords = c(input$long_var, input$lat_var),
-                                     crs = sf::st_crs(shp_layer()))})
+                                     crs = sf::st_crs(shp_layer())) %>% mutate(pr_ab = as.character(pr_ab))
+    })
   ### plot shp and occurence data
   observeEvent(input$add_layer, {
     req(layer_file_path())
     occ_and_shp_layer <- ggplot()+
       geom_sf(data = shp_layer(), aes())+
-      geom_sf(data = occ_data(), aes(), color = "#f26802")+
-      labs(x = "Longitude\n", y = "Latitude\n")
+      #geom_sf(data = occ_data(), aes(), color = "#f26802")+
+      geom_sf(data = occ_data(), aes(color = if(length(unique(pr_ab)) > 1) {pr_ab} ))+
+      labs(x = "Longitude\n", y = "Latitude\n")+
+      scale_color_manual(values = c("#878787", "#323232"))+
+      guides(color = guide_legend(title = ""))
+
     output$geo_distribution <- renderPlotly({
-      ggplotly(occ_and_shp_layer)
+      ggplotly(occ_and_shp_layer, tooltip = c("x", "|", "y"), originalData = TRUE, dynamicTicks = TRUE)
     })
   })
 
@@ -221,8 +233,10 @@ server <- function(input, output, session) {
   ### calibration modal
   calib_area_modal <- function(){
     modalDialog("Area Calibration",
-                footer = tagList(actionButton("valid_calib_area", "Calibrate"),
-                                 modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon"))),
+                footer = tagList(
+                                 modalButton("Ok"),
+                                 actionButton("valid_calib_area", "Calibrate", style = bttn_primary_style)
+                  ),
                 fluidRow(
                   column(8, plotOutput("calib_area_plot")),
                   column(4,
@@ -230,7 +244,7 @@ server <- function(input, output, session) {
                     br(),
                     selectInput("calib_area_method", "Methode", choices = calib_area_method),
                     conditionalPanel("input.calib_area_method == 'buffer' | input.calib_area_method == 'bmcp'",
-                                     numericInput("calib_area_width", "Width (m)", value = 1000, min = 1, width = "100%")),
+                                     numericInput("calib_area_width", "Width (m)", value = 3000, min = 5, width = "100%")),
                     conditionalPanel("input.calib_area_method == 'mask'",
                                      selectInput("clusters_field", "Filter by", choices = c()))
                     )
@@ -1176,6 +1190,7 @@ observeEvent(input$search_by, {
                                   label = paste("Select the", tolower(names(gbif_q[gbif_q == input$search_by])))
                                   )
 })
+
 observeEvent(input$species_input, {
   search_term <- input$species_input
   search_by <- input$search_by
@@ -1318,7 +1333,7 @@ gbif_citation <- eventReactive(input$load_gbif_data, {
   }
 })
 output$occ_citation <- renderPrint({
-  cat(gbif_citation(), sep = "\n\n")
+  HTML(gbif_citation(), br())
 })
 
 observe({
@@ -1327,7 +1342,7 @@ observe({
                    id = "copy_citation_btn",
                    label = "Copy",
                    icon = icon("copy"),
-                   text = gbif_citation()
+                   text = cat(gbif_citation(), sep = "\n\n")
   )
 
 })
