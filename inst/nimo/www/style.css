@@ -1,26 +1,69 @@
+/*** HEADER ***/
+.skin-blue .main-header .navbar {
+    background-color: #042d0f;
+}
+
+.skin-blue .main-header .logo {
+    background-color: #042d0f;
+}
+
+.skin-blue .left-side, .skin-blue .main-sidebar, .skin-blue .wrapper {
+    background-color: #042d0f;
+}
+
+
 .fit_model_btn_icon {
   color: green;
 }
+/*** SIDE BAR ****/
+.skin-blue .sidebar-menu>li.active>a {
+    border-left-color: yellow;
+    border-left-width: 5px;
+}
+.skin-blue .sidebar-menu>li.hover>a {
+    background: yellow;
+}
+
+
 
 @font-face {
-  font-family: 'Montserrat';
-  src: url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
+    font-family: 'Montserrat-Bold';
+    src: url('fonts/Montserrat-Bold.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'Montserrat-Regular';
+    src: url('fonts/Montserrat-Regular.ttf') format('truetype');
+}
+
+/****TITLES****/
+h1 {
+    font-family: 'Montserrat-Bold',sans-serif;
+    text-align: center;
+}
+
+h5 {
+    font-family: 'Montserrat-Regular',sans-serif;
+    font-size: 2rem;
+    text-align: center;
 }
 
 p{
-  font-family: "Montserrat", sans-serif;
-  color: red;
+  font-family: 'Montserrat-Regular' sans-serif;
+}
+
+/****** SIDE BARE**********/
+.skin-blue .sidebar a {
+  font-family: "Montserrat-Bold", sans-serif;
 }
 
 body {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat-Regular', sans-serif;
   color: #292929
   height:100%
 }
 
-.skin-blue .sidebar a {
-  font-family: "Montserrat", sans-serif;
-}
+
 
 .leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
     height: 100vh;
@@ -29,4 +72,13 @@ body {
 /**TABLE BODY**/
 .dataTables_scrollBody{
   height: 50vh;
+}
+
+/****** LEAFLET ****/
+
+.leaflet-control-zoom {
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: 500%;
 }
