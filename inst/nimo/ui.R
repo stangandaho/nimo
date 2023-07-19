@@ -10,23 +10,23 @@ thr <- c("No omission" = "lpt", "Sensitivity = specificity" = "equal_sens_spec",
          "Sorensen" = "max_sorensen", "FPB" = "max_fpb",
          "Sensitivity" = "sensitivity")
 
-bttn_primary_style <-  paste0("background-color:", "#58126b;", "color:#ffffff;")
+bttn_primary_style <-  paste0("background-color:", "#065325;", "color:#ffffff;")
 bttn_second_style <- paste0("background-color:", "#ff9e15;", "color:#ffffff;")
 loader_color <- "#1b105a"; loader_type  <- 7
 
 
 source("./inst/nimo/src/query_gbif_occ_data.R") ## GBIF Queries fields
 source("./inst/nimo/src/copy.R") # CopyClipboard
-
+source("./inst/nimo/src/head_menu_set.R")
 
 git_repo <- "https://github.com/stangandaho/nimo"
 git_issues <- "https://github.com/stangandaho/nimo/issues"
 nimo_site <- "https://nimo.re-agro.org/"
-#tags$img(src= nimo_logo, height = '40',width='50')
+get_started_url <- "https://nimo.re-agro.org/get-started/"
 mytitle <-   tags$link(tags$a(href = nimo_site,
-                            tags$img(src= nimo_logo, height = '45',width='50')),
+                            tags$img(src= nimo_logo, height = '32',width='37')),
                      strong("nimo", style = "font-size: 1.8em;     font-family: 'Montserrat-Bold';"))
-
+# variables
 colinearity_method <- c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
                         "Principal component analysis" = "pca", "Factorial analysis" = "fa")
 partition_types <- c("Random" = "part_random", "Spatial band" = "part_sband",
@@ -34,37 +34,37 @@ partition_types <- c("Random" = "part_random", "Spatial band" = "part_sband",
 ## Header ----
 header <- shinydashboardPlus::dashboardHeader(title = mytitle,
                                               titleWidth = 300,
-                                              dropdownMenuOutput("notification_menu"),
+                                              #dropdownMenuOutput("notification_menu"),
                                               dropdownMenu(
                                                 type = "messages",
-                                                icon = icon("question-circle", "font-awesome"),
+                                                icon = icon("question-circle"),
                                                 badgeStatus = NULL,
                                                 headerText = strong("Help"),
-                                                boxDropdownItem(
+                                                box_dropdown_item(
                                                   "Get started",
-                                                  href = "#",
+                                                  href = get_started_url,
                                                   icon = icon("menu-right", lib = "glyphicon")
                                                 ),
-                                                boxDropdownItem(
+                                                box_dropdown_item(
                                                   "Issues",
                                                   href = git_issues,
-                                                  icon = icon("bug", lib = "font-awesome"),
+                                                  icon = icon("bug"),
                                                 ),
-                                                boxDropdownItem(
+                                                box_dropdown_item(
                                                   "About",
                                                   href = "#",
-                                                  icon = icon("info", lib = "font-awesome"),
+                                                  icon = icon("info"),
                                                 )
                                               ),
                                               dropdownMenu(
-                                                 type = "messages",
-                                                 icon = icon("sack-dollar", lib = "font-awesome"),
+                                                 type = "task",
+                                                 icon = icon("sack-dollar"),
                                                  badgeStatus = NULL,
                                                  headerText = strong("Donate"),
-                                                 boxDropdownItem(
+                                                 box_dropdown_item(
                                                    "Donation",
                                                    href = "#",
-                                                   icon = icon("hand-holding-dollar", lib = "font-awesome")
+                                                   icon = icon("hand-holding-dollar")
                                                            )
                                               ),
                                               tags$li(class = "dropdown",
@@ -80,8 +80,8 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
     id="sidebar_menu",
     menuItem("Niche Modeler", tabName = "nimo_home_page", icon = icon("house-chimney")),
     menuItem(
-        tags$span(
-        tags$img(src = gbif_white_logo, height = '26',width='75')),
+      text = tags$span(
+        tags$img(src = gbif_white_logo, height = '26', width='75')),
         tabName = "gbif_access", icon = NULL),
     #menuItem("GBIF Data", tabName = "gbif_access", icon = NULL),
     menuItem("Pre-Modeling",tabName = "pre_modeling", icon = icon("arrow-left", lib = "glyphicon"),
@@ -162,17 +162,15 @@ nimo_body <- shinydashboard::dashboardBody(
                 column(12,
                        div(id = "main_title",
                            h1("Species distribution modeling (SDM) App",
-                              style="text-align:center; font-size:50px;")),
-                       hr()
+                              style="text-align:center; font-size:50px;"))
                 ),
                 column(12,
-                       div(shiny::img(src = nimo_logo, height = "35%",width = "40%"), style="text-align: center;")
+                       div(shiny::img(src = nimo_logo, height = "25%",width = "30%"), style="text-align: center;")
                 ),
-                br(),
                 column(12,
                        div(p(strong("To start quickly with NIMO, please visite the start page "),
                              em(a("here",
-                                  href = "#", target="_blank")),
+                                  href = get_started_url)),
                              style="text-align:center; font-size:2.5rem; color:#00910a")),
                 ),
                 hr(),
@@ -248,7 +246,7 @@ nimo_body <- shinydashboard::dashboardBody(
                               )),
                        column(4,
                               hr(),
-                              shinyDirButton("pred_source", "Source", icon = icon("folder"), style = bttn_primary_style,
+                              shinyDirButton("pred_source", "Predictor Folder", icon = icon("folder"), style = bttn_primary_style,
                                              title = "Select folder containing predictors"),
                               hr(),
                               selectInput("pred_single", "Predictors", choices = c()),
@@ -512,7 +510,6 @@ nimo_body <- shinydashboard::dashboardBody(
                        fluidPage(
                          tagList(
                            #actionButton("load_gbif_data", "Load", icon = icon("refresh", lib = "glyphicon"), style = bttn_second_style),
-                           actionButton("add_to_map", "Add to map", icon = icon("plus")),
                            ), hr(),
                          DT::DTOutput("occ_gbif_dataset", height = "500px", fill = FALSE)
                        )
@@ -520,11 +517,16 @@ nimo_body <- shinydashboard::dashboardBody(
               tabPanel("Citation",
                        fluidPage(
                          shiny::verbatimTextOutput("occ_citation", placeholder = TRUE),
-                         copy_button(
-                           "copy_citation_btn",
-                           "Copy",
-                           icon = icon("copy"),
-                           text = "No citation copied"
+                         tagList(
+                           copy_button(
+                             "copy_citation_btn",
+                             "Copy",
+                             icon = icon("copy"),
+                             text = "No citation copied"
+                           ),
+                           shinyFiles::shinySaveButton("save_citation", "Save ciatation", title = "Save citation",
+                                                       filename = "", filetype = list(`Plain text` = "txt"),
+                                                       icon = icon("save"))
                          )
                        )
                        )
