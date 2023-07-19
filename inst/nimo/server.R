@@ -23,20 +23,20 @@ server <- function(input, output, session) {
   source(paste0(pkg_root, "render_esm_model_fitting.R"), local = TRUE)[1]
   source(paste0(pkg_root, "model_fitting.R"), local = TRUE)[1]
   source(paste0(pkg_root, "esm_model_fitting.R"), local = TRUE)[1]
-  source(paste0(pkg_root, "occ_data_access.R"), local = TRUE)[1]
+  source(paste0(pkg_root, "leaflet_map.R"), local = TRUE)[1]
   source(paste0(pkg_root, "handle_sf.R"), local = TRUE)[1]
   source(paste0(pkg_root, "query_gbif_occ_data.R"), local = TRUE)[1]
   # DIRECTORY SET UP ----
   set_dir_modal <- function() {
     modalDialog(
-      title = "Project Directory Setup", size = "l",
+      title = strong("Project Directory Setup", style = "font-family:'Montserrat-Bold'"), size = "l",
       footer = tagList(
-        modalButton("Ok", icon("glyphicon-ok", "glyphicon")),
+        modalButton("Ok"),
         actionButton("dir_setup", "Set up", icon("wrench"), style = bttn_primary_style)
         ),
       fluidRow(column(6, shinyFiles::shinyDirButton("browse_dir", "Directory",
                                                     title = "Project Directory",
-                                                    icon = icon("folder", "fa-awesom"))),
+                                                    icon = icon("folder"))),
                column(6, checkboxInput("cali_area", "Calibrate area", value = TRUE))),
       fluidRow(column(6, selectInput("algorithm", "Algorithm", choices = algorithm, multiple = TRUE)),
                column(6, selectInput("ensemble", "Ensemble", choices = ensemble, selected = "mean"))),
@@ -78,12 +78,23 @@ server <- function(input, output, session) {
   })
   ## import data
   species_data <- reactive({
+    if (is.null(input$start_modeling) && input$import_data_check == TRUE) {
     req(data_file_path())
-    read.csv(file = data_file_path(), header = TRUE) %>%
+    data <- read.csv(file = data_file_path(), header = TRUE) %>%
       dplyr::select(-1)
+    } else if (input$start_modeling == 1 && input$import_data_check == TRUE) {
+      req(data_file_path())
+      data <- read.csv(file = data_file_path(), header = TRUE) %>%
+        dplyr::select(-1)
+    } else if (input$start_modeling == 1 && input$import_data_check == FALSE) {
+      data <- gbif_data()[[1]]
+    }
+    data
   })
+
   ## set nodal to customize data importing
   data_customize_modal <- function(){
+    sdm_data <- species_data()
     modalDialog(title = "Caracterize the species data",
                 footer = tagList(
                   modalButton("Ok"),
@@ -92,19 +103,19 @@ server <- function(input, output, session) {
                   ),
                 fluidRow(
                   column(6, selectInput("species_var", "Sepcies column",
-                                        choices = colnames(species_data()))),
+                                        choices = colnames(sdm_data))),
                   column(6, selectInput("unique_species", "Sepcies",
-                                        choices = c()))
+                                        choices = c(), multiple = TRUE))
                 ),
                 fluidRow(
-                  column(4, selectInput("long_var", "Longitude", choices = colnames(species_data()))),
-                  column(4, selectInput("lat_var", "Latitude", choices = colnames(species_data()))),
+                  column(4, selectInput("long_var", "Longitude", choices = colnames(sdm_data))),
+                  column(4, selectInput("lat_var", "Latitude", choices = colnames(sdm_data))),
                   column(4, selectInput("var_to_conserve", "Variable to conserve",
                                         choices = c(), selected = c(), multiple = T))
                 ),
                 fluidRow(
                   conditionalPanel("input.occ_type != 'Presence'",
-                                   column(4, selectInput("occ_var", "Occurence column", choices = colnames(species_data()))),
+                                   column(4, selectInput("occ_var", "Occurence column", choices = colnames(sdm_data))),
                                    column(4, selectInput("presence", "Presence", choices = c())),
                                    column(4, selectInput("abscence", "Abscence", choices = c())))
                 )
@@ -146,7 +157,7 @@ server <- function(input, output, session) {
     if (input$occ_type != "Presence") {
     df <- species_data() %>%
       dplyr::select(input$species_var, input$long_var, input$lat_var, input$occ_var, input$var_to_conserve) %>%
-      dplyr::filter(!!sym(input$species_var) == input$unique_species &
+      dplyr::filter(!!sym(input$species_var) %in% input$unique_species &
                       !!sym(input$occ_var) %in% c(input$presence, input$abscence)) %>%
       dplyr::mutate(uni = paste0(!!sym(input$long_var), !!sym(input$lat_var))) #%>%
     w_df_uni <- df %>% dplyr::distinct(uni, .keep_all = TRUE) %>%
@@ -327,11 +338,16 @@ server <- function(input, output, session) {
   })
   env_layers <- reactive({
     req(pred_list())
+  tryCatch({
     ras <- terra::rast(pred_list())
     if (base::any(duplicated(names(ras)))) {
       names(ras) <- sub("\\.[^.]*$", "", basename(pred_list()))}
     ras
-    })
+  }, error = function(e){
+    showModal(error_modal())
+    output$error_modal <- renderText(paste(e))
+  })
+  })
   ## display dummary
   predictors_summary <- function() {
     pred_rast <- c()
@@ -362,9 +378,15 @@ server <- function(input, output, session) {
   # REDUCE COLINEARITY -----
   observeEvent(input$colinearize, {
     req(pred_list())
-    preds <- terra::rast(pred_list())
-    showModal(colin_modal())
-    output$colin_corr <- renderPlot(terra::pairs(preds))
+    tryCatch({
+      preds <- terra::rast(pred_list())
+      showModal(colin_modal())
+      output$colin_corr <- renderPlot(terra::pairs(preds))
+    },
+    error = function(e){
+      showModal(error_modal())
+      output$error_modal <- renderText(paste(e))
+    })
   })
   colin_modal <- function(){
     modalDialog(title = "", footer = modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon")),
@@ -1203,13 +1225,23 @@ observeEvent(input$species_input, {
 
 gbif_data <- eventReactive(input$load_gbif_data, {
   if (input$use_geom_gbif == FALSE) {
-    query_occ(query_params = query_params())[[1]]}
+    list(
+      query_occ(query_params = query_params())[[1]],
+      query_occ(query_params = query_params())[[2]]
+    )}
   else if (nrow(drawn_poly()) > 2 && input$use_geom_gbif == FALSE) {
-    inside_drawn_ply()[[1]]}
+    list(
+      inside_drawn_ply()[[1]],
+      inside_drawn_ply()[[2]]
+    )}
   else if (input$use_geom_gbif == TRUE) {
-    loc_geom()[[1]]
+    list(
+      loc_geom()[[1]],
+      loc_geom()[[2]]
+    )
   }
 })
+
 ## Hide country if geometry is defined
 observe({
   if (input$use_geom_gbif == TRUE) {
@@ -1226,10 +1258,12 @@ observeEvent(input$acces_gbif_data, {
       footer = NULL,
       title = tagList(
         actionButton("load_gbif_data", "Load", icon = icon("refresh", lib = "glyphicon"), style = bttn_second_style),
+        actionButton("add_to_map", "Add to map", icon = icon("plus")),
         shinySaveButton(id = "export_occ", label = "Export", title = "Save occurrence data",
                         filename = gsub("\\s", "_", paste0(input$species_suggestions, "_occurrence")),
                         filetype = list(CSV = "csv", `Plain text` = "txt"),
                         icon = icon("save")),
+        actionButton("start_modeling", "Start Modeling", icon = icon("glyphicon-play", "glyphicon")),
         modalButton("Close", icon = icon("remove-circle", lib = "glyphicon"))),
       size = "l",
       tags$div(
@@ -1244,13 +1278,13 @@ observeEvent(input$acces_gbif_data, {
 
 output$gbif_occ_data <- DT::renderDT({
   input$acces_gbif_data
-  gbif_data()
+  gbif_data()[[1]]
 }, options = list(scrollX = TRUE, scrollY = TRUE, searching = FALSE, lengthMenu = c(5, 10, 50, 100, 300, 500)),
 selection = "single", editable = TRUE)
 
 output$occ_gbif_dataset<- DT::renderDT({
   input$acces_gbif_data
-  gbif_data()
+  gbif_data()[[1]]
 }, options = list(scrollX = TRUE, scrollY = TRUE, searching = FALSE, lengthMenu = c(5, 10, 50, 100, 300, 500)),
 selection = "single", editable = TRUE)
 ## Save occ data
@@ -1261,17 +1295,15 @@ export_occ_path <- reactive({
 })
 
 observe({
-  req(export_occ_path(), gbif_data())
+  req(export_occ_path(), gbif_data()[[1]])
   if (nrow(export_occ_path()) > 0 ) {
-    write.csv(x = gbif_data(), file = as.character(export_occ_path()$datapath))
+    write.csv(x = gbif_data()[[1]], file = as.character(export_occ_path()$datapath))
   }
 })
 ## leaflet
 output$occ_map <- renderLeaflet({ llf() })
 observeEvent(input$add_to_map, {lft_proxy()})
-observe({
-  req(geom_vect()); lft_geom()
-})
+observe({ req(geom_vect()); lft_geom() })
 observeEvent(input$clear_map, {
   output$occ_map <- renderLeaflet({ llf() })
 })
@@ -1322,33 +1354,52 @@ observe({
   }
 })
 
-## copy citation button
-gbif_citation <- eventReactive(input$load_gbif_data, {
-  if (input$use_geom_gbif == FALSE) {
-    markdown_text <- query_occ(query_params = query_params())[[2]]}
-  else if (nrow(drawn_poly()) > 2 && input$use_geom_gbif == FALSE) {
-    markdown_text <- inside_drawn_ply()[[2]]}
-  else if (input$use_geom_gbif == TRUE) {
-    markdown_text <- loc_geom()[[2]]
-  }
-})
+
 output$occ_citation <- renderPrint({
-  HTML(gbif_citation(), br())
+  gbif_data()[[2]]
 })
 
+
+# CITATION - GBIF DATA
 observe({
   req(input$copy_citation_btn)
   copy_button_update(session,
                    id = "copy_citation_btn",
                    label = "Copy",
                    icon = icon("copy"),
-                   text = cat(gbif_citation(), sep = "\n\n")
+                   text = paste(gbif_data()[[2]], collapse = "\n")
   )
 
 })
 
+shinyFileSave(input = input, "save_citation", root = root)
+citation_file_path <- reactive({
+  req(input$save_citation)
+  shinyFiles::parseSavePath(roots = root, selection = input$save_citation)
+})
+
+observe({
+  req(citation_file_path(), gbif_data()[[2]])
+  if (nrow(citation_file_path()) > 0 ) {
+    tryCatch(
+      {
+        writeLines(text = gbif_data()[[2]], as.character(citation_file_path()$datapath), sep = "\n\n")
+      }, error = error
+    )
+  }
+})
 
 
+## Inject GBIF Data Into modeling Workflow
+observeEvent(input$start_modeling, {
+  tryCatch({
+    if(is.data.frame(species_data())){
+      showModal(data_customize_modal())}},
+    error = function(e){
+      showModal(error_modal())
+      output$error_modal <- renderText(paste(e))
+    })
+})
 ## END SERVER
 
 }
