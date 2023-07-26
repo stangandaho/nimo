@@ -17,20 +17,16 @@
 #'
 #' @examples
 #'
-#' nimo(in_browser = TRUE)
+#' nimo()
 #'
 #' @export
-nimo <- function(host = c("HOST" = "127.0.0.1"), port = NULL, in_browser = TRUE, maxUploadSize=200) {
-  ui <- paste0(system.file("R", package = "nimo"), "/ui.R")
-  server <- paste0(system.file("R", package = "nimo"), "/server.R")
-  source("R/ui.R", local = T); source("R/server.R", local = T)
 
+nimo <- function(maxUploadSize=200) {
+  rt_path <- system.file("nimo", package = "nimo")
+  source(paste0(rt_path, "/ui.R")); source(paste0(rt_path, "/server.R"))
   shinyOptions(maxUploadSize = maxUploadSize)
-  # runApp(system.file("R", package = "nimo"), launch.browser = in_browser, port = port,
-  #        host = getOption("shiny.host", host))
+
   shinyApp(ui = ui, server = server)
 
 }
-#nimo()
 
-list.files(system.file("R", package = "nimo"))
