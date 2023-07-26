@@ -1,11 +1,11 @@
 Package: nimo
 Type: Package
-Title: GUI for Ecological Niche Modeling
-Version: 0.1.0
+Title: GUI for Species Distrubution Modeling
+Version: 0.2.0
 Depends: R (>= 3.5.0)
 Imports: flexsdm, shiny, shinyFiles, shinydashboard, shinydashboardPlus, shinyjs,
-        plotly, leaflet, leaflet.extras, httr, jsonlite, sf, terra, DT, shinycssloaders,
-        shinyWidgets, methods, dplyr, ggplot2
+        plotly, leaflet, leaflet.extras, httr, jsonlite, sf, terra (>= 1.5-21), 
+        DT, shinyWidgets, shinycssloaders, methods, dplyr, ggplot2
 Author: Stanislas Mahussi GANDAHO
 Maintainer: Stanislas Mahussi GANDAHO <stangandaho@gmail.com>
 URL: https://github.com/stangandaho/nimo
@@ -21,7 +21,6 @@ Description: The nimo (niche modeler) R package, based on flexsdm and powered by
     package empowers researchers to explore, customize, and model their data 
     effectively, with the added benefit of accessing real-world biodiversity 
     data through GBIF.
-License: GPL (>= 3)
+License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.2.3
