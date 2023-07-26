@@ -10,8 +10,8 @@ gbif_q <- c(
 )
 
 ## Set country iso code
-cc <- paste0(system.file("", package = "nimo"), "/data")
-ccode <- read.csv(paste0(cc, "/country_code.txt")) %>%
+cc <- paste0(system.file("", package = "nimo"))
+ccode <- read.csv(paste0(cc, "/extdata/country_code.csv"), header = TRUE, sep = ",") %>%
   dplyr::select(country, iso) %>%
   dplyr::mutate(iso = dplyr::case_when(is.na(iso) ~ "NA",
                                        TRUE ~ iso))
@@ -79,7 +79,7 @@ query_occ <- function(query_params) {
           }
 
         }
-          markdown_text <- sub("accessed via GBIF.org", "accessed via nimo 10.15468/22lope", paste(metadata_list))
+          markdown_text <- sub("accessed via GBIF.org", "accessed via nimo", paste(metadata_list))
       }
     }
     # Combine all_occurrences list into a single data frame
@@ -93,7 +93,3 @@ query_occ <- function(query_params) {
     occ <- all_occurrences_df %>% dplyr::select(dplyr::all_of(col))
     return(list(occ, markdown_text))
 }
-
-
-
-
