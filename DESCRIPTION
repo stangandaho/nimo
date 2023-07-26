@@ -24,3 +24,6 @@ Description: The nimo (niche modeler) R package, based on flexsdm and powered by
 License: MIT + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.2.3
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
