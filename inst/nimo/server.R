@@ -11,21 +11,24 @@ bg_metho <- c("Random" = "random", "Thickening" = "thickening")
 pseudo_abs_method <- c("Random" = "random", "Env constrained" = "env_const",
                 "Geo contrained" = "geo_const", "Env & Geo contrained" = "geo_env_const",
                 "Env clustering" = "geo_env_km_const")
+# set source file access
+src_root <- paste0(system.file("nimo", package = "nimo"), "/src/")
 
 ## Add ressource
-addResourcePath("nimo", "./inst/nimo/www")
+addResourcePath("nimo", paste0(system.file("nimo", package = "nimo"), "/www"))
 
 server <- function(input, output, session) {
-  pkg_root <- "./inst/nimo/src/"
-  source(paste0(pkg_root, "cust_functions.R"), local = TRUE)[1]
-  source(paste0(pkg_root, "find_highly_coor_var.R"), local = TRUE)[1]
-  source(paste0(pkg_root, "predictors_selection_update.R"), local = TRUE)[1]
-  source(paste0(pkg_root, "render_esm_model_fitting.R"), local = TRUE)[1]
-  source(paste0(pkg_root, "model_fitting.R"), local = TRUE)[1]
-  source(paste0(pkg_root, "esm_model_fitting.R"), local = TRUE)[1]
-  source(paste0(pkg_root, "leaflet_map.R"), local = TRUE)[1]
-  source(paste0(pkg_root, "handle_sf.R"), local = TRUE)[1]
-  source(paste0(pkg_root, "query_gbif_occ_data.R"), local = TRUE)[1]
+  source(paste0(src_root, "cust_functions.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "find_highly_coor_var.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "predictors_selection_update.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "render_esm_model_fitting.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "model_fitting.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "esm_model_fitting.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "handle_sf.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "leaflet_map.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "query_gbif_occ_data.R"), verbose = FALSE, local = TRUE)$value
+
+
   # DIRECTORY SET UP ----
   set_dir_modal <- function() {
     modalDialog(
@@ -1162,7 +1165,6 @@ output$extrapo_raster <- renderPlot({
   terra::plot(model_extrapo())})
 
 ## POSTERIORI - CORRECTION
-
 over_correct <- eventReactive(input$ov_p_correct, {
   if (input$reduce_collin > 0 && !any(reduce_colin()[[3]] %in% "")) {
     env_layers <- env_layers()[[!names(env_layers()) %in% reduce_colin()[[3]]]]
@@ -1224,17 +1226,17 @@ observeEvent(input$species_input, {
 })
 
 gbif_data <- eventReactive(input$load_gbif_data, {
-  if (input$use_geom_gbif == FALSE) {
-    list(
-      query_occ(query_params = query_params())[[1]],
-      query_occ(query_params = query_params())[[2]]
-    )}
-  else if (nrow(drawn_poly()) > 2 && input$use_geom_gbif == FALSE) {
+  if (!is.null(drawn_poly())) {
     list(
       inside_drawn_ply()[[1]],
       inside_drawn_ply()[[2]]
     )}
-  else if (input$use_geom_gbif == TRUE) {
+  else if (input$country_filter != "") {
+    list(
+      query_occ(query_params = query_params())[[1]],
+      query_occ(query_params = query_params())[[2]]
+    )}
+  else if (input$use_geom_gbif == TRUE & input$country_filter == "" ) {
     list(
       loc_geom()[[1]],
       loc_geom()[[2]]
@@ -1250,6 +1252,13 @@ observe({
     shinyjs::show("country_filter")
   }
 })
+observe({
+  if (input$use_geom_gbif == TRUE) {
+    shinyjs::hide("country_filter")
+  } else {
+    shinyjs::show("country_filter")
+  }
+})
 
 ### Modal to show data queried
 observeEvent(input$acces_gbif_data, {
@@ -1258,12 +1267,12 @@ observeEvent(input$acces_gbif_data, {
       footer = NULL,
       title = tagList(
         actionButton("load_gbif_data", "Load", icon = icon("refresh", lib = "glyphicon"), style = bttn_second_style),
-        actionButton("add_to_map", "Add to map", icon = icon("plus")),
+        actionButton("start_modeling", "Start Modeling", icon = icon("glyphicon-play", "glyphicon"), style = bttn_second_style),
+        actionButton("add_to_map", "Add to map", icon = icon("plus"), style = bttn_third_style),
         shinySaveButton(id = "export_occ", label = "Export", title = "Save occurrence data",
                         filename = gsub("\\s", "_", paste0(input$species_suggestions, "_occurrence")),
                         filetype = list(CSV = "csv", `Plain text` = "txt"),
-                        icon = icon("save")),
-        actionButton("start_modeling", "Start Modeling", icon = icon("glyphicon-play", "glyphicon")),
+                        icon = icon("save"), style = bttn_third_style),
         modalButton("Close", icon = icon("remove-circle", lib = "glyphicon"))),
       size = "l",
       tags$div(
@@ -1318,9 +1327,16 @@ observeEvent(input$occ_map_click,{
   coord <- input$occ_map_click
   df <- data.frame(lon = coord[["lng"]], lat = coord[["lat"]])
   polyg$point <- rbind(polyg$point, df)
-  print(polyg$point)
   if (nrow(polyg$point) > 2) {
     shinyjs::show("clear_map")
+  }
+})
+# Hide country if polygon is drawn
+observe({
+  if (nrow(polyg$point) > 2) {
+    shinyjs::hide("country_filter")
+  } else {
+    shinyjs::show("country_filter")
   }
 })
 observeEvent(input$clear_map, {polyg$point <- data.frame(lon = c(), lat = c())})
@@ -1330,17 +1346,16 @@ drawn_poly <- eventReactive(input$acces_gbif_data, {
     sf::st_as_sf(x = polyg$point, coords = c("lon", "lat"), crs = 4326)
   }
 })
-observe({req(drawn_poly()); print(nrow(drawn_poly()))})
 
 ## clear button
 observe({
   shinyjs::hide("clear_map")
-
   if (input$clear_map) {
     shinyjs::hide("clear_map")
     updateCheckboxInput(session, "use_geom_gbif", value = FALSE)
   }
 })
+
 observe({
   req(input$add_to_map)
   if (input$add_to_map) {
@@ -1354,13 +1369,11 @@ observe({
   }
 })
 
-
+# citation - GBIF data
 output$occ_citation <- renderPrint({
   gbif_data()[[2]]
 })
 
-
-# CITATION - GBIF DATA
 observe({
   req(input$copy_citation_btn)
   copy_button_update(session,
@@ -1400,6 +1413,8 @@ observeEvent(input$start_modeling, {
       output$error_modal <- renderText(paste(e))
     })
 })
+
+
 ## END SERVER
 
 }

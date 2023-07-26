@@ -1,28 +1,32 @@
 ## load necessaries packages
 pkg_root <- "./src"#paste0(system.file("", package = "nimo"), "/nimo/src")
 nimo_logo <- "nimo/nimo_logo.png"; gbif_white_logo <- "nimo/gbif_white_logo.png"
+src_root <- paste0(system.file("nimo", package = "nimo"), "/src/")
+call_src <- function(file_name) { source(paste0(src_root, file_name)) }
 
-suppressPackageStartupMessages(
-  source("./inst/nimo/src/packages.R")
-)
+# load some src
+suppressPackageStartupMessages( call_src("packages.R") )
+call_src("query_gbif_occ_data.R") ## GBIF Queries fields
+call_src("copy.R") # CopyClipboard
+call_src("head_menu_set.R")
+
 thr <- c("No omission" = "lpt", "Sensitivity = specificity" = "equal_sens_spec",
          "TSS" = "max_sens_spec", "Jaccard" = "max_jaccard",
          "Sorensen" = "max_sorensen", "FPB" = "max_fpb",
          "Sensitivity" = "sensitivity")
 
 bttn_primary_style <-  paste0("background-color:", "#065325;", "color:#ffffff;")
-bttn_second_style <- paste0("background-color:", "#ff9e15;", "color:#ffffff;")
+bttn_second_style <- paste0("background-color:#065325;", "color:#ffffff;", "hover:red")
+bttn_third_style <- paste0("background-color:#B7C1C6")
+bttn_warn <- paste0("background-color:#f0b0a9", "border-color:#f0b0a9")
 loader_color <- "#1b105a"; loader_type  <- 7
 
-
-source("./inst/nimo/src/query_gbif_occ_data.R") ## GBIF Queries fields
-source("./inst/nimo/src/copy.R") # CopyClipboard
-source("./inst/nimo/src/head_menu_set.R")
 
 git_repo <- "https://github.com/stangandaho/nimo"
 git_issues <- "https://github.com/stangandaho/nimo/issues"
 nimo_site <- "https://nimo.re-agro.org/"
 get_started_url <- "https://nimo.re-agro.org/get-started/"
+donation <- "https://nimo.re-agro.org/donation/"
 mytitle <-   tags$link(tags$a(href = nimo_site,
                             tags$img(src= nimo_logo, height = '32',width='37')),
                      strong("nimo", style = "font-size: 1.8em;     font-family: 'Montserrat-Bold';"))
@@ -63,7 +67,7 @@ header <- shinydashboardPlus::dashboardHeader(title = mytitle,
                                                  headerText = strong("Donate"),
                                                  box_dropdown_item(
                                                    "Donation",
-                                                   href = "#",
+                                                   href = donation,
                                                    icon = icon("hand-holding-dollar")
                                                            )
                                               ),
@@ -339,7 +343,7 @@ nimo_body <- shinydashboard::dashboardBody(
                                   DT::DTOutput("extracted_data"))),
                        column(4,
                               selectInput("extract_variables", label = "Predictors to use",
-                                          choices = c(), multiple = T, selected = c()),
+                                          choices = c(), multiple = TRUE, selected = c()),
                               actionButton("extract_data", "Extract data", icon = icon("table"), style = bttn_primary_style),
                               shinySaveButton(id = "save_extracted_data", label = "Save",  title = "Save occurence data filtered",
                                               filename = "", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
@@ -469,11 +473,9 @@ nimo_body <- shinydashboard::dashboardBody(
                                 color = loader_color, type = loader_type),
                                 absolutePanel(bottom = 20, right = 0,
                                               tags$div(
-                                                id = "gt", style = "background-color:#a8b8ea;
-                                                border-radius:10px; padding: 8px 8px; width:60%; margin-right:10px",
-                                                #conditionalPanel("input.acces_gbif_data",
+                                                id = "gt", style = "background-color:#b7c1c6;
+                                                border-radius:10px; padding: 5px 5px; width:50%; margin-right:10px; margin-bottom:10px",
                                                                  actionButton("clear_map", "Clear", icon = icon("trash", lib = "glyphicon"), style = bttn_primary_style),
-                                                                 #hr()),
                                                 checkboxInput("use_geom_gbif", "Use defined area"),
                                                 conditionalPanel("input.use_geom_gbif",
                                                                  shinyFilesButton("location_filter", "Add area", "Choose external area",
@@ -498,10 +500,9 @@ nimo_body <- shinydashboard::dashboardBody(
                                 ),
                                 span(
                                   id = "location", style = "width:100%; display: flex;",
-                                  selectInput("country_filter", "Country", choices = countries, selected = NULL)
+                                  selectInput("country_filter", "Country", choices = countries, selected = "")
 
                                 ),
-
                                 actionButton("acces_gbif_data", "Access data", icon = icon("data"), style = bttn_primary_style)
                          )
                        )
