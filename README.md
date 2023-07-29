@@ -30,3 +30,51 @@ nimo()
 ```
 The **nimo** [website](https://nimo.re-agro.org) provides to users the resources to get started. 
 All necessaries concept and part of **nimo** are explained with screenshot and example. 
+
+# To do 
+
+## General
+* [x] Stylize User Interface
+* [ ] Package documentation (globally in progress)
+* [ ] Add tooltip to Pre-modeling, modeling and Post modeling input (globally mot started)
+
+## GBIF API
+
+| Task                                   | Progress (1-5) | Status         |
+|----------------------------------------|----------------|--------------- |
+| Designe UI                             | 5              | Completed  ✅ |
+| Query data using vector files          | 5              | Completed  ✅ |
+| Query data drawing an area             | 5              | Completed  ✅ |
+| Get and save data citation             | 5              | Completed  ✅ |
+| Documentation                          | 4              | In progess    |
+
+## Pre-modeling
+
+| Task                                   | Progress (1-5) | Status                                                                                |
+|----------------------------------------|----------------|---------------------------------------------------------------------------------------|
+| Pre-modeling user interface            | 5              | Completed  ✅ |
+| Implement [(functions)](https://sjevelazco.github.io/flexsdm/articles/v01_pre_modeling.html) to prepare modeling input| 5 | Completed  ✅ |
+| Documentation                          | 4              | In progess    |
+| Functionality to request R script of pre-modeling process| 3              | Planning   |
+| Add tooltip to briefly explain inputs by mouse hovering | 2               | Not started   |
+
+## Modeling
+
+| Task                                   | Progress (1-5) | Status                                                                                         |
+|----------------------------------------|----------------|----------------------------------------------------------------------------------------------- |
+| Pre-modeling user interface            | 5              | Completed  ✅ |
+| Construct and validate models with default hyper-parameter [(model fitting)](https://sjevelazco.github.io/flexsdm/articles/v02_modeling.html)| 5 | Completed  ✅ |
+|  Model tuning by searching for the best combination of hyper-parameter| 4 | In progess|
+| Documentation                          | 4              | In progess    |
+| Functionality to request R script of pre-modeling process| 2              | Not started   |
+| Add tooltip to briefly explain inputs by mouse hovering | 2               | Not started   |
+
+## Post-modeling
+
+| Task                                   | Progress (1-5) | Status                                                                                         |
+|----------------------------------------|----------------|----------------------------------------------------------------------------------------------- |
+| Post-modeling user interface            | 5              | Completed  ✅ |
+| Functionalities for [(model prediction, evaluation and correction)](https://sjevelazco.github.io/flexsdm/articles/v03_post_modeling.html)| 5 | Completed  ✅ |
+| Documentation                          | 4              | In progess    |
+| Functionality to request R script of pre-modeling process| 2              | Not started   |
+| Add tooltip to briefly explain inputs by mouse hovering | 2               | Not started   |
