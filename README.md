@@ -46,7 +46,7 @@ All necessaries concept and part of **nimo** are explained with screenshot and e
 | Query data using vector files          | 5              | Completed  ✅ |
 | Query data drawing an area             | 5              | Completed  ✅ |
 | Get and save data citation             | 5              | Completed  ✅ |
-| Documentation                          | 4              | In progess    |
+| Documentation                          | 4              | Completed  ✅  |
 
 ## Pre-modeling
 
