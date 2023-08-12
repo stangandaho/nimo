@@ -1,3 +1,14 @@
+/*** FONTS SET ***/
+@font-face {
+    font-family: 'Montserrat-Bold';
+    src: url('fonts/Montserrat-Bold.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'Montserrat-Regular';
+    src: url('fonts/Montserrat-Regular.ttf') format('truetype');
+}
+
 /*** HEADER ***/
 .skin-blue .main-header .navbar {
     background-color: #042d0f;
@@ -15,28 +26,12 @@
 .fit_model_btn_icon {
   color: green;
 }
-/*** SIDE BAR ****/
-.skin-blue .sidebar-menu>li.active>a {
-    border-left-color: yellow;
-    border-left-width: 5px;
+
+/* When hovering toggle button */
+.skin-blue .main-header .navbar .sidebar-toggle:hover {
+    background-color: #042d0f;
 }
-.skin-blue .sidebar-menu>li.hover>a {
-    background: yellow;
-}
-
-
-
-@font-face {
-    font-family: 'Montserrat-Bold';
-    src: url('fonts/Montserrat-Bold.ttf') format('truetype');
-}
-
-@font-face {
-    font-family: 'Montserrat-Regular';
-    src: url('fonts/Montserrat-Regular.ttf') format('truetype');
-}
-
-/****TITLES****/
+/****TITLES FONT ****/
 h1 {
     font-family: 'Montserrat-Bold',sans-serif;
     text-align: center;
@@ -52,11 +47,6 @@ p{
   font-family: 'Montserrat-Regular' sans-serif;
 }
 
-/****** SIDE BARE**********/
-.skin-blue .sidebar a {
-  font-family: "Montserrat-Bold", sans-serif;
-}
-
 body {
   font-family: 'Montserrat-Regular', sans-serif;
   color: #292929
@@ -64,21 +54,54 @@ body {
 }
 
 
-
-.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
-    height: 100vh;
+/*** SIDE BAR ****/
+.skin-blue .sidebar-menu>li.active>a {
+    border-left-color: #cceed4;
+    border-left-width: 5px;
 }
 
+.skin-blue .sidebar-menu>li.active>a, .skin-blue .sidebar-menu>li.menu-open>a, .skin-blue .sidebar-menu>li:hover>a {
+    color: #fff;
+    background: rgba(0,0,0,0);
+}
+
+.skin-blue .main-header .logo:hover {
+    background-color: rgba(0,0,0,0);
+}
+
+.skin-blue .sidebar a {
+  font-family: "Montserrat-Bold", sans-serif;
+}
+/****SHINY FILE***/
+.sF-title {
+    font-family: 'Montserrat-Bold' , sans-serif;
+}
+.btn-primary {
+    background-color: #065325;
+    border-color: #065325;
+}
+.btn-primary:hover {
+    background-color: #042d0f;
+    border-color: #042d0f;
+}
 /**TABLE BODY**/
 .dataTables_scrollBody{
   height: 50vh;
 }
 
 /****** LEAFLET ****/
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+    height: 100vh;
+}
 
-.leaflet-control-zoom {
-  top: auto;
-  right: auto;
-  bottom: auto;
-  left: 500%;
+/*** GBIF ****/
+.modal-body {
+    padding: 05vh;
+}
+/* connection status error*/
+.shiny-notification-error {
+    color: #dc0602;
+    font-family:"Montserrat-Bold", sans-serif;
+    background-color: #f2dede;
+    border: 0px solid #ebccd100;
 }

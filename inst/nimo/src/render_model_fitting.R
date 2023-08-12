@@ -1,8 +1,8 @@
 thr <- c("No omission" = "lpt", "Sensitivity = specificity" = "equal_sens_spec",
          "TSS" = "max_sens_spec", "Jaccard" = "max_jaccard",
          "Sorensen" = "max_sorensen", "FPB" = "max_fpb", "Sensitivity" = "sensitivity")
-fit_model_btn_style <- "border-radius: 5px 5px;"
-fit_model_btn_icon = icon("buromobelexperte", class = "fit_model_btn_icon")
+fit_model_btn_style <- paste0("background-color:", "#065325;", "color:#ffffff;")
+fit_model_btn_icon = icon("buromobelexperte")
 
 output$dynamic_model_fitting <- renderUI({
   selected_order <- input$fit_model_algorithm
@@ -12,8 +12,7 @@ output$dynamic_model_fitting <- renderUI({
     if (order %in% c("gam") && input$esm == TRUE) {
       div(style = "flex: 1;  margin-right: 20px;",
           h4("Generalized Additive Models - ESM"),
-          selectInput("gam_esm_predictors", "Quantitative p
-                          redictors", choices = c(), multiple = T),
+          selectInput("gam_esm_predictors", "Quantitative predictors", choices = c(), multiple = T),
           selectInput("gam_esm_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.gam_esm_thr.includes('sensitivity')",
                            numericInput("gam_esm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),

@@ -1,26 +1,38 @@
+# Algotithm
 algorithm <- c("Generalized Additive Models" = "gam", "Maximum Entropy" = "max",
                "Neural Networks" = "net", "Generalized Linear Models" = "glm",
                "Gaussian Process" = "gau", "Generalized Boosted Regression" = "gbm",
                "Random Forest" = "raf", "Support Vector Machine" = "svm")
+# Ensemble method
 ensemble <- c("Average" = "mean", "Super average" = "meansup", "Weighted average" = "meanw",
               "Median" = "median", "Based on Threshold" = "meanthr")
+# Calibration area method
 calib_area_method <- c("Buffer" = "buffer", "Minimum convex polygon" = "mcp",
                        "Buffered minimum convex polygon" = "bmcp", "Mask" = "mask")
+# Occurrence filtering method
 occ_filt_method <- c("Moran" = "moran", "Cellsize" = "cellsize", "Defined" = "defined")
 bg_metho <- c("Random" = "random", "Thickening" = "thickening")
 pseudo_abs_method <- c("Random" = "random", "Env constrained" = "env_const",
                 "Geo contrained" = "geo_const", "Env & Geo contrained" = "geo_env_const",
                 "Env clustering" = "geo_env_km_const")
-# set source file access
-src_root <- paste0(system.file("nimo", package = "nimo"), "/src/")
-
+# Set source file access
+src_root <- paste0(system.file("nimo", package = "nimo"), "/src/")#"./inst/nimo/src/"
 ## Add ressource
-addResourcePath("nimo", paste0(system.file("nimo", package = "nimo"), "/www"))
+addResourcePath("nimo", paste0(system.file("nimo", package = "nimo"), "/www"))#addResourcePath("nimo", "./inst/nimo/www")
 
+# button style
+bttn_primary_style <-  paste0("background-color:", "#065325;", "color:#ffffff;")
+bttn_second_style <- paste0("background-color:#065325;", "color:#ffffff;", "hover:red")
+bttn_third_style <- paste0("background-color:#B7C1C6")
+bttn_warn <- paste0("background-color:#f0b0a9", "border-color:#f0b0a9")
+loader_color <- "#042d0f"; loader_type  <- 7
+
+## SERVER
 server <- function(input, output, session) {
   source(paste0(src_root, "cust_functions.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "find_highly_coor_var.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "predictors_selection_update.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "render_model_fitting.R"), local = TRUE)[1]
   source(paste0(src_root, "render_esm_model_fitting.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "model_fitting.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "esm_model_fitting.R"), verbose = FALSE, local = TRUE)$value
@@ -69,7 +81,6 @@ server <- function(input, output, session) {
         threshold = TRUE)
       return(project_directory)
   })
-
   output$dir_setup_success <- renderText(paste("\n", {project_dir()}))
 
   # IMPORT DATA ---------
@@ -101,8 +112,7 @@ server <- function(input, output, session) {
     modalDialog(title = "Caracterize the species data",
                 footer = tagList(
                   modalButton("Ok"),
-                  actionButton("valid_data", "Valid", icon("check", "font-awesome"),
-                               tyle = bttn_primary_style)
+                  actionButton("valid_data", "Valid", icon("check"), style = bttn_primary_style)
                   ),
                 fluidRow(
                   column(6, selectInput("species_var", "Sepcies column",
@@ -114,11 +124,11 @@ server <- function(input, output, session) {
                   column(4, selectInput("long_var", "Longitude", choices = colnames(sdm_data))),
                   column(4, selectInput("lat_var", "Latitude", choices = colnames(sdm_data))),
                   column(4, selectInput("var_to_conserve", "Variable to conserve",
-                                        choices = c(), selected = c(), multiple = T))
+                                        choices = c(), selected = c(), multiple = TRUE))
                 ),
                 fluidRow(
                   conditionalPanel("input.occ_type != 'Presence'",
-                                   column(4, selectInput("occ_var", "Occurence column", choices = colnames(sdm_data))),
+                                   column(4, selectInput("occ_var", "Occurrence column", choices = colnames(sdm_data))),
                                    column(4, selectInput("presence", "Presence", choices = c())),
                                    column(4, selectInput("abscence", "Abscence", choices = c())))
                 )
@@ -227,7 +237,7 @@ server <- function(input, output, session) {
   occ_data <- reactive({sf::st_as_sf(x = wrangle_data()[[1]], coords = c(input$long_var, input$lat_var),
                                      crs = sf::st_crs(shp_layer())) %>% mutate(pr_ab = as.character(pr_ab))
     })
-  ### plot shp and occurence data
+  ### plot shp and occurrence data
   observeEvent(input$add_layer, {
     req(layer_file_path())
     occ_and_shp_layer <- ggplot()+
@@ -266,7 +276,7 @@ server <- function(input, output, session) {
                 )
   }
   observeEvent(input$area_calibration,{
-    output$da_la_unav <- renderText(paste("Provide occurence data and geographic delimitation layer\n
+    output$da_la_unav <- renderText(paste("Provide occurrence data and geographic delimitation layer\n
                                            to process to area calibration"))
   })
   observeEvent(input$area_calibration, {
@@ -278,7 +288,7 @@ server <- function(input, output, session) {
       showModal(calib_area_modal())
       hide("da_la_unav")}
   })
-  ## update cluster filtering filed for mask methode
+  ## update cluster filtering field for mask method
   observeEvent(input$area_calibration, {
     req(layer_file_path())
     updateSelectInput(session, "clusters_field",
@@ -327,7 +337,6 @@ server <- function(input, output, session) {
   })
 
   output$calib_area_plot <- renderPlot(plot_cali_area())
-
 
   # PREDICTORS -----
   shinyFiles::shinyDirChoose(input, "pred_source", roots = root,
@@ -392,7 +401,7 @@ server <- function(input, output, session) {
     })
   })
   colin_modal <- function(){
-    modalDialog(title = "", footer = modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon")),
+    modalDialog(title = "", footer = modalButton("Ok"),
                 shinycssloaders::withSpinner(plotOutput("colin_corr"),
                                              color = loader_color, type = loader_type))
   }
@@ -459,9 +468,11 @@ server <- function(input, output, session) {
 
   # OCCURENCE FILTERING --------
   occ_filt_modal <- function(){
-    modalDialog(title = "Occurence data filtering", size = "l",
-                footer = tagList(actionButton("valid_occ_filt", "Filter", icon = icon("check")),
-                                 modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon"))),
+    modalDialog(title = "Occurrence data filtering", size = "l",
+                footer = tagList(
+                  modalButton("Ok"),
+                  actionButton("valid_occ_filt", "Filter", icon = icon("check"), style = bttn_primary_style)
+                  ),
                 fluidRow(column(8,
                                 tabsetPanel(
                                   tabPanel("Distribution",
@@ -481,8 +492,9 @@ server <- function(input, output, session) {
                                                                   numericInput("occ_filt_cellsize", "Factor", min = 1, value = 2, step = 1)),
                                                  conditionalPanel("input.occ_filt_method == 'defined'",
                                                                   numericInput("occ_filt_defined", "Distance (km)", min = 0, value = 1))),
-                                shinySaveButton(id = "save_occ_filt", label = "Save",  title = "Save occurence data filtered",
-                                                filename = "", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
+                                shinySaveButton(id = "save_occ_filt", label = "Save",  title = "Save occurrence data filtered",
+                                                filename = "", filetype = list(CSV = "csv", `Plain text` = "txt"),
+                                                icon = icon("save"), style = bttn_primary_style)
                                 )),
                 )
   }
@@ -675,14 +687,16 @@ server <- function(input, output, session) {
   ## GENERATE BACKGROUND OR PSEUDO-ABSCENCE DATA ------------
   bpas_modal <- function(){
     modalDialog(title = "Generate background or psdeudo-absence points", size = "l",
-                footer = tagList(actionButton("generate_bpas", "Generate"),
-                                 modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon"))),
+                footer = tagList(
+                  modalButton("Ok"),
+                  actionButton("generate_bpas", "Generate", style = bttn_primary_style)
+                  ),
                 fluidRow(column(8,
                                 tabsetPanel(
                                   tabPanel("New distribution", plotOutput("pbas_plot")),
                                   tabPanel("New points", shinycssloaders::withSpinner(DT::dataTableOutput("new_points"),
                                                                                       color = loader_color, type = loader_type)),
-                                  tabPanel("Updated occurence", shinycssloaders::withSpinner(DT::dataTableOutput("complete_occ_data"),
+                                  tabPanel("Updated occurrence", shinycssloaders::withSpinner(DT::dataTableOutput("complete_occ_data"),
                                                                                              color = loader_color, type = loader_type))
                                 )),
                          column(4,
@@ -827,7 +841,7 @@ server <- function(input, output, session) {
       data <- wrangle_data()[[1]]
     }
 
-        if(input$partition_type == "part_random" && input$part_random_method == "kfold"){
+      if(input$partition_type == "part_random" && input$part_random_method == "kfold"){
       partion <- part_random(data = data, pr_ab = "pr_ab",
                              method = c(method = "kfold", folds = input$kfold_number))
       val_dp <- partion
@@ -896,7 +910,7 @@ server <- function(input, output, session) {
     )
   })
   output$extracted_data <- st_render_dt({extracted_df()}, width = "50%")
-  ### Download setting
+  ### Download extracted data
   shinyFiles::shinyFileSave(input, "save_extracted_data", roots = root, session = session)
   save_extracted_data_path <- reactive({
     req(input$save_extracted_data)
@@ -947,7 +961,7 @@ server <- function(input, output, session) {
   models_modals <- function(tle = "")({
     modalDialog(
       title = tle,
-      footer = modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon")), size = "l",
+      footer = modalButton("Ok"), size = "l",
       tabsetPanel(
         tabPanel("Model",
                  div(
@@ -1106,12 +1120,12 @@ mperf <- reactive({
 observeEvent(input$merge_model_perf, {
   tryCatch({output$model_perf_merged <- render_dt(mperf())}, error = error)
 })
-## Savec performace table
+## Save performace table
 observe({
   hide("save_model_perf_merged")
   req(input$merge_model_perf)
   if (!is.null(input$merge_model_perf)) {
-    show("save_model_perf_merged")
+    shinyjs::show("save_model_perf_merged")
   }
 })
 shinyFiles::shinyFileSave(input, "save_model_perf_merged", roots = root, session = session)
@@ -1193,9 +1207,38 @@ output$ov_p_raster <- renderPlot({
   terra::plot(over_correct())
 })
 
+
+
 ## GBIF ACCESS
+# Internet connection availability checking
+having_ip <- function() {
+  if (.Platform$OS.type == "windows") {
+    ipmessage <- system("ipconfig", intern = TRUE)
+  } else {
+    ipmessage <- system("ifconfig", intern = TRUE)
+  }
+  validIP <- "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)[.]){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+  any(grep(validIP, ipmessage))
+}
+# Get the internet status
+internet_status <- reactive({
+  if (!having_ip() && input$sidebar_menu == "gbif_access") {
+    showNotification(
+      id = "connection_status",
+      ui = "No internet connection 😴",
+      duration = Inf,
+      closeButton = TRUE,
+      type = "error"
+    )
+  }
+})
+# Show an alert if the internet connection is no available
+observe({
+  internet_status()
+})
+
 # Function to fetch species suggestions from GBIF API
-fetchSpeciesSuggestions <- function(search_term) {
+fetch_species_suggestions <- function(search_term) {
   tryCatch({
     url <- paste0("https://api.gbif.org/v1/species/suggest?q=", URLencode(search_term))
     response <- httr::GET(url)
@@ -1218,10 +1261,10 @@ observeEvent(input$search_by, {
 observeEvent(input$species_input, {
   search_term <- input$species_input
   search_by <- input$search_by
-  species_suggestions <- fetchSpeciesSuggestions(search_term)
+  species_suggested <- fetch_species_suggestions(search_term)
   tryCatch({
     shinyWidgets::updatePickerInput(inputId = "species_suggestions", session = session,
-                      choices = species_suggestions[, search_by])
+                      choices = species_suggested[, search_by], selected = input$species_suggestions)
   }, error = function(e){return(e)})
 })
 
@@ -1296,6 +1339,7 @@ output$occ_gbif_dataset<- DT::renderDT({
   gbif_data()[[1]]
 }, options = list(scrollX = TRUE, scrollY = TRUE, searching = FALSE, lengthMenu = c(5, 10, 50, 100, 300, 500)),
 selection = "single", editable = TRUE)
+
 ## Save occ data
 shinyFiles::shinyFileSave(id = "export_occ", input = input, session = session, roots = root)
 export_occ_path <- reactive({
@@ -1370,6 +1414,21 @@ observe({
 })
 
 # citation - GBIF data
+###
+copy_button_update <- function (session, id = "copybtn", label = "Copy to Clipboard",
+                                icon = NULL, text = "Sample Text", modal = FALSE){
+  if (!is.null(icon))
+    icon <- as.character(icon)
+  session$sendCustomMessage("copybtnUpdate", list(id = id,
+                                                  label = label, icon = icon, `data-clipboard-text` = text,
+                                                  onclick = if (!modal) {
+                                                    paste0("new ClipboardJS(\".btn\", document.getElementById(\"",
+                                                           id, "\"));")
+                                                  } else {
+                                                    paste0("new ClipboardJS(\".btn\", { container: document.getElementById(\"",
+                                                           id, "\") });")
+                                                  }))
+}
 output$occ_citation <- renderPrint({
   gbif_data()[[2]]
 })
@@ -1382,7 +1441,6 @@ observe({
                    icon = icon("copy"),
                    text = paste(gbif_data()[[2]], collapse = "\n")
   )
-
 })
 
 shinyFileSave(input = input, "save_citation", root = root)
@@ -1413,9 +1471,17 @@ observeEvent(input$start_modeling, {
       output$error_modal <- renderText(paste(e))
     })
 })
+# Open calibration menu when clicking 'valid data' from GBIF side
+observeEvent(input$valid_data, {
+  updateTabItems(session, "sidebar_menu", selected = "calibration")
+})
 
+## Confirmation notification
+### When add point occ data to map
 
 ## END SERVER
 
 }
+
+
 

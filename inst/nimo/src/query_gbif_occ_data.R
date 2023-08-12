@@ -9,16 +9,6 @@ gbif_q <- c(
   "Genus key" = "genusKey", "Order key" = "orderKey", "Kingdom key" = "kingdomKey"
 )
 
-## Set country iso code
-cc <- paste0(system.file("", package = "nimo"))
-ccode <- read.csv(paste0(cc, "/extdata/country_code.csv"), header = TRUE, sep = ",") %>%
-  dplyr::select(country, iso) %>%
-  dplyr::mutate(iso = dplyr::case_when(is.na(iso) ~ "NA",
-                                       TRUE ~ iso))
-ccode <- rbind(data.frame("country" = "Any country","iso" = ""), ccode)
-
-countries <- ccode$iso
-names(countries) <- ccode$country
 
 # Prepare the query parameters
 query_params <- function() {
@@ -27,7 +17,8 @@ query_params <- function() {
       "offset" = 0,
       "q" = input$species_suggestions,
       "hasCoordinate" = "true",
-      "hasGeospatialIssue" = "false"
+      "hasGeospatialIssue" = "false",
+      "hl" = "true"
     )
     # Add optional parameters if provided
     if (!is.null(input$country_filter) & input$country_filter != "") {

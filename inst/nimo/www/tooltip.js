@@ -24,13 +24,13 @@ function disposeTooltip(btn) {
 var clipboard = new ClipboardJS('.btn');
 
 clipboard.on('success', function(e) {
-  setTooltip(e.trigger, 'Copied!');
+  setTooltip(e.trigger, 'Copied !');
   hideTooltip(e.trigger);
   disposeTooltip(e.trigger);
 });
 
 clipboard.on('error', function(e) {
-  setTooltip(e.trigger, 'Failed!');
+  setTooltip(e.trigger, 'Failed !');
   hideTooltip(e.trigger);
   disposeTooltip(e.trigger);
 });

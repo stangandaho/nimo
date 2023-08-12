@@ -1,49 +1,104 @@
-## load necessaries packages
-pkg_root <- "./src"#paste0(system.file("", package = "nimo"), "/nimo/src")
-nimo_logo <- "nimo/nimo_logo.png"; gbif_white_logo <- "nimo/gbif_white_logo.png"
-src_root <- paste0(system.file("nimo", package = "nimo"), "/src/")
-call_src <- function(file_name) { source(paste0(src_root, file_name)) }
-
-# load some src
+# Load packages
+src_root <- paste0(system.file("nimo", package = "nimo"), "/src/")#"./inst/nimo/src/"#
+call_src <- function(file_name) { return(source(paste0(src_root, file_name)))}
 suppressPackageStartupMessages( call_src("packages.R") )
-call_src("query_gbif_occ_data.R") ## GBIF Queries fields
-call_src("copy.R") # CopyClipboard
-call_src("head_menu_set.R")
 
+# Threshold
 thr <- c("No omission" = "lpt", "Sensitivity = specificity" = "equal_sens_spec",
          "TSS" = "max_sens_spec", "Jaccard" = "max_jaccard",
          "Sorensen" = "max_sorensen", "FPB" = "max_fpb",
          "Sensitivity" = "sensitivity")
 
+# Button style
 bttn_primary_style <-  paste0("background-color:", "#065325;", "color:#ffffff;")
 bttn_second_style <- paste0("background-color:#065325;", "color:#ffffff;", "hover:red")
 bttn_third_style <- paste0("background-color:#B7C1C6")
 bttn_warn <- paste0("background-color:#f0b0a9", "border-color:#f0b0a9")
-loader_color <- "#1b105a"; loader_type  <- 7
+loader_color <- "#042d0f"; loader_type  <- 7
 
-
+# Web page link
 git_repo <- "https://github.com/stangandaho/nimo"
 git_issues <- "https://github.com/stangandaho/nimo/issues"
 nimo_site <- "https://nimo.re-agro.org/"
 get_started_url <- "https://nimo.re-agro.org/get-started/"
-donation <- "https://nimo.re-agro.org/donation/"
+nimo_logo <- "nimo/nimo_logo.png"; gbif_white_logo <- "nimo/gbif_white_logo.png"
 mytitle <-   tags$link(tags$a(href = nimo_site,
-                            tags$img(src= nimo_logo, height = '32',width='37')),
-                     strong("nimo", style = "font-size: 1.8em;     font-family: 'Montserrat-Bold';"))
-# variables
+                              tags$img(src= nimo_logo, height = '32',width='37')),
+                       strong("nimo", style = "font-size: 1.8em;     font-family: 'Montserrat-Bold';"))
+# Colinearity methods
 colinearity_method <- c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
                         "Principal component analysis" = "pca", "Factorial analysis" = "fa")
 partition_types <- c("Random" = "part_random", "Spatial band" = "part_sband",
-                      "Spatial block" = "part_sblock", "Environmental and Spatial" = "part_senv")
-## Header ----
+                     "Spatial block" = "part_sblock", "Environmental and Spatial" = "part_senv")
+
+## GBIF utilities
+## Field to query
+gbif_q <- c(
+  "Scientific name" = "scientificName", "Phylum" = "phylum", "Order" = "order",
+  "Class" = "class", "Genus" = "genus", "Family" = "family", "Status" = "status",
+  "Rank" = "rank", "Parent" = "parent", "Higher classification map" = "higherClassificationMap",
+  "Synonym" = "synonym", "Family key" = "familyKey", "Canonical name" = "canonicalName",
+  "Key" = "key", "Name key" = "nameKey", "kingdom" = "kingdom",
+  "Nub key" = "nubKey", "Phylum key" = "phylumKey", "Parent key" = "parentKey",
+  "Genus key" = "genusKey", "Order key" = "orderKey", "Kingdom key" = "kingdomKey"
+)
+
+## Set country iso code
+cc <- paste0(system.file("", package = "nimo"))#"./inst"
+ccode <- read.csv(paste0(cc, "/extdata/country_code.csv"), header = TRUE, sep = ",") %>%
+  dplyr::select(country, iso) %>%
+  dplyr::mutate(iso = dplyr::case_when(is.na(iso) ~ "NA",
+                                       TRUE ~ iso))
+ccode <- rbind(data.frame("country" = "Any country","iso" = ""), ccode)
+
+countries <- ccode$iso
+names(countries) <- ccode$country
+
+#--- Copy citation ---
+## --> ALL OBJECT IMPORTED FROM shinyCopy2clipboard: https://github.com/deepanshu88/shinyCopy2clipboard/tree/main
+usecopy <- function (){
+  tagList(shiny::singleton(shiny::tags$head(shiny::tags$script(src = "nimo/clipboard.min.js"),
+                                            shiny::tags$script(src = "nimo/copy2clipboard.js"))),
+          shiny::tags$body(shiny::tags$script(src = "nimo/tooltip.js")))
+}
+
+###
+copy_button <- function (id, label, text = "No Text", icon = NULL, width = NULL,
+                         class = NULL, modal = FALSE, ...){
+  shiny::actionButton(inputId = id, label = label, icon = icon,
+                      width = width, class = class, `data-clipboard-text` = text,
+                      onclick = if (!modal) {
+                        paste0("new ClipboardJS(\".btn\", document.getElementById(\"",
+                               id, "\"));")
+                      }
+                      else {
+                        paste0("new ClipboardJS(\".btn\", { container: document.getElementById(\"",
+                               id, "\") });")
+                      }, ...)
+}
+
+
+
+#--- Dropdown - Help page -----------
+box_dropdown_item <- function (..., id = NULL, href = NULL, icon = NULL)
+{
+  shiny::tags$li(shiny::tags$a(id = id, class = if (!is.null(id))
+    "action-button", href = if (!is.null(href))
+      href
+    else "#", target = if (!is.null(href))
+      "", icon, ...))
+}
+# ---------
+
+
+# HEADER ----
 header <- shinydashboardPlus::dashboardHeader(title = mytitle,
                                               titleWidth = 300,
-                                              #dropdownMenuOutput("notification_menu"),
                                               dropdownMenu(
                                                 type = "messages",
-                                                icon = icon("question-circle"),
+                                                icon = icon("question-sign", lib = "glyphicon"),
                                                 badgeStatus = NULL,
-                                                headerText = strong("Help"),
+                                                headerText = strong("Help", style = "font-family:Montserrat-Bold; font-size:2rem"),
                                                 box_dropdown_item(
                                                   "Get started",
                                                   href = get_started_url,
@@ -60,43 +115,31 @@ header <- shinydashboardPlus::dashboardHeader(title = mytitle,
                                                   icon = icon("info"),
                                                 )
                                               ),
-                                              dropdownMenu(
-                                                 type = "task",
-                                                 icon = icon("sack-dollar"),
-                                                 badgeStatus = NULL,
-                                                 headerText = strong("Donate"),
-                                                 box_dropdown_item(
-                                                   "Donation",
-                                                   href = donation,
-                                                   icon = icon("hand-holding-dollar")
-                                                           )
-                                              ),
                                               tags$li(class = "dropdown",
                                                        tags$style(".main-header .logo {height: 53px}")
                                               )
-)
+                                              )
 
-## Side Bar ----
+
+# SIDE BAR ----
 sidebar <- shinydashboardPlus::dashboardSidebar(
   useShinyjs(),
   usecopy(),
   sidebarMenu(
     id="sidebar_menu",
-    menuItem("Niche Modeler", tabName = "nimo_home_page", icon = icon("house-chimney")),
+    menuItem("Home", tabName = "nimo_home_page", icon = icon("house-chimney")),
     menuItem(
       text = tags$span(
         tags$img(src = gbif_white_logo, height = '26', width='75')),
         tabName = "gbif_access", icon = NULL),
-    #menuItem("GBIF Data", tabName = "gbif_access", icon = NULL),
     menuItem("Pre-Modeling",tabName = "pre_modeling", icon = icon("arrow-left", lib = "glyphicon"),
              br(),
              actionButton("set_directory", "Set Directory", icon = icon("folder")),
              menuSubItem("Calibration", tabName = "calibration", icon = NULL),
-             menuSubItem("Predictors", tabName = "predictors", icon = NULL), # to move
+             menuSubItem("Predictors", tabName = "predictors", icon = NULL),
              menuSubItem("Partition", tabName = "data_partition", icon = NULL),
              menuSubItem("Data extraction", tabName = "data_extraction", icon = NULL)
              ),
-    #menuItemOutput("rest_of_sidebar"),
     ## MODELING
     menuItem("Modeling", tabName = "sd_modeling", icon = icon("play", lib = "glyphicon"),
              menuSubItem("Fitting", tabName = "model_fiting", icon = NULL),
@@ -113,20 +156,17 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
 )
 
 
-
-## Body ####
-### Theme ----
-### Body Content ----
+# BODY ----
 nimo_body <- shinydashboard::dashboardBody(
  # customTheme,
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "nimo/style.css"),
+    tags$link(rel = "icon", type = "image/png", href = nimo_logo),
     tags$style(".scrolling-container {
       display: flex;
       flex-wrap: nowrap;
       overflow-x: scroll;
-      width: 100%;
-    }"),
+      width: 100%;}"),
     tags$style("#models_model {height:300px;}"),
     tags$style("#bpas_check {background-color:#feb4b4; border-radius:10px 10px;
                border: 2px solid #fd7769; padding: 8px; width:75%;}"),
@@ -155,9 +195,8 @@ nimo_body <- shinydashboard::dashboardBody(
                   $("a[data-toggle=tab]").on("show.bs.tab", function(e){
                     Shiny.setInputValue("activeTab", $(this).attr("data-value"));
                    });
-            });
-      '
-    )),
+            });')
+    ),
   tabItems(
     #### Homepage menu ----
     tabItem("nimo_home_page",
@@ -180,20 +219,21 @@ nimo_body <- shinydashboard::dashboardBody(
                 hr(),
                 column(12,
                        div(id = "main_page",
-                           div(h5("nimo is open-source and freely available for use, distributed under the GPL license.")),
-                           div(h5("When they are used in a publication, we ask that authors to cite the following reference:")),
-                           br(),
-                           div(h5("GANDAHO, S.M. . (2023).", strong(" nimo: A GUI for flexible"))),
-                           div(h5(strong("species distribution modeling."), em("Journal of ..."),", xx(6), xxx-xxx.")),
-                           br(),
-                           div(h5(strong("Failure to properly cite the software is considered a violation of the license🥺"),
-                                  style = "color:red;")))
+                           div(h5("nimo is open-source and freely available for use, distributed under the MIT license.")),
+                           # div(h5("When they are used in a publication, we ask that authors to cite the following reference:")),
+                           # br(),
+                           # div(h5("GANDAHO, S.M. . (2023).", strong(" nimo: A GUI for flexible"))),
+                           # div(h5(strong("species distribution modeling."), em("Journal of ..."),", xx(6), xxx-xxx.")),
+                           # br(),
+                           # div(h5(strong("Failure to properly cite the software is considered a violation of the license🥺"),
+                           #        style = "color:red;"))
+                           )
                 )
 
               )
             )
     ),
-    ## Calibration menu --------
+    ## Calibration menu ----
     tabItem("calibration",
             fluidPage(
               fluidRow(column(8,
@@ -231,46 +271,49 @@ nimo_body <- shinydashboard::dashboardBody(
               )
             )
             ),
-    ## Predictors menu -----
+    ## Predictors menu ----
     tabItem("predictors",
             fluidPage(
-              fluidRow(column(8,
-                              tabsetPanel(
-                                tabPanel("Summary",
-                                         verbatimTextOutput("pred_summary")),
-                                tabPanel("Plot", icon = icon("image"),
-                                         plotOutput("pred_plot")),
-                                tabPanel("Colinearity", icon = icon("line"),
+              fluidRow(
+                column(8,
+                       tabsetPanel(
+                         tabPanel("Summary", verbatimTextOutput("pred_summary")),
+                         tabPanel("Plot",
+                                  shinycssloaders::withSpinner(plotOutput("pred_plot"),
+                                                                      color = loader_color, type = loader_type)),
+                         tabPanel("Colinearity",
                                          shiny::div(
                                            DT::dataTableOutput("cr_df"),
                                            fluidRow(column(7, verbatimTextOutput("cr_layer")),
-                                                    column(4, verbatimTextOutput("cr_remove")))
+                                                    column(4, verbatimTextOutput("cr_remove"))
+                                                    )
                                          )
                                 )
                               )),
-                       column(4,
-                              hr(),
-                              shinyDirButton("pred_source", "Predictor Folder", icon = icon("folder"), style = bttn_primary_style,
-                                             title = "Select folder containing predictors"),
-                              hr(),
-                              selectInput("pred_single", "Predictors", choices = c()),
-                              fluidRow(column(3, actionButton("pred_load", "Show", icon = icon("eye"), style = bttn_primary_style)),
-                                       column(4, actionButton("colinearize", "Colinearize", icon = icon("poll-h"), style = bttn_primary_style)),
-                                       column(3, actionButton("occ_filt", "", icon = icon("braille"), style = bttn_second_style))),
-                              tags$hr(),
-                              tags$h4("Reduce colinearity"),
-                              selectInput("coli_method", "Method", choices = colinearity_method),
-                              conditionalPanel("input.coli_method == 'pearson'",
-                                               numericInput("pearson_threshold", "Threshold", value = 0.8, min = 0, step = 0.1)),
-                              conditionalPanel("input.coli_method == 'vif'",
-                                               numericInput("vif_threshold", "Threshold", value = 10, min = 1)),
-                              fluidRow(column(7, actionButton("reduce_collin", "Reduce colinearity",
-                                                              icon = icon("sort-amount-down"), style = bttn_second_style))
-                              )
-                       ))
+              column(4,
+                      hr(),
+                      shinyDirButton("pred_source", "Predictor Folder", icon = icon("folder"), style = bttn_primary_style,
+                                     title = "Select folder containing predictors"),
+                      hr(),
+                      selectInput("pred_single", "Predictors", choices = c()),
+                      fluidRow(column(3, actionButton("pred_load", "Show", icon = icon("eye"), style = bttn_primary_style)),
+                               column(4, actionButton("colinearize", "Colinearize", icon = icon("poll-h"), style = bttn_primary_style)),
+                               column(3, actionButton("occ_filt", "", icon = icon("braille"), style = bttn_second_style))),
+                      tags$hr(),
+                      tags$h4("Reduce colinearity"),
+                      selectInput("coli_method", "Method", choices = colinearity_method),
+                      conditionalPanel("input.coli_method == 'pearson'",
+                                       numericInput("pearson_threshold", "Threshold", value = 0.8, min = 0, step = 0.1)),
+                      conditionalPanel("input.coli_method == 'vif'",
+                                       numericInput("vif_threshold", "Threshold", value = 10, min = 1)),
+                      fluidRow(column(7, actionButton("reduce_collin", "Reduce colinearity",
+                                                      icon = icon("sort-amount-down"), style = bttn_second_style))
+                      )
+                       )
+              )
             )
             ),
-    ## Data partition menu -----
+    ## Data partition menu ----
     tabItem("data_partition",
             fluidPage(
               fluidRow(column(8,
@@ -335,7 +378,7 @@ nimo_body <- shinydashboard::dashboardBody(
 
 
             ),
-    ## Data Extraction ------
+    ## Data Extraction ----
     tabItem("data_extraction",
             fluidPage(
               fluidRow(column(8,
@@ -357,19 +400,18 @@ nimo_body <- shinydashboard::dashboardBody(
             fluidPage(
               fluidRow(column(6,
                               selectInput("fit_model_algorithm", label = "Algorithm", choices = c(),
-                                          multiple = T, selected = c(), width = "100%")),
+                                          multiple = TRUE, selected = c(), width = "100%")),
                        column(2, br(), checkboxInput("use_existing_df4mod", "Use existing data")),
                        column(2, br(), conditionalPanel("input.use_existing_df4mod == true",
                                                         shinyFilesButton("import_exiting_df4mod", "Load data",
                                                                          title = "Import data for modeling",
-                                                                         icon = icon("upload"), multiple = F))
+                                                                         icon = icon("upload"), multiple = FALSE))
                        ),
                        column(2, br(), conditionalPanel("input.import_exiting_df4mod",
                                                         checkboxInput("esm", "Ensemble of Small Models"))
                        )),
               uiOutput("dynamic_model_fitting")
             )
-            #uiOutput("dynamic_esm_model_fitting")
             ),
     tabItem("model_ensembling",
             fluidPage(
@@ -382,7 +424,7 @@ nimo_body <- shinydashboard::dashboardBody(
               column(5,
                      h4("Ensembling parameter"),
                      selectInput("ens_method", "Method", choices = c()),
-                     selectInput("ens_thr", "Threshol", choices = thr, multiple = T),
+                     selectInput("ens_thr", "Threshol", choices = thr, multiple = TRUE),
                      conditionalPanel("input.ens_thr.includes('sensitivity')",
                                       numericInput("ens_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
                      conditionalPanel("input.ens_method.includes('meanw', 'meandsup', 'meanthr')",
@@ -411,12 +453,12 @@ nimo_body <- shinydashboard::dashboardBody(
               column(4,
                      selectInput("model_category", "Model category",
                                  choices = c("Standard models", "Ensemble")),
-                     selectInput("predict_thr", "Threshol", choices = thr, multiple = T),
+                     selectInput("predict_thr", "Threshol", choices = thr, multiple = TRUE),
                      conditionalPanel("input.predict_thr.includes('sensitivity')",
                                       numericInput("predict_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
                      shinyFilesButton("predict_area", label = "Add area",
                                       title = "Select spatial polygon to restrict prediction",
-                                      icon = icon("plus"), multiple = F),
+                                      icon = icon("plus"), multiple = FALSE),
                      br(), br(),
                      selectInput("predict_clamp", "Clamp", choices = c("No" = FALSE, "Yes" = TRUE),
                                  selected = TRUE),
@@ -479,7 +521,7 @@ nimo_body <- shinydashboard::dashboardBody(
                                                 checkboxInput("use_geom_gbif", "Use defined area"),
                                                 conditionalPanel("input.use_geom_gbif",
                                                                  shinyFilesButton("location_filter", "Add area", "Choose external area",
-                                                                                  multiple = F, icon = icon("upload")))
+                                                                                  multiple = FALSE, icon = icon("upload")))
                                               )
 
                                 )
@@ -496,21 +538,21 @@ nimo_body <- shinydashboard::dashboardBody(
                                   id = "date", style = "width:100%; display: flex;",
                                   shinyWidgets::airDatepickerInput("date_filter_from", "Date range",
                                                                    minView = "years", maxDate = Sys.Date(), multiple = TRUE,
-                                                                   clearButton = TRUE, view = "years", value = ""),
+                                                                   clearButton = TRUE, view = "years", value = "",
+                                                                   dateFormat = "yyyy", addon = "none"),
                                 ),
                                 span(
                                   id = "location", style = "width:100%; display: flex;",
                                   selectInput("country_filter", "Country", choices = countries, selected = "")
 
                                 ),
-                                actionButton("acces_gbif_data", "Access data", icon = icon("data"), style = bttn_primary_style)
+                                actionButton("acces_gbif_data", "Access data", icon = NULL, style = bttn_primary_style)
                          )
                        )
                        ),
-              tabPanel("Occurence",
+              tabPanel("Occurrence",
                        fluidPage(
                          tagList(
-                           #actionButton("load_gbif_data", "Load", icon = icon("refresh", lib = "glyphicon"), style = bttn_second_style),
                            ), hr(),
                          DT::DTOutput("occ_gbif_dataset", height = "500px", fill = FALSE)
                        )
@@ -538,10 +580,8 @@ nimo_body <- shinydashboard::dashboardBody(
 )
 )
 
-
-## UI ####
+## UI ----
 ui <- shinydashboardPlus::dashboardPage(
-  #skin = 'blue-light',
   header = header,
   sidebar = sidebar,
   body = nimo_body,
@@ -550,14 +590,3 @@ ui <- shinydashboardPlus::dashboardPage(
   scrollToTop =TRUE,
   title = "nimo"
 )
-#
-# skin = “blue”, “blue-light”, “black”, “black-light”, “purple”, “purple-light”,
-# “green”, “green-light”, “red”, “red-light”, “yellow”, “yellow-light”, “midnight”
-# selectInput("occ_database", "Database",
-#             choices = c("GBIF" = "gbif",
-#                         "iNaturalist" = "inat",
-#                         "eBird" = "ebird",
-#                         "VertNet" = "vertnet",
-#                         "iDigBio" = "idigbio",
-#                         "OBIS" = "obis",
-#                         "ALA" = "ala"))

@@ -48,4 +48,3 @@ predict_rasters <- function(prediction){
   }
   return(predic_raster_list)
 }
-

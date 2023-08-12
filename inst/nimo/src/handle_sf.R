@@ -25,7 +25,7 @@ geom_gbif <- reactive({
   } else {
     showModal(
       modalDialog(title = "", footer = modalButton("Ok"),
-                  tags$h1("Choose a polygon vector"))
+                  tags$h1("Choose a single polygon vector"))
     )
   }
 
@@ -50,7 +50,6 @@ loc_geom <- reactive({
   qp[["geometry"]] <- noquote(geom_wkt)
   all_occurrences_df <- query_occ(query_params = qp)
   all_occurrences_df
-  #return(all_occurrences_df)
 })
 
 inside_drawn_ply <- reactive({
@@ -62,9 +61,7 @@ inside_drawn_ply <- reactive({
     } else {
       qp <- query_params
     }
-
     qp[["geometry"]] <- noquote(drawn_poly_wkt)
     all_occurrences_df <- query_occ(query_params = qp)
     all_occurrences_df
-    #return(all_occurrences_df)
 })
