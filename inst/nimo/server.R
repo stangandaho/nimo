@@ -693,7 +693,8 @@ server <- function(input, output, session) {
                   ),
                 fluidRow(column(8,
                                 tabsetPanel(
-                                  tabPanel("New distribution", plotOutput("pbas_plot")),
+                                  tabPanel("New distribution", shinycssloaders::withSpinner(plotOutput("pbas_plot"),
+                                                                                            color = loader_color, type = loader_type)),
                                   tabPanel("New points", shinycssloaders::withSpinner(DT::dataTableOutput("new_points"),
                                                                                       color = loader_color, type = loader_type)),
                                   tabPanel("Updated occurrence", shinycssloaders::withSpinner(DT::dataTableOutput("complete_occ_data"),
@@ -761,18 +762,20 @@ server <- function(input, output, session) {
 
     }
     else if(input$bpas_type == "Background" && !input$partition_type %in% c("part_sband", "part_sblock")){
-      bg <- lapply(1:n, function(x){
+      bg_list <- lapply(1:n, function(x){
         bgpoint <- terra::spatSample(x = calib_area_nimo(), method = "random",
                                      size = prt[x, 1]* (input$n_bg))
         sf::st_coordinates(st_as_sf(bgpoint)) %>% as.data.frame() %>%
-          rename("{input$long_var}" := X, "{input$lat_var}" := Y) %>%
-          mutate(pr_ab = 0) %>%
-          mutate("{input$species_var}" := unique(dplyr::pull(wrangle_data()[[1]],
+          dplyr::rename("{input$long_var}" := X, "{input$lat_var}" := Y) %>%
+          dplyr::mutate(pr_ab = 0,
+                 "{input$species_var}" := unique(dplyr::pull(wrangle_data()[[1]],
                                                              var = input$species_var))) %>%
-          relocate(!!sym(input$species_var), .before = !!sym(input$long_var))
-      }) %>% bind_rows()
-    } ## pseudo-abscence sample
+          dplyr::relocate(!!sym(input$species_var), .before = !!sym(input$long_var))
+      }) #%>% dplyr::bind_rows()
+      bg <- do.call(rbind, bg_list)
+    }
 
+    ## pseudo-abscence sample
     else if(input$bpas_type == "Pseudo-absence" && input$partition_type %in% c("part_sband", "part_sblock")){
       w <- as.character(input$pseudo_abs_width)
       bg <- lapply(1:n, function(x) {
@@ -1065,7 +1068,7 @@ prediction <- eventReactive(input$predict, {
     )
   }, eraror = error)
 })
-## Modal to show predict ouput
+## Modal to show predict output
 predict_modal <- function(){
   modalDialog(title = "Spatial predictions",
               footer = modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon")), size = "l",
