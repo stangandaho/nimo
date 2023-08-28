@@ -238,9 +238,9 @@ nimo_body <- shinydashboard::dashboardBody(
             fluidPage(
               fluidRow(column(8,
                               tabsetPanel(
-                                tabPanel(title = "Unique Occurence", icon = icon("database", "font-awesome"),
+                                tabPanel(title = "Unique Occurrence", icon = icon("database", "font-awesome"),
                                          DT::DTOutput("unique_data", height = "50%")),
-                                tabPanel(title = "Duplicate Occurence", icon = icon("clone", "font-awesome"),
+                                tabPanel(title = "Duplicate Occurrence", icon = icon("clone", "font-awesome"),
                                          DT::DTOutput("duplicate_data")),
                                 tabPanel(title = "Geographic", icon = icon("globe", "font-awesome"),
                                          plotlyOutput("geo_distribution", height = "600px")
@@ -343,7 +343,7 @@ nimo_body <- shinydashboard::dashboardBody(
                                       numericInput("sband_part_number", "Number of partition", value = 2, min = 2, step = 1),
                                       fluidRow(column(6, numericInput("sband_part_min", "Min bands", value = 2, min = 2, step = 1, width = "55%")),
                                                column(6, numericInput("sband_part_max", "Max bands", value = 20, min = 1, step = 1, width = "55%"))),
-                                      numericInput("sband_part_min_occ", "Min occurence", value = 10, min = 1, step = 1),
+                                      numericInput("sband_part_min_occ", "Min occurrence", value = 10, min = 1, step = 1),
                                       numericInput("sband_part_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
                      ),
                      conditionalPanel("input.partition_type == 'part_sblock'",
@@ -351,14 +351,14 @@ nimo_body <- shinydashboard::dashboardBody(
                                       fluidRow(column(6, numericInput("min_res_mult", "Min precision", value = 3, min = 2, step = 1, width = "55%")),
                                                column(6, numericInput("max_res_mult", "Max precision", value = 200, min = 2, step = 1, width = "55%"))),
                                       numericInput("num_grids", "Number of grid", value = 30, min = 1, step = 1),
-                                      numericInput("sblock_min_occ", "Min occurence", value = 10, min = 1, step = 1),
+                                      numericInput("sblock_min_occ", "Min occurrence", value = 10, min = 1, step = 1),
                                       numericInput("sblock_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
                      ),
                      conditionalPanel("input.partition_type == 'part_senv'",
                                       fluidRow(column(6, numericInput("min_n_groups", "Min groups", value = 2, min = 1, step = 1, width = "55%")),
                                                column(6, numericInput("max_n_groups", "Max groups", value = 10, min = 1, width = "55%"))
                                       ),
-                                      numericInput("senv_min_occ", "Min occurence", value = 10, min = 1),
+                                      numericInput("senv_min_occ", "Min occurrence", value = 10, min = 1),
                                       numericInput("senv_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
                      ),
                      fluidRow(column(4, actionButton("divvy_data", "Divvy", icon = icon("project-diagram"), style = bttn_primary_style)),
@@ -388,7 +388,7 @@ nimo_body <- shinydashboard::dashboardBody(
                               selectInput("extract_variables", label = "Predictors to use",
                                           choices = c(), multiple = TRUE, selected = c()),
                               actionButton("extract_data", "Extract data", icon = icon("table"), style = bttn_primary_style),
-                              shinySaveButton(id = "save_extracted_data", label = "Save",  title = "Save occurence data filtered",
+                              shinySaveButton(id = "save_extracted_data", label = "Save",  title = "Save occurrence data filtered",
                                               filename = "", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
                        )
               )

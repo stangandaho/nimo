@@ -109,21 +109,21 @@ server <- function(input, output, session) {
   ## set nodal to customize data importing
   data_customize_modal <- function(){
     sdm_data <- species_data()
-    modalDialog(title = "Caracterize the species data",
+    modalDialog(title = "Characterize the species data", size = "l",
                 footer = tagList(
                   modalButton("Ok"),
                   actionButton("valid_data", "Valid", icon("check"), style = bttn_primary_style)
                   ),
                 fluidRow(
-                  column(6, selectInput("species_var", "Sepcies column",
+                  column(6, selectInput("species_var", "Species column",
                                         choices = colnames(sdm_data))),
-                  column(6, selectInput("unique_species", "Sepcies",
+                  column(6, selectInput("unique_species", "Species",
                                         choices = c(), multiple = TRUE))
                 ),
                 fluidRow(
                   column(4, selectInput("long_var", "Longitude", choices = colnames(sdm_data))),
                   column(4, selectInput("lat_var", "Latitude", choices = colnames(sdm_data))),
-                  column(4, selectInput("var_to_conserve", "Variable to conserve",
+                  column(4, selectInput("var_to_conserve", "Variable(s) to conserve",
                                         choices = c(), selected = c(), multiple = TRUE))
                 ),
                 fluidRow(
