@@ -6,7 +6,8 @@ gbif_q <- c(
   "Synonym" = "synonym", "Family key" = "familyKey", "Canonical name" = "canonicalName",
   "Key" = "key", "Name key" = "nameKey", "kingdom" = "kingdom",
   "Nub key" = "nubKey", "Phylum key" = "phylumKey", "Parent key" = "parentKey",
-  "Genus key" = "genusKey", "Order key" = "orderKey", "Kingdom key" = "kingdomKey"
+  "Genus key" = "genusKey", "Order key" = "orderKey", "Kingdom key" = "kingdomKey",
+  "Taxon key" = "taxonKey"
 )
 
 
@@ -15,7 +16,7 @@ query_params <- function() {
     query_params <- list(
       "limit" = 300,
       "offset" = 0,
-      "q" = input$species_suggestions,
+      #"q" = input$species_suggestions,
       "hasCoordinate" = "true",
       "hasGeospatialIssue" = "false",
       "hl" = "true"
@@ -24,6 +25,9 @@ query_params <- function() {
     if (!is.null(input$country_filter) & input$country_filter != "") {
       query_params[["country"]] <- input$country_filter
     }
+
+    query_params[[input$search_by]] <- input$species_suggestions
+
     if (!is.null(input$date_filter_from)) {
       if(length(input$date_filter_from) > 1){
         x_ <- as.Date(input$date_filter_from)

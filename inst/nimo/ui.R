@@ -40,7 +40,8 @@ gbif_q <- c(
   "Synonym" = "synonym", "Family key" = "familyKey", "Canonical name" = "canonicalName",
   "Key" = "key", "Name key" = "nameKey", "kingdom" = "kingdom",
   "Nub key" = "nubKey", "Phylum key" = "phylumKey", "Parent key" = "parentKey",
-  "Genus key" = "genusKey", "Order key" = "orderKey", "Kingdom key" = "kingdomKey"
+  "Genus key" = "genusKey", "Order key" = "orderKey", "Kingdom key" = "kingdomKey",
+  "Taxon key" = "taxonKey"
 )
 
 ## Set country iso code
@@ -529,7 +530,7 @@ nimo_body <- shinydashboard::dashboardBody(
                          column(4,
                                 span(
                                   style = "width:100%; display: flex;",
-                                  selectInput("search_by", "", choices = gbif_q, selected = "scientificName"),
+                                  selectInput("search_by", "", choices = sort(gbif_q), selected = "scientificName"),
                                   textInput("species_input", "", placeholder = "Enter ...")
                                 ),
                                 shinyWidgets::pickerInput("species_suggestions", "Select species", choices = NULL, multiple = FALSE),
