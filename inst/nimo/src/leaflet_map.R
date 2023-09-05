@@ -32,12 +32,7 @@ lft_proxy <- function() {
     lng <- gbif_data()[[1]]$decimalLongitude; lat <- gbif_data()[[1]]$decimalLatitude
     simple_lft <-   leafletProxy("occ_map") %>%
       addMarkers(lng = lng, lat = lat,
-                 popup = paste("Lon:", round(as.numeric(gbif_data()$decimalLongitude), 2), "  |  ",
-                               "Lat:", round(as.numeric(gbif_data()$decimalLatitude), 2)),
-                 icon = list(
-                   "https://fontawesome.com/v5/icons/paw?f=classic&s=regular",
-                   c(20,20)
-                 )
+                 popup = paste("Lon:", round(lng, 2), "  |  ", "Lat:", round(lat, 2))
       )
     return(simple_lft)
 }
