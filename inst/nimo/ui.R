@@ -265,7 +265,7 @@ nimo_body <- shinydashboard::dashboardBody(
                                       shinyFilesButton("add_layer", "Add layer",
                                                        title = "Select a vector file",
                                                        icon = icon("plus"),
-                                                       multiple = FALSE)
+                                                       multiple = FALSE, style = bttn_primary_style)
                      ),
 
               )
@@ -301,14 +301,17 @@ nimo_body <- shinydashboard::dashboardBody(
                                column(4, actionButton("colinearize", "Colinearize", icon = icon("poll-h"), style = bttn_primary_style)),
                                column(3, actionButton("occ_filt", "", icon = icon("braille"), style = bttn_second_style))),
                       tags$hr(),
-                      tags$h4("Reduce colinearity"),
-                      selectInput("coli_method", "Method", choices = colinearity_method),
-                      conditionalPanel("input.coli_method == 'pearson'",
-                                       numericInput("pearson_threshold", "Threshold", value = 0.8, min = 0, step = 0.1)),
-                      conditionalPanel("input.coli_method == 'vif'",
-                                       numericInput("vif_threshold", "Threshold", value = 10, min = 1)),
-                      fluidRow(column(7, actionButton("reduce_collin", "Reduce colinearity",
-                                                      icon = icon("sort-amount-down"), style = bttn_second_style))
+                     shiny::div(
+                       shiny::div(
+                         tags$h5("Reduce colinearity"),
+                         selectInput("coli_method", "Method", choices = colinearity_method),
+                         conditionalPanel("input.coli_method == 'pearson'",
+                                          numericInput("pearson_threshold", "Threshold", value = 0.8, min = 0, step = 0.1)),
+                         conditionalPanel("input.coli_method == 'vif'",
+                                          numericInput("vif_threshold", "Threshold", value = 10, min = 1)),
+                         fluidRow(column(7, actionButton("reduce_collin", "Reduce colinearity",
+                                                         icon = icon("sort-amount-down"), style = bttn_second_style)))
+                       ), style = "background-color:#fcfcfa; border-radius: 8px 8px; padding: 15px 15px"
                       )
                        )
               )
@@ -553,8 +556,11 @@ nimo_body <- shinydashboard::dashboardBody(
                        ),
               tabPanel("Occurrence",
                        fluidPage(
-                         tagList(
-                           ), hr(),
+                         div(
+                           shiny::downloadButton("export_occ2",  "Export", icon = shiny::icon("save"),
+                                                 style = bttn_primary_style),
+                           style = "margin-bottom: 15px; display: flex; justify-content: flex-end;"
+                         ),
                          DT::DTOutput("occ_gbif_dataset", height = "500px", fill = FALSE)
                        )
               ),

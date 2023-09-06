@@ -109,7 +109,7 @@ server <- function(input, output, session) {
   ## set nodal to customize data importing
   data_customize_modal <- function(){
     sdm_data <- species_data()
-    modalDialog(title = "Characterize the species data", size = "l",
+    modalDialog(title = h3("Characterize the species data", style = "text-align:left"), size = "l",
                 footer = tagList(
                   modalButton("Ok"),
                   actionButton("valid_data", "Valid", icon("check"), style = bttn_primary_style)
@@ -256,7 +256,7 @@ server <- function(input, output, session) {
   # CALIBRATE AREA ---------
   ### calibration modal
   calib_area_modal <- function(){
-    modalDialog("Area Calibration",
+    modalDialog(h3("Area Calibration", style = "text-align:left"), size = "l",
                 footer = tagList(
                                  modalButton("Ok"),
                                  actionButton("valid_calib_area", "Calibrate", style = bttn_primary_style)
@@ -273,7 +273,7 @@ server <- function(input, output, session) {
                                      selectInput("clusters_field", "Filter by", choices = c()))
                     )
                 )
-                )
+              )
   }
   observeEvent(input$area_calibration,{
     output$da_la_unav <- renderText(paste("Provide occurrence data and geographic delimitation layer\n
@@ -294,24 +294,36 @@ server <- function(input, output, session) {
     updateSelectInput(session, "clusters_field",
                       choices = colnames(shp_layer()))
   })
+
   ## function to calibrate area
+  # drop point outside area
+occ_dt <- reactive({
+  req(shp_layer())
+  wd <- wrangle_data()[[1]]
+  occ_dt <- sf::st_as_sf(wd, coords = c(input$long_var, input$lat_var), crs = crs(shp_layer())) %>%
+    dplyr::bind_cols(wd[, c(input$long_var, input$lat_var)])
+  occ_dt <- sf::st_intersection(x = occ_dt, y = shp_layer()) %>%
+    as.data.frame() %>% dplyr::select(-geometry)
+  occ_dt
+})
+
   calib_area_nimo <- function(){
-    req(shp_layer())
+    occ_dt <- occ_dt()
     if (input$calib_area_method == "buffer") {
-      cala <- calib_area(data = wrangle_data()[[1]], x = input$long_var,
+      cala <- calib_area(data = occ_dt, x = input$long_var,
                          y = input$lat_var, crs = terra::crs(shp_layer()),
                          method = c("buffer", width = as.numeric(input$calib_area_width)))
     } else if (input$calib_area_method == "bmcp"){
-      cala <- calib_area(data = wrangle_data()[[1]], x = input$long_var,
+      cala <- calib_area(data = occ_dt, x = input$long_var,
                          y = input$lat_var, crs = terra::crs(shp_layer()),
                          method = c("bmcp", width = as.numeric(input$calib_area_width)))
     } else if (input$calib_area_method == "mcp"){
-      cala <- calib_area(data = wrangle_data()[[1]], x = input$long_var,
+      cala <- calib_area(data = occ_dt, x = input$long_var,
                          y = input$lat_var, crs = terra::crs(shp_layer()),
                          method = c("mcp"))
     } else if (input$calib_area_method == "mask"){
       clusters <- terra::vect(shp_layer())
-      cala <- calib_area(data = wrangle_data()[[1]], x = input$long_var,
+      cala <- calib_area(data = occ_dt, x = input$long_var,
                          y = input$lat_var, crs = terra::crs(shp_layer()),
                          method = c("mask", clusters, input$clusters_field))
     }
@@ -319,18 +331,20 @@ server <- function(input, output, session) {
   }
   ## plot calibrated area
   plot_cali_area <- eventReactive(input$valid_calib_area, {
-      req(calib_area_nimo(), layer_file_path(), wrangle_data(), data_file_path())
+      req(calib_area_nimo(), layer_file_path(), wrangle_data(), data_file_path(), shp_layer())
+    occ_dt <- sf::st_as_sf(occ_dt(), coords = c(input$long_var, input$lat_var), crs = crs(shp_layer()))
+
       ##
       if (input$calib_area_method != "mask") {
         ca_plot <-  ggplot()+
           geom_sf(data = shp_layer())+
-          geom_sf(data = sf::st_as_sf(calib_area_nimo()))+
-          geom_sf(data = occ_data())+
+          geom_sf(data = sf::st_as_sf(calib_area_nimo()), fill = "#e5d9d9", color = "#947368")+
+          geom_sf(data = occ_dt)+
           theme_void()
       } else {
         ca_plot <-  ggplot()+
-          geom_sf(data = sf::st_as_sf(calib_area_nimo()))+
-          geom_sf(data = occ_data())+
+          geom_sf(data = sf::st_as_sf(calib_area_nimo()), fill = "#e5d9d9", color = "#947368")+
+          geom_sf(data = occ_dt)+
           theme_void()
       }
       return(ca_plot)
@@ -401,7 +415,7 @@ server <- function(input, output, session) {
     })
   })
   colin_modal <- function(){
-    modalDialog(title = "", footer = modalButton("Ok"),
+    modalDialog(title = h3("Pair plots of predictor", style = "text-align:left"), footer = modalButton("Ok"), size = "l",
                 shinycssloaders::withSpinner(plotOutput("colin_corr"),
                                              color = loader_color, type = loader_type))
   }
@@ -435,13 +449,14 @@ server <- function(input, output, session) {
         enlayer[[i]] <- l
       }
       rm_enlayer <- colin_var$cumulative_variance
-    } else if(input$coli_method == "fa"){
-      colin_var <- correct_colinvar(env_layer = env_layers(), method = c("fa"))
-      cr_df <- colin_var$loadings # table
-      enlayer <- colin_var$env_layer
-      rm_enlayer <- colin_var$removed_variables
+    } else if(input$coli_method == "fa" & terra::nlyr(env_layers()) > 2){
+        colin_var <- correct_colinvar(env_layer = env_layers(), method = c("fa"))
+        cr_df <- colin_var$loadings # table
+        enlayer <- colin_var$env_layer
+        rm_enlayer <- colin_var$removed_variables
     }
-    return(list(cr_df, enlayer, rm_enlayer, colin_var))
+
+      return(list(cr_df, enlayer, rm_enlayer, colin_var))
   })
 
   cr_env <- eventReactive(input$reduce_collin, {
@@ -467,8 +482,20 @@ server <- function(input, output, session) {
     reduce_colin()[[3]]})
 
   # OCCURENCE FILTERING --------
+  observe({
+    req(env_layers())
+    if (terra::nlyr(env_layers()) <= 2) {
+    updateSelectInput(inputId = "coli_method", session = session,
+                      choices = c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
+                                  "Principal component analysis" = "pca"))
+    } else {
+      updateSelectInput(inputId = "coli_method", session = session,
+                        choices = c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
+                                    "Principal component analysis" = "pca", "Factorial analysis" = "fa"))
+    }
+  })
   occ_filt_modal <- function(){
-    modalDialog(title = "Occurrence data filtering", size = "l",
+    modalDialog(title = h3("Occurrence data filtering", style = "text-align:left"), size = "l",
                 footer = tagList(
                   modalButton("Ok"),
                   actionButton("valid_occ_filt", "Filter", icon = icon("check"), style = bttn_primary_style)
@@ -1228,7 +1255,7 @@ internet_status <- reactive({
   if (!having_ip() && input$sidebar_menu == "gbif_access") {
     showNotification(
       id = "connection_status",
-      ui = "No internet connection 😴",
+      ui = "No internet connection for GBIF data😴",
       duration = Inf,
       closeButton = TRUE,
       type = "error"
@@ -1277,12 +1304,12 @@ gbif_data <- eventReactive(input$load_gbif_data, {
       inside_drawn_ply()[[1]],
       inside_drawn_ply()[[2]]
     )}
-  else if (input$country_filter != "") {
+  else if (input$country_filter != "" & input$use_geom_gbif == FALSE) {
     list(
       query_occ(query_params = query_params())[[1]],
       query_occ(query_params = query_params())[[2]]
     )}
-  else if (input$use_geom_gbif == TRUE & input$country_filter == "" ) {
+  else if (input$use_geom_gbif == TRUE) {
     list(
       loc_geom()[[1]],
       loc_geom()[[2]]
@@ -1315,10 +1342,7 @@ observeEvent(input$acces_gbif_data, {
         actionButton("load_gbif_data", "Load", icon = icon("refresh", lib = "glyphicon"), style = bttn_second_style),
         actionButton("start_modeling", "Start Modeling", icon = icon("glyphicon-play", "glyphicon"), style = bttn_second_style),
         actionButton("add_to_map", "Add to map", icon = icon("plus"), style = bttn_third_style),
-        shinySaveButton(id = "export_occ", label = "Export", title = "Save occurrence data",
-                        filename = gsub("\\s", "_", paste0(input$species_suggestions, "_occurrence")),
-                        filetype = list(CSV = "csv", `Plain text` = "txt"),
-                        icon = icon("save"), style = bttn_third_style),
+        shiny::downloadButton("export_occ",  "Export",  icon = shiny::icon("save"), style = bttn_third_style),
         modalButton("Close", icon = icon("remove-circle", lib = "glyphicon"))),
       size = "l",
       tags$div(
@@ -1343,19 +1367,28 @@ output$occ_gbif_dataset<- DT::renderDT({
 }, options = list(scrollX = TRUE, scrollY = TRUE, searching = FALSE, lengthMenu = c(5, 10, 50, 100, 300, 500)),
 selection = "single", editable = TRUE)
 
-## Save occ data
-shinyFiles::shinyFileSave(id = "export_occ", input = input, session = session, roots = root)
-export_occ_path <- reactive({
-  req(input$export_occ)
-  shinyFiles::parseSavePath(roots = root, selection = input$export_occ)
-})
+## Save occ data ---1
+output$export_occ <- downloadHandler(
+  filename = function() {
+    gsub("\\s", "_", paste0(input$species_suggestions, "_occurrence", ".csv"))
+  },
+  content = function(file) {
+    write.csv(gbif_data()[[1]], file)
+  },
+  contentType = "text/csv"
+)
 
-observe({
-  req(export_occ_path(), gbif_data()[[1]])
-  if (nrow(export_occ_path()) > 0 ) {
-    write.csv(x = gbif_data()[[1]], file = as.character(export_occ_path()$datapath))
-  }
-})
+## Save occ data ---2
+output$export_occ2 <- downloadHandler(
+  filename = function() {
+    gsub("\\s", "_", paste0(input$species_suggestions, "_occurrence", ".csv"))
+  },
+  content = function(file) {
+    write.csv(gbif_data()[[1]], file)
+  },
+  contentType = "text/csv"
+)
+
 ## leaflet
 output$occ_map <- renderLeaflet({ llf() })
 observeEvent(input$add_to_map, {lft_proxy()})
