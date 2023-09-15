@@ -137,7 +137,7 @@ server <- function(input, output, session) {
   }
 
   error_modal <- function(){
-    modalDialog(title = strong(h2("Error", style = "color:#c52323")),
+    modalDialog(title = h3("Error", style = "color:#c52323"),
                 textOutput("error_modal"), footer = modalButton("Ok"))
   }
   ## import data
@@ -329,6 +329,20 @@ occ_dt <- reactive({
     }
     return(cala)
   }
+
+  ## Notify calibration area valid
+  observeEvent(input$valid_calib_area, {
+    req(calib_area_nimo())
+    if (class(calib_area_nimo()) == "SpatVector") {
+      showNotification(
+        id = "cala_validity_status",
+        ui = "Area calibrated and saved",
+        duration = 4,
+        closeButton = TRUE,
+        type = "message"
+      )
+    }
+  })
   ## plot calibrated area
   plot_cali_area <- eventReactive(input$valid_calib_area, {
       req(calib_area_nimo(), layer_file_path(), wrangle_data(), data_file_path(), shp_layer())
@@ -484,16 +498,23 @@ occ_dt <- reactive({
   # OCCURENCE FILTERING --------
   observe({
     req(env_layers())
-    if (terra::nlyr(env_layers()) <= 2) {
-    updateSelectInput(inputId = "coli_method", session = session,
-                      choices = c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
-                                  "Principal component analysis" = "pca"))
-    } else {
-      updateSelectInput(inputId = "coli_method", session = session,
-                        choices = c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
-                                    "Principal component analysis" = "pca", "Factorial analysis" = "fa"))
-    }
+    tryCatch({
+      if (terra::nlyr(env_layers()) <= 2) {
+        updateSelectInput(inputId = "coli_method", session = session,
+                          choices = c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
+                                      "Principal component analysis" = "pca"))
+      } else {
+        updateSelectInput(inputId = "coli_method", session = session,
+                          choices = c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
+                                      "Principal component analysis" = "pca", "Factorial analysis" = "fa"))
+      }
+    }, error = function(e){
+      showModal(error_modal())
+      output$error_modal <- renderText(paste(e))
+    })
   })
+
+
   occ_filt_modal <- function(){
     modalDialog(title = h3("Occurrence data filtering", style = "text-align:left"), size = "l",
                 footer = tagList(
@@ -641,6 +662,7 @@ occ_dt <- reactive({
       prt <- partion %>% select(.part1)
 
     } else if (input$partition_type == "part_sband"){
+      print(env_layers())
       parts <- part_sband(env_layer = env_layers(), data = wrangle_data()[[1]],
         x = input$long_var, y = input$lat_var, pr_ab = "pr_ab",
         type = input$sband_lon_lat,
@@ -713,7 +735,7 @@ occ_dt <- reactive({
 
   ## GENERATE BACKGROUND OR PSEUDO-ABSCENCE DATA ------------
   bpas_modal <- function(){
-    modalDialog(title = "Generate background or psdeudo-absence points", size = "l",
+    modalDialog(title = h3("Generate background or psdeudo-absence points"), size = "l",
                 footer = tagList(
                   modalButton("Ok"),
                   actionButton("generate_bpas", "Generate", style = bttn_primary_style)
@@ -859,7 +881,7 @@ occ_dt <- reactive({
       geom_sf(data = st_as_sf(calib_area_nimo()))+
       geom_point(data = c_occ_data(),
                  aes(x = !!sym(input$long_var), y = !!sym(input$lat_var), color = as.factor(!!sym("pr_ab"))))+
-      labs(fill = "Presence/absence", x = "Longitude", y = "Latitude")
+      labs(color = "Presence & absence", x = "Longitude", y = "Latitude")
   })
 
   ## VALIDED DATA PARTITION
@@ -1269,14 +1291,15 @@ observe({
 
 # Function to fetch species suggestions from GBIF API
 fetch_species_suggestions <- function(search_term) {
-  tryCatch({
+
+  if (having_ip()) {
     url <- paste0("https://api.gbif.org/v1/species/suggest?q=", URLencode(search_term))
     response <- httr::GET(url)
     species_list <- jsonlite::fromJSON(httr::content(response, "text", encoding = "UTF-8"))
     if (!is.null(species_list)) {
       return(species_list)
     }
-  }, error = function(e){return(e)})
+  }
 }
 
 # Update species suggestions as user types
