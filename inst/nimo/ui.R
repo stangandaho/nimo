@@ -420,10 +420,10 @@ nimo_body <- shinydashboard::dashboardBody(
     tabItem("model_ensembling",
             fluidPage(
               fluidRow(column(7,
-                              DT::DTOutput("fitted_model_list_dt"),
+                              DT::DTOutput("fml_st"),
                               hr(),
                               verbatimTextOutput("selected_mod_lenght"),
-                              DT::DTOutput("ens_performance")
+                              DT::DTOutput("ens_performance"),
               ),
               column(5,
                      h4("Ensembling parameter"),
@@ -445,8 +445,8 @@ nimo_body <- shinydashboard::dashboardBody(
             fluidPage(
               fluidRow(column(8,
                               DT::DTOutput("st_fitted_model_list_dt"),
-                              tags$hr(),
-                              DT::DTOutput("es_fitted_model_list_dt"),
+                              #tags$hr(),
+                              DT::DTOutput("esm_fitted_model_list_dt"),
                               div(style = "height:400px",
                                   DT::DTOutput("model_perf_merged", height = "90%")),
                               tags$hr(),
@@ -483,9 +483,16 @@ nimo_body <- shinydashboard::dashboardBody(
                               shinycssloaders::withSpinner(plotOutput("extrapo_raster"),
                                                            color = loader_color, type = loader_type)),
                        column(4,
+                              selectInput("extrap_metric", "Metric",
+                                          choices = c("Mahalanobis" = "mahalanobis", "Euclidean" = "euclidean"),
+                                          selected = "Mahalanobis"),
                               numericInput("n_cores", "Number of cores", min = 1, step = 1, value = 1),
                               numericInput("aggreg_factor", "Aggregation factor", min = 1, step = 1, value = 1),
-                              actionButton("extrapo_model", "Extrapolate", style = bttn_primary_style)))
+                              tagList(
+                                actionButton("extrapo_model", "Extrapolate", style = bttn_primary_style),
+                                downloadButton("download_extrapo_raster", "Save", icon = icon("save"))
+                              )
+                              ))
             )),
     tabItem("overpredict_correct",
             fluidPage(

@@ -1031,16 +1031,19 @@ occ_dt <- reactive({
 
 ## ENSEMBLING ----
 observeEvent(input$ensemble,
-  {updateSelectInput(session = session, inputId = "ens_method", choices = ensemble, selected = input$ensemble)}
+             {updateSelectInput(session = session, inputId = "ens_method", choices = ensemble,
+                     selected = input$ensemble)}
 )
 
-output$selected_mod_lenght <- renderText(paste("Number of chosen models for ensembling:", length(selected())))
+output$selected_mod_lenght <- renderText(
+  paste("Number of chosen models for ensembling:", length(sst()) ))
+
 
 ens_fitting <- eventReactive(input$fit_ens, {
-  req(model_list$models, models_names_df(), selected())
+  req(es_model_list$models, esm_models_names_df(), sst())
   tryCatch({
     fit_ensemble(
-      models = base::as.list(model_list$models[ models_names_df()[selected(), ] ]),
+      models = model_list$models[ models_names_df()[sst(), ] ],
       ens_method = input$ens_method,
       thr = if(any(input$ens_thr %in% c("sensitivity"))) {
         c(input$ens_thr, "sens" = as.character(input$ens_sens))
@@ -1051,14 +1054,17 @@ ens_fitting <- eventReactive(input$fit_ens, {
       metric = input$ens_metric)
   }, error = error)
 })
-output$ens_performance <- render_dt(ens_fitting()$performance)
+
+output$ens_performance <- render_dt({ ens_fitting()$performance })
 
 ## POST-MODELING
 ## PREDICTIONS
 observeEvent(input$esm, {
   if (input$esm == TRUE) {
     shinyjs::hide("model_category")
-    shinyjs::hide("st_fitted_model_list_dt")}
+    shinyjs::hide("st_fitted_model_list_dt")
+    shinyjs::show("es_fitted_model_list_dt")
+    }
   else {
     shinyjs::show("model_category")
     shinyjs::show("st_fitted_model_list_dt")
@@ -1067,17 +1073,17 @@ observeEvent(input$esm, {
 observeEvent(input$model_category, {
   if(input$model_category == "Ensemble"){
     shinyjs::hide("st_fitted_model_list_dt")
-    shinyjs::hide("es_fitted_model_list_dt")
   } else if (input$model_category == "Standard models"){
     shinyjs:: show("st_fitted_model_list_dt")
     shinyjs::hide("es_fitted_model_list_dt")
   }
 })
+
 predict_models <- reactive(
   tryCatch({
     if(input$esm == TRUE){
-      req(es_selected())
-      es_model_list$models[[es_models_names_df()[es_selected(), ]]]
+      req(esm_selected())
+      base::as.list(es_model_list$models[[esm_models_names_df()[esm_selected(), ]]])
     } else if(input$esm == FALSE && input$model_category == "Ensemble"){
       req(ens_fitting())
       ens_fitting()
@@ -1091,11 +1097,11 @@ predict_models <- reactive(
 
 )
 ## set layer files path
-shinyFiles::shinyFileChoose(input, "predict_area", roots = root,
-                            filetypes = c("shp", "kml", "kmz"))
+shinyFiles::shinyFileChoose(input, "predict_area", roots = root, filetypes = c("shp", "kml", "kmz"))
 predict_area_path <- reactive({
   shinyFiles::parseFilePaths(roots = root, selection = input$predict_area)$datapath
 })
+
 predict_area <- reactive({
   req(predict_area_path())
   terra::vect(sf::read_sf( predict_area_path() ) %>%
@@ -1119,12 +1125,17 @@ prediction <- eventReactive(input$predict, {
 })
 ## Modal to show predict output
 predict_modal <- function(){
-  modalDialog(title = "Spatial predictions",
-              footer = modalButton("Ok", icon = icon("glyphicon-ok", "glyphicon")), size = "l",
-              fluidRow(column(9,plotOutput("predict_raster_plot")),
+  modalDialog(title = h3("Spatial predictions", style = "text-align:left;"),
+              footer = modalButton("Ok"), size = "l",
+              fluidRow(column(9,
+                              plotOutput("predict_raster_plot")),
                        column(3,
                               selectInput("pred_rasters", "Prediction", choices = c()),
-                              actionButton("reload_pred_out", "Load", icon = icon("refresh"))))
+                              tagList(
+                                actionButton("reload_pred_out", "Load", icon = icon("refresh")),
+                                downloadButton("download_predict", "Save", icon = icon("save"))
+                              )
+                              ))
               )
 }
 
@@ -1133,16 +1144,16 @@ pred_rst <- eventReactive(input$predict, {
     predict_rasters(prediction = prediction())
   }, error = error)
 })
+observeEvent(input$predict, {showModal(predict_modal())})
 
-observeEvent(input$predict, {
-  showModal(predict_modal())
+observeEvent(input$reload_pred_out, {
   updateSelectInput(inputId = "pred_rasters", choices = names(pred_rst()))
   ### add from posteriori - overprediction correction
   updateSelectInput(inputId = "ov_p_cont_suit", choices = names(pred_rst()),
                     selected = names(pred_rst())[1])
 })
 
-observeEvent(input$reload_pred_out, {
+observeEvent(input$pred_rasters, {
   tryCatch({
     output$predict_raster_plot <- renderPlot({
       terra::plot(pred_rst()[[input$pred_rasters]], main = names(pred_rst()[[input$pred_rasters]]))
@@ -1154,7 +1165,7 @@ observeEvent(input$reload_pred_out, {
 perf_models <- reactive(
   if(input$esm == TRUE){
     req(es_selected())
-    es_model_list$models[[es_models_names_df()[es_selected(), ]]]
+    base::as.list(es_model_list$models[[esm_models_names_df()[es_selected(), ]]])
   } else if(input$esm == FALSE && input$model_category == "Ensemble"){
     req(ens_fitting())
     list(ens_fitting())
@@ -1166,9 +1177,8 @@ perf_models <- reactive(
   }
 
 )
-mperf <- reactive({
-  sdm_summarize(models = perf_models())
-})
+mperf <- reactive({ sdm_summarize(models = perf_models()) })
+
 observeEvent(input$merge_model_perf, {
   tryCatch({output$model_perf_merged <- render_dt(mperf())}, error = error)
 })
@@ -1187,10 +1197,23 @@ save_perf_path <- reactive({
 })
 observe({
   req(save_perf_path())
-  if (nrow(save_perf_path()) > 0 ) {
-    write.csv(x = mperf(), file = as.character(save_perf_path()$datapath))
-  }
+  tryCatch({
+    req(save_perf_path())
+    if (nrow(save_perf_path()) > 0 ) {
+      write.csv(x = mperf(), file = as.character(save_perf_path()$datapath))
+    }
+  }, error = error)
 })
+
+## Download model prediction
+output$download_predict <- downloadHandler(
+  filename = function() {
+    paste0(input$pred_rasters, ".tiff")
+  },
+  content = function(file) {
+    terra::writeRaster(pred_rst()[[input$pred_rasters]], file, overwrite = T)
+  }
+  )
 
 ## MODEL EXTRAPOLATION ----
 # env_cond_for_calib_area <- eventReactive(input$extrapo_model, {
@@ -1221,6 +1244,7 @@ model_extrapo <- eventReactive(input$extrapo_model, {
     extra_eval(
       training_data = ready_df_mod(),
       projection_data = env_layers,
+      metric = input$extrap_metric,
       n_cores = input$n_cores,
       aggreg_factor = input$aggreg_factor
     )
@@ -1229,6 +1253,18 @@ model_extrapo <- eventReactive(input$extrapo_model, {
 output$extrapo_raster <- renderPlot({
   req(model_extrapo())
   terra::plot(model_extrapo())})
+
+# Download extrapolation raster
+output$download_extrapo_raster <- downloadHandler(
+  filename = function() {
+    paste0(names(model_extrapo()), ".tiff")
+  },
+  content = function(file) {
+    terra::writeRaster(model_extrapo(), file, overwrite = T)
+  }
+)
+
+
 
 ## POSTERIORI - CORRECTION
 over_correct <- eventReactive(input$ov_p_correct, {
@@ -1252,7 +1288,6 @@ over_correct <- eventReactive(input$ov_p_correct, {
     crs = terra::crs(cont_suit)
   )
 })
-
 
 output$ov_p_raster <- renderPlot({
   req(input$ov_p_correct)
@@ -1539,6 +1574,7 @@ observeEvent(input$valid_data, {
 ### When add point occ data to map
 
 ## END SERVER
+
 
 }
 
