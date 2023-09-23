@@ -412,7 +412,7 @@ nimo_body <- shinydashboard::dashboardBody(
                                                                          icon = icon("upload"), multiple = FALSE))
                        ),
                        column(2, br(), conditionalPanel("input.import_exiting_df4mod",
-                                                        checkboxInput("esm", "Ensemble of Small Models"))
+                                                        checkboxInput("esm", "ESM"))
                        )),
               uiOutput("dynamic_model_fitting")
             )

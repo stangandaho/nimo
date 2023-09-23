@@ -155,75 +155,99 @@
 model_list <- reactiveValues( models = list() )
 
 observeEvent(input$fit_gam, {
-  showModal(models_modals("Generalized Additive Models output"))
-  output$xx_model <- renderPrint(gam_fitting()$model)
-  output$xx_performance_metric <- render_dt(gam_fitting()$performance)
-  output$xx_predicted_suitability <- DT::renderDT(gam_fitting()$data_ens,
-                                                  options = list(scrollX = TRUE))
-  model_list$models$`Generalized Additive Models` <- gam_fitting()
+  tryCatch({
+    showModal(models_modals("Generalized Additive Models output"))
+    output$xx_model <- renderPrint(gam_fitting()$model)
+    output$xx_performance_metric <- render_dt(gam_fitting()$performance)
+    performance_metric <<- gam_fitting()$performance
+    output$xx_predicted_suitability <- DT::renderDT(gam_fitting()$data_ens,
+                                                    options = list(scrollX = TRUE))
+    model_list$models$`Generalized Additive Models` <- gam_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_gau, {
-  showModal(models_modals("Gaussian Process Models output"))
-  output$xx_model <- renderPrint(gau_fitting()$model)
-  output$xx_performance_metric <- render_dt(gau_fitting()$performance)
-  output$xx_predicted_suitability <- DT::renderDT(gau_fitting()$data_ens,
-                                                  options = list(scrollX = TRUE))
-  model_list$models$`Gaussian Process Models` <- gau_fitting()
+  tryCatch({
+    showModal(models_modals("Gaussian Process Models output"))
+    output$xx_model <- renderPrint(gau_fitting()$model)
+    output$xx_performance_metric <- render_dt(gau_fitting()$performance)
+    performance_metric <<- gau_fitting()$performance
+    output$xx_predicted_suitability <- DT::renderDT(gau_fitting()$data_ens,
+                                                    options = list(scrollX = TRUE))
+    model_list$models$`Gaussian Process Models` <- gau_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_gbm, {
-  showModal(models_modals("Generalized Boosted Regression Models output"))
-  output$xx_model <- renderPrint(gbm_fitting()$model)
-  output$xx_performance_metric <- render_dt(gbm_fitting()$performance)
-  output$xx_predicted_suitability <- DT::renderDT(gbm_fitting()$data_ens,
-                                                  options = list(scrollX = TRUE))
-  model_list$models$`Generalized Boosted Regression Models` <- gbm_fitting()
+  tryCatch({
+    showModal(models_modals("Generalized Boosted Regression Models output"))
+    output$xx_model <- renderPrint(gbm_fitting()$model)
+    output$xx_performance_metric <- render_dt(gbm_fitting()$performance)
+    performance_metric <<- gbm_fitting()$performance
+    output$xx_predicted_suitability <- DT::renderDT(gbm_fitting()$data_ens,
+                                                    options = list(scrollX = TRUE))
+    model_list$models$`Generalized Boosted Regression Models` <- gbm_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_glm, {
-  showModal(models_modals("Generalized Linear Models output"))
-  output$xx_model <- renderPrint(glm_fitting()$model)
-  output$xx_performance_metric <- render_dt(glm_fitting()$performance)
-  output$xx_predicted_suitability <- DT::renderDT(glm_fitting()$data_ens,
-                                                  options = list(scrollX = TRUE))
-  model_list$models$`Generalized Linear Models` <- glm_fitting()
+  tryCatch({
+    showModal(models_modals("Generalized Linear Models output"))
+    output$xx_model <- renderPrint(glm_fitting()$model)
+    output$xx_performance_metric <- render_dt(glm_fitting()$performance)
+    performance_metric <<- glm_fitting()$performance
+    output$xx_predicted_suitability <- DT::renderDT(glm_fitting()$data_ens,
+                                                    options = list(scrollX = TRUE))
+    model_list$models$`Generalized Linear Models` <- glm_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_max, {
-  showModal(models_modals("Maximum Entropy Models output"))
-  output$xx_model <- renderPrint(max_fitting()$model)
-  output$xx_performance_metric <- render_dt(max_fitting()$performance)
-  output$xx_predicted_suitability <- DT::renderDT(max_fitting()$data_ens,
-                                                  options = list(scrollX = TRUE))
-  model_list$models$`Maximum Entropy Models` <- max_fitting()
+  tryCatch({
+    showModal(models_modals("Maximum Entropy Models output"))
+    output$xx_model <- renderPrint(max_fitting()$model)
+    output$xx_performance_metric <- render_dt(max_fitting()$performance)
+    performance_metric <<- max_fitting()$performance
+    output$xx_predicted_suitability <- DT::renderDT(max_fitting()$data_ens,
+                                                    options = list(scrollX = TRUE))
+    model_list$models$`Maximum Entropy Models` <- max_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_net, {
-  showModal(models_modals("Neural Networks Models output"))
-  output$xx_model <- renderPrint(net_fitting()$model)
-  output$xx_performance_metric <- render_dt(net_fitting()$performance)
-  output$xx_predicted_suitability <- DT::renderDT(net_fitting()$data_ens,
-                                                  options = list(scrollX = TRUE))
-  model_list$models$`Neural Networks Models` <- net_fitting()
+  tryCatch({
+    showModal(models_modals("Neural Networks Models output"))
+    output$xx_model <- renderPrint(net_fitting()$model)
+    output$xx_performance_metric <- render_dt(net_fitting()$performance)
+    performance_metric <<- net_fitting()$performance
+    output$xx_predicted_suitability <- DT::renderDT(net_fitting()$data_ens,
+                                                    options = list(scrollX = TRUE))
+    model_list$models$`Neural Networks Models` <- net_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_raf, {
-  showModal(models_modals("Random Forests Models output"))
-  output$xx_model <- renderPrint(raf_fitting()$model)
-  output$xx_performance_metric <- render_dt(raf_fitting()$performance)
-  output$xx_predicted_suitability <- DT::renderDT(raf_fitting()$data_ens,
-                                                  options = list(scrollX = TRUE))
-  model_list$models$`Random Forests Models` <- raf_fitting()
+  tryCatch({
+    showModal(models_modals("Random Forests Models output"))
+    output$xx_model <- renderPrint(raf_fitting()$model)
+    output$xx_performance_metric <- render_dt(raf_fitting()$performance)
+    performance_metric <<- raf_fitting()$performance
+    output$xx_predicted_suitability <- DT::renderDT(raf_fitting()$data_ens,
+                                                    options = list(scrollX = TRUE))
+    model_list$models$`Random Forests Models` <- raf_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_svm, {
-  showModal(models_modals("Support Vector Machine Models output"))
-  output$xx_model <- renderPrint(svm_fitting()$model)
-  output$xx_performance_metric <- render_dt(svm_fitting()$performance)
-  output$xx_predicted_suitability <- DT::renderDT(svm_fitting()$data_ens,
-                                                  options = list(scrollX = TRUE))
-  model_list$models$`Support Vector Machine Models` <- svm_fitting()
+  tryCatch({
+    showModal(models_modals("Support Vector Machine Models output"))
+    output$xx_model <- renderPrint(svm_fitting()$model)
+    output$xx_performance_metric <- render_dt(svm_fitting()$performance)
+    performance_metric <<- svm_fitting()$performance
+    output$xx_predicted_suitability <- DT::renderDT(svm_fitting()$data_ens,
+                                                    options = list(scrollX = TRUE))
+    model_list$models$`Support Vector Machine Models` <- svm_fitting()
+  }, error = error)
 })
 
 ## models
@@ -231,12 +255,14 @@ models_names_df <- reactive({
   model_data <- data.frame(Model = names(model_list$models))
   return(model_data)
 })
+
+
 # Get the selected rows
-selected <- reactive({
-  input$fitted_model_list_dt_rows_selected
+sst <- reactive({
+  input$fml_st_rows_selected
 })
 #all fitted models with for selection
-output$fitted_model_list_dt <- DT::renderDataTable({
+output$fml_st <- DT::renderDataTable({
   datatable(models_names_df(), escape = FALSE,
             extensions = c("Buttons"), colnames = NULL,
             selection = "multiple", rownames = FALSE,

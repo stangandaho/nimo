@@ -1012,9 +1012,11 @@ occ_dt <- reactive({
   ## modal to show model output
   models_modals <- function(tle = "")({
     modalDialog(
-      title = tle,
-      footer = modalButton("Ok"), size = "l",
-      tabsetPanel(
+      title = h3(tle, style = "text-align:left;"),
+      footer = tagList(modalButton("Ok"),
+                       downloadButton(outputId = "download_models_output", style = bttn_primary_style)),
+      size = "l",
+      tabsetPanel(id = "models_output",
         tabPanel("Model",
                  div(
                    style = "overflow-y: scroll; max-height: 350px;",
@@ -1023,7 +1025,7 @@ occ_dt <- reactive({
                      type = loader_type, color = loader_color)
                    ),
           ),
-        tabPanel("Performance metric", DT::DTOutput("xx_performance_metric")),
+        tabPanel("Performance metric", value = "xx_performance_metric" , DT::DTOutput("xx_performance_metric")),
         tabPanel("Predicted suitability", DT::DTOutput("xx_predicted_suitability"))
       )
     )
@@ -1205,6 +1207,24 @@ observe({
   }, error = error)
 })
 
+## Download model output
+observe(
+{  req(input$models_output)
+  if (input$models_output == "xx_performance_metric") {
+    shinyjs::show("download_models_output")
+  } else{
+    shinyjs::hide("download_models_output")
+  }}
+)
+output$download_models_output <- downloadHandler(
+  filename = function() {
+    paste0("performance_metric", ".csv")
+  },
+  content = function(file) {
+    write.csv(performance_metric, file)
+  }
+  )
+
 ## Download model prediction
 output$download_predict <- downloadHandler(
   filename = function() {
@@ -1213,7 +1233,7 @@ output$download_predict <- downloadHandler(
   content = function(file) {
     terra::writeRaster(pred_rst()[[input$pred_rasters]], file, overwrite = T)
   }
-  )
+)
 
 ## MODEL EXTRAPOLATION ----
 # env_cond_for_calib_area <- eventReactive(input$extrapo_model, {

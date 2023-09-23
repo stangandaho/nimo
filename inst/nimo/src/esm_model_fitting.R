@@ -131,52 +131,73 @@ observeEvent(input$esm, {
   })
 
 observeEvent(input$fit_gam_esm, {
-  showModal(models_modals("Generalized Additive Models on ESM output"))
-  output$xx_model <- renderPrint(gam_esm_fitting()$esm_model)
-  output$xx_performance_metric <- render_dt(gam_esm_fitting()$performance)
-  es_model_list$models$`Generalized Additive Models - ESM` <- gam_esm_fitting()
+  tryCatch({
+    showModal(models_modals("Generalized Additive Models on ESM output"))
+    output$xx_model <- renderPrint(gam_esm_fitting()$esm_model)
+    output$xx_performance_metric <- render_dt(gam_esm_fitting()$performance)
+    performance_metric <<- gam_esm_fitting()$performance
+    es_model_list$models$`Generalized Additive Models - ESM` <- gam_esm_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_gau_esm, {
-  showModal(models_modals("Gaussian Process Models on ESM output"))
-  output$xx_model <- renderPrint(gau_esm_fitting()$esm_model)
-  output$xx_performance_metric <- render_dt(gau_esm_fitting()$performance)
-  es_model_list$models$`Gaussian Process Models - ESM` <- gau_esm_fitting()
+  tryCatch({
+    showModal(models_modals("Gaussian Process Models on ESM output"))
+    output$xx_model <- renderPrint(gau_esm_fitting()$esm_model)
+    output$xx_performance_metric <- render_dt(gau_esm_fitting()$performance)
+    performance_metric <<- gau_esm_fitting()$performance
+    es_model_list$models$`Gaussian Process Models - ESM` <- gau_esm_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_gbm_esm, {
-  showModal(models_modals("Generalized Boosted Regression Models on ESM output"))
-  output$xx_model <- renderPrint(gbm_esm_fitting()$esm_model)
-  output$xx_performance_metric <- render_dt(gbm_esm_fitting()$performance)
-  es_model_list$models$`Generalized Boosted Regression Models - ESM` <- gbm_esm_fitting()
+  tryCatch({
+    showModal(models_modals("Generalized Boosted Regression Models on ESM output"))
+    output$xx_model <- renderPrint(gbm_esm_fitting()$esm_model)
+    output$xx_performance_metric <- render_dt(gbm_esm_fitting()$performance)
+    performance_metric <<- gbm_esm_fitting()$performance
+    es_model_list$models$`Generalized Boosted Regression Models - ESM` <- gbm_esm_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_glm_esm, {
-  showModal(models_modals("Generalized Linear Models on ESM output"))
-  output$xx_model <- renderPrint(glm_esm_fitting()$esm_model)
-  output$xx_performance_metric <- render_dt(glm_esm_fitting()$performance)
-  es_model_list$models$`Generalized Linear Models - ESM` <- glm_esm_fitting()
+  tryCatch({
+    showModal(models_modals("Generalized Linear Models on ESM output"))
+    output$xx_model <- renderPrint(glm_esm_fitting()$esm_model)
+    output$xx_performance_metric <- render_dt(glm_esm_fitting()$performance)
+    performance_metric <<- glm_esm_fitting()$performance
+    es_model_list$models$`Generalized Linear Models - ESM` <- glm_esm_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_max_esm, {
-  showModal(models_modals("Maximum Entropy Models on ESM output"))
-  output$xx_model <- renderPrint(max_esm_fitting()$esm_model)
-  output$xx_performance_metric <- render_dt(max_esm_fitting()$performance)
-  es_model_list$models$`Maximum Entropy Models - ESM` <- max_esm_fitting()
+  tryCatch({
+    showModal(models_modals("Maximum Entropy Models on ESM output"))
+    output$xx_model <- renderPrint(max_esm_fitting()$esm_model)
+    output$xx_performance_metric <- render_dt(max_esm_fitting()$performance)
+    performance_metric <<- max_esm_fitting()$performance
+    es_model_list$models$`Maximum Entropy Models - ESM` <- max_esm_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_net_esm, {
-  showModal(models_modals("Neural Networks Models on ESM output"))
-  output$xx_model <- renderPrint(net_esm_fitting()$esm_model)
-  output$xx_performance_metric <- render_dt(net_esm_fitting()$performance)
-  es_model_list$models$`Neural Networks Models - ESM` <- net_esm_fitting()
+  tryCatch({
+    showModal(models_modals("Neural Networks Models on ESM output"))
+    output$xx_model <- renderPrint(net_esm_fitting()$esm_model)
+    output$xx_performance_metric <- render_dt(net_esm_fitting()$performance)
+    performance_metric <<- net_esm_fitting()$performance
+    es_model_list$models$`Neural Networks Models - ESM` <- net_esm_fitting()
+  }, error = error)
 })
 
 observeEvent(input$fit_svm_esm, {
-  showModal(models_modals("Support Vector Machine Models on ESM output"))
-  output$xx_model <- renderPrint(svm_esm_fitting()$esm_model)
-  output$xx_performance_metric <- render_dt(svm_esm_fitting()$performance)
-  es_model_list$models$`Support Vector Machine Models - ESM` <- svm_esm_fitting()
+  tryCatch({
+    showModal(models_modals("Support Vector Machine Models on ESM output"))
+    output$xx_model <- renderPrint(svm_esm_fitting()$esm_model)
+    output$xx_performance_metric <- render_dt(svm_esm_fitting()$performance)
+    performance_metric <<- svm_esm_fitting()$performance
+    es_model_list$models$`Support Vector Machine Models - ESM` <- svm_esm_fitting()
+  }, error = error)
 })
 
 
