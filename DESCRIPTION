@@ -1,7 +1,8 @@
 Package: nimo
 Type: Package
-Title: GUI for Species Distrubution Modeling
+Title: Species distribution modeling with GBIF occurrence data and graphical user interface
 Version: 0.2.0
+Date: 2023-10-05
 Depends: R (>= 3.5.0)
 Imports: flexsdm, shiny, shinyFiles, shinydashboard, shinydashboardPlus, shinyjs,
         plotly, leaflet, leaflet.extras, httr, jsonlite, sf, terra (>= 1.5-21), 
