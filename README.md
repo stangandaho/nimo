@@ -54,8 +54,7 @@ All necessaries concept and part of **nimo** are explained with screenshot and e
 |----------------------------------------|----------------|---------------------------------------------------------------------------------------|
 | Pre-modeling user interface            | 5              | Completed  ✅ |
 | Implement [(functions)](https://sjevelazco.github.io/flexsdm/articles/v01_pre_modeling.html) to prepare modeling input| 5 | Completed  ✅ |
-| Documentation                          | 4              | In progess    |
-| Functionality to request R script of pre-modeling process| 3              | Planning   |
+| Documentation                          | 5              | Completed  ✅     |
 | Add tooltip to briefly explain inputs by mouse hovering | 2               | Not started   |
 
 ## Modeling
@@ -65,8 +64,7 @@ All necessaries concept and part of **nimo** are explained with screenshot and e
 | Pre-modeling user interface            | 5              | Completed  ✅ |
 | Construct and validate models with default hyper-parameter [(model fitting)](https://sjevelazco.github.io/flexsdm/articles/v02_modeling.html)| 5 | Completed  ✅ |
 |  Model tuning by searching for the best combination of hyper-parameter| 4 | In progess|
-| Documentation                          | 4              | In progess    |
-| Functionality to request R script of pre-modeling process| 2              | Not started   |
+| Documentation                          | 5              | Completed  ✅     |
 | Add tooltip to briefly explain inputs by mouse hovering | 2               | Not started   |
 
 ## Post-modeling
@@ -75,6 +73,5 @@ All necessaries concept and part of **nimo** are explained with screenshot and e
 |----------------------------------------|----------------|----------------------------------------------------------------------------------------------- |
 | Post-modeling user interface            | 5              | Completed  ✅ |
 | Functionalities for [(model prediction, evaluation and correction)](https://sjevelazco.github.io/flexsdm/articles/v03_post_modeling.html)| 5 | Completed  ✅ |
-| Documentation                          | 4              | In progess    |
-| Functionality to request R script of pre-modeling process| 2              | Not started   |
+| Documentation                          | 5              | Completed  ✅     |
 | Add tooltip to briefly explain inputs by mouse hovering | 2               | Not started   |
