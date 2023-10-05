@@ -1156,9 +1156,12 @@ observeEvent(input$reload_pred_out, {
 })
 
 observeEvent(input$pred_rasters, {
+  req(input$pred_rasters)
   tryCatch({
     output$predict_raster_plot <- renderPlot({
-      terra::plot(pred_rst()[[input$pred_rasters]], main = names(pred_rst()[[input$pred_rasters]]))
+      terra::plot(x = pred_rst()[[input$pred_rasters]],
+                  y = names(pred_rst()[[input$pred_rasters]]),
+                  main = names(pred_rst()[[input$pred_rasters]]))
     })
   }, error = error)
 })
@@ -1236,27 +1239,11 @@ output$download_predict <- downloadHandler(
 )
 
 ## MODEL EXTRAPOLATION ----
-# env_cond_for_calib_area <- eventReactive(input$extrapo_model, {
-#   req(reduce_colin())
-#   if (!any(reduce_colin()[[3]] %in% "")) {
-#     env_layers <- env_layers()[[!names(env_layers()) %in% reduce_colin()[[3]]]]
-#   } else {
-#     env_layers <- env_layers()
-#   }
-#   req(calib_area_nimo())
-#   calib_area_nimo <- sf::st_as_sf(calib_area_nimo())
-#   sf::st_crs(calib_area_nimo) <- terra::crs(env_layers)
-#   calib_area_nimo <- terra::vect(calib_area_nimo)
-#   env <- env_layers %>%
-#     terra::crop(., calib_area_nimo) %>%
-#     terra::mask(., calib_area_nimo)
-#   return(env)
-# })
 
 model_extrapo <- eventReactive(input$extrapo_model, {
   req(reduce_colin())
   tryCatch({
-    if (!any(reduce_colin()[[3]] %in% "")) {
+    if (input$reduce_collin > 0 && !any(reduce_colin()[[3]] %in% "")) {
       env_layers <- env_layers()[[!names(env_layers()) %in% reduce_colin()[[3]]]]
     } else {
       env_layers <- env_layers()
@@ -1266,7 +1253,8 @@ model_extrapo <- eventReactive(input$extrapo_model, {
       projection_data = env_layers,
       metric = input$extrap_metric,
       n_cores = input$n_cores,
-      aggreg_factor = input$aggreg_factor
+      aggreg_factor = input$aggreg_factor,
+      pr_ab = "pr_ab"
     )
   }, error = error)
 })
@@ -1287,6 +1275,11 @@ output$download_extrapo_raster <- downloadHandler(
 
 
 ## POSTERIORI - CORRECTION
+observe({
+  req(ready_df_mod())
+  updateSelectInput(inputId = "ov_p_lon", choices = colnames(ready_df_mod()))
+  updateSelectInput(inputId = "ov_p_lat", choices = colnames(ready_df_mod()))
+})
 over_correct <- eventReactive(input$ov_p_correct, {
   if (input$reduce_collin > 0 && !any(reduce_colin()[[3]] %in% "")) {
     env_layers <- env_layers()[[!names(env_layers()) %in% reduce_colin()[[3]]]]
@@ -1294,26 +1287,44 @@ over_correct <- eventReactive(input$ov_p_correct, {
     env_layers <- env_layers()
   }
   cont_suit <- pred_rst()[[input$ov_p_cont_suit]]
-  msdm_posteriori(
-    records = ready_df_mod(),
-    x = "x",
-    y = "y",
-    pr_ab = "pr_ab",
-    cont_suit = cont_suit,
-    method = input$ov_p_method,
-    thr = if(any(input$ov_p_thr %in% c("sensitivity"))) {
-      c(input$ov_p_thr, "sens" = as.character(input$predict_sens))
-    } else{input$ov_p_thr},
-    buffer = if(input$ov_p_method == "bmcp"){input$ov_p_buffer} else {NULL},
-    crs = terra::crs(cont_suit)
-  )
+  tryCatch({
+    msdm_posteriori(
+      records = ready_df_mod(),
+      x = input$ov_p_lon,
+      y = input$ov_p_lat,
+      pr_ab = "pr_ab",
+      cont_suit = cont_suit,
+      method = input$ov_p_method,
+      thr = if(any(input$ov_p_thr %in% c("sensitivity"))) {
+        c(input$ov_p_thr, "sens" = as.character(input$predict_sens))
+      } else{input$ov_p_thr},
+      buffer = if(input$ov_p_method == "bmcp"){input$ov_p_buffer} else {NULL},
+      crs = terra::crs(cont_suit)
+    )
+  }, error = error)
 })
 
 output$ov_p_raster <- renderPlot({
-  req(input$ov_p_correct)
+  req(over_correct())
   terra::plot(over_correct())
 })
 
+## Download overprediction correction
+observe({shinyjs::hide("download_ov_p_correct")})
+observe({
+  req(over_correct())
+  if (class(over_correct()) == "SpatRaster") {
+    shinyjs::show("download_ov_p_correct")
+  }
+})
+output$download_ov_p_correct <- downloadHandler(
+  filename = function() {
+    paste0(names(over_correct()[1]),"_overp_corrected", ".tiff")
+  },
+  content = function(file) {
+    terra::writeRaster(over_correct(), file, overwrite = T)
+  }
+)
 
 
 ## GBIF ACCESS

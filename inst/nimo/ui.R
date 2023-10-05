@@ -502,6 +502,10 @@ nimo_body <- shinydashboard::dashboardBody(
                                                     color = loader_color, type = loader_type)),
                 column(4,
                        selectInput("ov_p_cont_suit", "Suitability", choices = c()),
+                       tagList(
+                         selectInput("ov_p_lon", "Longitude", choices = c(), width = "60%"),
+                         selectInput("ov_p_lat", "Latitude", choices = c(), width = "60%")
+                       ),
                        selectInput("ov_p_method", "Methode",
                                    choices = c("Occurrences Based Restriction" = "obr",
                                                "Presence" = "pres",
@@ -511,7 +515,10 @@ nimo_body <- shinydashboard::dashboardBody(
                        selectInput("ov_p_thr", "Threshold", choices = thr),
                        conditionalPanel("input.ov_p_method == 'bmcp'",
                                         numericInput("ov_p_buffer", "Buffer (m)", min = 1, value = 1500)),
-                       actionButton("ov_p_correct", "Correct", style = bttn_primary_style)
+                       tagList(
+                         actionButton("ov_p_correct", "Correct", style = bttn_primary_style),
+                         downloadButton("download_ov_p_correct")
+                       )
                        )
               )
             )),
