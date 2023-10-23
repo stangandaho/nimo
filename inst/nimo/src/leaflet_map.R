@@ -6,9 +6,8 @@ llf <- function() {
     addProviderTiles("OpenStreetMap.Mapnik", group = "OpenStreetMap") %>%
     addProviderTiles("Esri.WorldImagery", group = "Natural") %>%
     addProviderTiles("OpenTopoMap", group = "OpenTopoMap") %>%
-    addProviderTiles("Stamen.Terrain", group = "Stamen Terrain") %>%
     addLayersControl(
-      baseGroups = c("OpenStreetMap", "Natural", "OpenTopoMap", "Stamen Terrain"),
+      baseGroups = c("OpenStreetMap", "Natural", "OpenTopoMap"),
       options = layersControlOptions(collapsed = T)
     ) %>%
     addMiniMap(position = "bottomright", height = 100, width = 100) %>%
