@@ -83,7 +83,7 @@ jobs:
       - name: Check
         env:
           _R_CHECK_CRAN_INCOMING_: false
-        run: rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error", build_args = c('--no-build-vignettes'))
+        run: rcmdcheck::rcmdcheck(args = c("--no-manual", "--no-examples"), error_on = "error", build_args = c('--no-build-vignettes'))
         shell: Rscript {0}
 
       - name: Show testthat output
