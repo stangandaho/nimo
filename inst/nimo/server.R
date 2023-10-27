@@ -233,10 +233,18 @@ server <- function(input, output, session) {
   ## set shp data
   shp_layer <- reactive({
     req(layer_file_path())
-    sf::read_sf(layer_file_path())})
+    sf::read_sf(layer_file_path()) })
+
   occ_data <- reactive({sf::st_as_sf(x = wrangle_data()[[1]], coords = c(input$long_var, input$lat_var),
                                      crs = sf::st_crs(shp_layer())) %>% mutate(pr_ab = as.character(pr_ab))
     })
+  observe({
+    req(shp_layer())
+    if (sf::st_geometry_type(shp_layer(), F) != "POLYGON") {
+      showModal(error_modal())
+      output$error_modal <- renderText("The layer must be a polygon.")
+    }
+  })
   ### plot shp and occurrence data
   observeEvent(input$add_layer, {
     req(layer_file_path())
@@ -288,6 +296,7 @@ server <- function(input, output, session) {
       showModal(calib_area_modal())
       hide("da_la_unav")}
   })
+
   ## update cluster filtering field for mask method
   observeEvent(input$area_calibration, {
     req(layer_file_path())
@@ -388,7 +397,7 @@ occ_dt <- reactive({
     output$error_modal <- renderText(paste(e))
   })
   })
-  ## display dummary
+  ## display summary
   predictors_summary <- function() {
     pred_rast <- c()
     for (i in pred_list()) {
@@ -436,9 +445,9 @@ occ_dt <- reactive({
 
   reduce_colin <- eventReactive(input$reduce_collin, {
     req(env_layers())
-    #preds <- terra::rast(pred_list())
     if(input$coli_method == "pearson"){
-      colin_var <- correct_colinvar(env_layer = env_layers(), method = c("pearson", th = as.character()))
+      colin_var <- correct_colinvar(env_layer = env_layers(),
+                                    method = c("pearson", th = as.character(input$pearson_threshold)))
       cr_df <- colin_var$cor_table # table
       enlayer <- colin_var$cor_variables # layer
       #corr_matrix <- col_red$cor_table
@@ -568,7 +577,6 @@ occ_dt <- reactive({
   occ_filt_out <- eventReactive(input$valid_occ_filt, {
     # data frame
     data <- wrangle_data()[[1]]#[c(input$long_var, input$lat_var)]
-    #colnames(data) <- c("x", "y")
     if(input$occ_filt_method == "moran" && input$occ_filt_type == "Geographical"){
       occ_filtered <- occfilt_geo(data = data, x = input$long_var, y = input$lat_var, env_layer = env_layers(),
                                   method = "moran", prj = terra::crs(env_layers()))
