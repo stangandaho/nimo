@@ -257,16 +257,17 @@ nimo_body <- shinydashboard::dashboardBody(
                                                   selected = "Presence"),
                                       shinyFilesButton("choose_data_file", "Load data",
                                                        "Select Species occurrence data", multiple = FALSE,
-                                                       icon = icon("file-upload")),
-                                      actionButton("area_calibration", "Calibrate area",
-                                                   icon = icon("draw-polygon"), style = bttn_primary_style)),
+                                                       icon = icon("file-upload"))
+                                      ),
                      hr(),
                      conditionalPanel("output.geo_distribution != null",
                                       shinyFilesButton("add_layer", "Add layer",
                                                        title = "Select a vector file",
                                                        icon = icon("plus"),
-                                                       multiple = FALSE, style = bttn_primary_style)
-                     ),
+                                                       multiple = FALSE, style = bttn_primary_style),
+                                      actionButton("area_calibration", "Calibrate area",
+                                                   icon = icon("draw-polygon"), style = bttn_primary_style)
+                     )
 
               )
               )
@@ -306,7 +307,7 @@ nimo_body <- shinydashboard::dashboardBody(
                          tags$h5("Reduce colinearity"),
                          selectInput("coli_method", "Method", choices = colinearity_method),
                          conditionalPanel("input.coli_method == 'pearson'",
-                                          numericInput("pearson_threshold", "Threshold", value = 0.8, min = 0, step = 0.1)),
+                                          numericInput("pearson_threshold", "Threshold", value = 0.7, min = 0, step = 0.1, max = 1)),
                          conditionalPanel("input.coli_method == 'vif'",
                                           numericInput("vif_threshold", "Threshold", value = 10, min = 1)),
                          fluidRow(column(7, actionButton("reduce_collin", "Reduce colinearity",
