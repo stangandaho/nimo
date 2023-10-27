@@ -1,4 +1,5 @@
   [![R-CMD-check](https://github.com/stangandaho/nimo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stangandaho/nimo/actions/workflows/R-CMD-check.yaml)
+  [![Code coverage](https://codecov.io/gh/stangandaho/nimo/graph/badge.svg?token=ehmZyEafyI)](https://codecov.io/gh/stangandaho/nimo)
 
 
 # `{nimo}` in brief
