@@ -11,10 +11,6 @@ name: test-coverage
 jobs:
   test-coverage:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        r-version: ['3.6.3', '4.3.1']
-
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
