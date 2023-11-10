@@ -78,7 +78,10 @@ copy_button <- function (id, label, text = "No Text", icon = NULL, width = NULL,
                       }, ...)
 }
 
-
+## Session time out
+session_time_out <- function() {
+  shiny::singleton(shiny::tags$head(shiny::tags$script(src = "nimo/session_time_out.js")))
+}
 
 #--- Dropdown - Help page -----------
 box_dropdown_item <- function (..., id = NULL, href = NULL, icon = NULL)
@@ -124,8 +127,7 @@ header <- shinydashboardPlus::dashboardHeader(title = mytitle,
 
 # SIDE BAR ----
 sidebar <- shinydashboardPlus::dashboardSidebar(
-  useShinyjs(),
-  usecopy(),
+  useShinyjs(), usecopy(), session_time_out(),
   sidebarMenu(
     id="sidebar_menu",
     menuItem("Home", tabName = "nimo_home_page", icon = icon("house-chimney")),
@@ -150,7 +152,13 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
              menuSubItem("Spatial predictions", tabName = "spatial_predict", icon = NULL),
              menuSubItem("Extrapolation ", tabName = "extrapolation", icon = NULL),
              menuSubItem("Overprediction correction", tabName = "overpredict_correct", icon = NULL)
-             )
+             ),
+    ## CONFIGURATION
+    div(
+      menuItem("", tabName = "configuration", icon = icon("wrench")),
+      style = "position:absolute; bottom:0; left:0; right:0; margin:15px 15px;
+    list-style-type: none"
+    )
   ),
   textOutput("res"),
   width = 300
@@ -333,7 +341,10 @@ nimo_body <- shinydashboard::dashboardBody(
                      selectInput("partition_type", "Partitioning type", choices = partition_types),
                      conditionalPanel("input.partition_type == 'part_random'",
                                       selectInput("part_random_method", "Method",
-                                                  choices = c("kfold", "rep_kfold", "loocv", "boot")),
+                                                  choices = c("k-fold" = "kfold",
+                                                              "Repeated k-fold" = "rep_kfold",
+                                                              "Leave-One-Out CV" = "loocv",
+                                                              "Bootstrap" = "boot")),
                                       conditionalPanel("input.part_random_method == 'kfold' | input.part_random_method == 'rep_kfold'",
                                                        numericInput("kfold_number", "Number of folds", value = 10, min = 1, step = 1)),
                                       conditionalPanel("input.part_random_method == 'rep_kfold'",
@@ -394,7 +405,9 @@ nimo_body <- shinydashboard::dashboardBody(
                                           choices = c(), multiple = TRUE, selected = c()),
                               actionButton("extract_data", "Extract data", icon = icon("table"), style = bttn_primary_style),
                               shinySaveButton(id = "save_extracted_data", label = "Save",  title = "Save occurrence data filtered",
-                                              filename = "", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
+                                              filename = "",
+                                              filetype = list(CSV = "csv", `Plain text` = "txt"),
+                                              icon = icon("save"))
                        )
               )
             )
@@ -427,7 +440,6 @@ nimo_body <- shinydashboard::dashboardBody(
                               DT::DTOutput("ens_performance"),
               ),
               column(5,
-                     h4("Ensembling parameter"),
                      selectInput("ens_method", "Method", choices = c()),
                      selectInput("ens_thr", "Threshol", choices = thr, multiple = TRUE),
                      conditionalPanel("input.ens_thr.includes('sensitivity')",
@@ -437,7 +449,10 @@ nimo_body <- shinydashboard::dashboardBody(
                      conditionalPanel("input.ens_thr_model.includes('sensitivity')",
                                       numericInput("ens_sens_model", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
                      selectInput("ens_metric", "Metric", choices = c("SORENSEN", "JACCARD", "FPB", "TSS", "KAPPA", "AUC", "IMAE", "BOYCE"), selected = "TSS"),
-                     actionButton("fit_ens", "Ensemble", style = bttn_primary_style)
+                     tagList(
+                       actionButton("fit_ens", "Assemble", style = bttn_primary_style),
+                       shiny::downloadButton("export_ens_table", "Download")
+                     )
               )
               )
             )
@@ -450,10 +465,7 @@ nimo_body <- shinydashboard::dashboardBody(
                               DT::DTOutput("esm_fitted_model_list_dt"),
                               div(style = "height:400px",
                                   DT::DTOutput("model_perf_merged", height = "90%")),
-                              tags$hr(),
-                              shinySaveButton("save_model_perf_merged", "Export",
-                                              title = "Save models performance table",
-                                              filename = "model_performance", filetype = list(CSV = "csv", `Plain text` = "txt"), icon = icon("save"))
+                              tags$hr()
               ),
               column(4,
                      selectInput("model_category", "Model category",
@@ -472,8 +484,16 @@ nimo_body <- shinydashboard::dashboardBody(
                                  selected = "Cloglog"),
                      actionButton("predict", "Predict", icon = icon("qrcode", lib = "glyphicon"), style = bttn_primary_style),
                      hr(),
-                     actionButton("merge_model_perf", "Merge performance",
-                                  icon = icon("resize-small", lib = "glyphicon"), style = bttn_primary_style)
+                     tagList(
+                       actionButton("merge_model_perf", "Merge performance",
+                                    icon = icon("resize-small", lib = "glyphicon"),
+                                    style = bttn_primary_style),
+                       shinySaveButton("save_model_perf_merged", "Export",
+                                       title = "Save models performance table",
+                                       filename = "model_performance",
+                                       filetype = list(CSV = "csv", `Plain text` = "txt"),
+                                       icon = icon("save"))
+                     )
               )
               )
             ),
@@ -597,7 +617,18 @@ nimo_body <- shinydashboard::dashboardBody(
                        )
             )
 
+            ),
+
+    # Congiguration
+    tabItem("configuration",
+            fluidPage(
+              shinyWidgets::panel(
+                tagList(numericInput("set_seed", "Set seed", value = 123, min = 0, step = 1),
+                        numericInput("sys_timeout", "Timeout (min)", value = 1, min = 1, step = 0.1),
+                        actionButton("save_config", "Save change", style = bttn_primary_style))
+              )
             )
+    )
 
 )
 )

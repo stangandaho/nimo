@@ -778,7 +778,7 @@ occ_dt <- reactive({
   observeEvent(input$back_ps_ab_samp , { showModal(bpas_modal()) })
   ########----
   sd_occ_data <- eventReactive(input$generate_bpas, {
-    set.seed(0123)
+    set.seed(global_seed())
     req(wrangle_data()[[1]])
     prt <- data_partition()[[3]] %>% table() %>% as.data.frame() %>% dplyr::select(2)
     if(input$partition_type == "part_random" && !input$part_random_method %in% c("rep_kfold", "loocv", "boot")){
@@ -1046,7 +1046,7 @@ observeEvent(input$ensemble,
 )
 
 output$selected_mod_lenght <- renderText(
-  paste("Number of chosen models for ensembling:", length(sst()) ))
+  paste("The number of models selected for assemblage:", length(sst()) ))
 
 
 ens_fitting <- eventReactive(input$fit_ens, {
@@ -1066,6 +1066,22 @@ ens_fitting <- eventReactive(input$fit_ens, {
 })
 
 output$ens_performance <- render_dt({ ens_fitting()$performance })
+## Save Ensemble table
+observe({
+  shinyjs::hide("export_ens_table")
+  if (input$fit_ens > 0) {
+    shinyjs::show("export_ens_table")
+  }
+})
+output$export_ens_table <- downloadHandler(
+  filename = function() {
+    paste0("model_ensemble_table", ".csv")
+  },
+  content = function(file) {
+    write.csv(ens_fitting()$performance, file)
+  },
+  contentType = "text/csv"
+)
 
 ## POST-MODELING
 ## PREDICTIONS
@@ -1143,7 +1159,7 @@ predict_modal <- function(){
                               selectInput("pred_rasters", "Prediction", choices = c()),
                               tagList(
                                 actionButton("reload_pred_out", "Load", icon = icon("refresh")),
-                                downloadButton("download_predict", "Save", icon = icon("save"))
+                                downloadButton("download_predict", "Download", icon = icon("download"))
                               )
                               ))
               )
@@ -1366,14 +1382,16 @@ observe({
 # Function to fetch species suggestions from GBIF API
 fetch_species_suggestions <- function(search_term) {
 
-  if (having_ip()) {
-    url <- paste0("https://api.gbif.org/v1/species/suggest?q=", URLencode(search_term))
-    response <- httr::GET(url)
-    species_list <- jsonlite::fromJSON(httr::content(response, "text", encoding = "UTF-8"))
-    if (!is.null(species_list)) {
-      return(species_list)
+  tryCatch({
+    if (having_ip()) {
+      url <- paste0("https://api.gbif.org/v1/species/suggest?q=", URLencode(search_term))
+      response <- httr::GET(url, httr::timeout((input$sys_timeout)*60))
+      species_list <- jsonlite::fromJSON(httr::content(response, "text", encoding = "UTF-8"))
+      if (!is.null(species_list)) {
+        return(species_list)
+      }
     }
-  }
+  }, error = error)
 }
 
 # Update species suggestions as user types
@@ -1609,8 +1627,9 @@ observeEvent(input$valid_data, {
   updateTabItems(session, "sidebar_menu", selected = "calibration")
 })
 
-## Confirmation notification
-### When add point occ data to map
+# CONFIGURATION
+global_seed <- reactive(input$set_seed)
+
 
 ## END SERVER
 
