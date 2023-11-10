@@ -7,13 +7,14 @@ lf_path <- reactive({
 })
 geom_vect <- reactive({
   req(lf_path())
-  geom_vect <- sf::st_make_valid(sf::read_sf(lf_path()))
+  sf_use_s2(FALSE)
+  geom_vect <- sf::st_simplify(sf::st_make_valid(sf::read_sf(lf_path())))
+  sf_use_s2(TRUE)
   if(is.na(sf::st_crs(geom_vect))){
     geom_vect <- sf::st_set_crs(geom_vect, 4326); geom_vect
   } else {
     geom_vect <- geom_vect %>%
-      sf::st_transform(crs = st_crs(4326))
-    geom_vect
+      sf::st_transform(crs = st_crs(4326)); geom_vect
   }
   })
 
