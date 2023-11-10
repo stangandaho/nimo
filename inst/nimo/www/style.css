@@ -41,9 +41,14 @@ h3 {
     text-align: center;
 }
 
+h4 {
+    font-family: 'Montserrat-Bold',sans-serif;
+    font-size: 2rem;
+}
+
 h5 {
     font-family: 'Montserrat-Regular',sans-serif;
-    font-size: 2rem;
+    font-size: 1.9rem;
     text-align: center;
 }
 
