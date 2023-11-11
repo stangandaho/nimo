@@ -1,6 +1,6 @@
 Package: nimo
 Type: Package
-Title: Species distribution modeling with GBIF occurrence data and graphical user interface
+Title: nimo: A Graphical User Interface-Based R Package for Species Distribution Modeling
 Version: 0.2.0
 Date: 2023-10-05
 Depends: R (>= 3.5.0)
