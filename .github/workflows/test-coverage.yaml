@@ -40,13 +40,6 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds') }}
           restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-
 
-      - name: Install dependencies
-        run: |
-          install.packages("remotes")
-          remotes::install_github("sjevelazco/flexsdm")
-          remotes::install_deps(dependencies = TRUE)
-        shell: Rscript {0}
-
       - name: Test coverage
         run: covr::codecov()
         shell: Rscript {0}
