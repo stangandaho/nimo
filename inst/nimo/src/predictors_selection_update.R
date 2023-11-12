@@ -1,52 +1,39 @@
+## Define predictors from data clomuns name
+predictors <- reactive({
+  req(ready_df_mod())
+  if(any(startsWith(colnames(ready_df_mod()), ".part"))) {
+    colnames(ready_df_mod())[!startsWith(colnames(ready_df_mod()), ".part")] }else{colnames(ready_df_mod())}
+})
 ## GAM
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "gam_predictors", choices = colnames(ready_df_mod()))
-})
+  updateSelectInput(inputId = "gam_predictors", choices = predictors()) })
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "gam_predictors_f", choices = colnames(ready_df_mod())[ !colnames(ready_df_mod()) %in% input$gam_predictors])
-})
+  updateSelectInput(inputId = "gam_predictors_f", choices = predictors()[ !predictors() %in% input$gam_predictors]) })
 ## update for GAM fit_formula placholder
 observe({
-  req(ready_df_mod())
   if (!is.null(input$gam_predictors_f)) {
     formula_str <- paste("pr_ab", "~",
                          paste("s(", input$gam_predictors, ")", collapse=" + ", sep = ""),
                          "+", paste(input$gam_predictors_f, collapse = " + ", sep = ""))
   }else{
     formula_str <- paste("pr_ab", "~",
-                         paste("s(", input$gam_predictors, ")", collapse=" + ", sep = ""))
-  }
+                         paste("s(", input$gam_predictors, ")", collapse=" + ", sep = "")) }
   updateTextInput(inputId = "gam_fit_formula", value = formula_str)
 })
-# observe({
-#   req(ready_df_mod())
-#   updateSelectInput(inputId = "gam_partition", choices = colnames(ready_df_mod())[ !colnames(ready_df_mod()) %in% input$gam_predictors])
-# })
 
 ## GAU
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "gau_predictors", choices = colnames(ready_df_mod()))
-})
+  updateSelectInput(inputId = "gau_predictors", choices = predictors()) })
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "gau_predictors_f", choices = colnames(ready_df_mod())[ !colnames(ready_df_mod()) %in% input$gau_predictors])
-})
+  updateSelectInput(inputId = "gau_predictors_f", choices = predictors()[ !predictors() %in% input$gau_predictors]) })
 
 ## GBM
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "gbm_predictors", choices = colnames(ready_df_mod()))
-})
+  updateSelectInput(inputId = "gbm_predictors", choices = predictors()) })
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "gbm_predictors_f", choices = colnames(ready_df_mod())[ !colnames(ready_df_mod()) %in% input$gbm_predictors])
-})
+  updateSelectInput(inputId = "gbm_predictors_f", choices = predictors()[ !predictors() %in% input$gbm_predictors]) })
 ## update for GBM fit_formula placholder
 observe({
-  req(ready_df_mod())
   if (!is.null(input$gbm_predictors_f)) {
     formula_str <- paste("pr_ab", "~",
                          paste(input$gbm_predictors, collapse = " + ", sep = ""),
@@ -55,21 +42,16 @@ observe({
     formula_str <- paste("pr_ab", "~",
                          paste(input$gbm_predictors, collapse = " + ", sep = ""))
   }
-  updateTextInput(inputId = "gbm_fit_formula", value = formula_str)
-})
+  updateTextInput(inputId = "gbm_fit_formula", value = formula_str) })
 
 ## GLM
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "glm_predictors", choices = colnames(ready_df_mod()))
-})
+  updateSelectInput(inputId = "glm_predictors", choices = predictors()) })
 observe({
   req(ready_df_mod())
-  updateSelectInput(inputId = "glm_predictors_f", choices = colnames(ready_df_mod())[ !colnames(ready_df_mod()) %in% input$glm_predictors])
-})
-## update for GBM fit_formula placholder
+  updateSelectInput(inputId = "glm_predictors_f", choices = predictors()[ !predictors() %in% input$glm_predictors]) })
+## update for GLM fit_formula placholder
 observe({
-  req(ready_df_mod())
   if (!is.null(input$glm_predictors_f)) {
     formula_str <- paste("pr_ab", "~",
                          paste(input$glm_predictors, collapse = " + ", sep = ""),
@@ -78,65 +60,37 @@ observe({
     formula_str <- paste("pr_ab", "~",
                          paste(input$glm_predictors, collapse = " + ", sep = ""))
   }
-  updateTextInput(inputId = "glm_fit_formula", value = formula_str)
-})
+  updateTextInput(inputId = "glm_fit_formula", value = formula_str) })
 
 
 ## MAX
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "max_predictors", choices = colnames(ready_df_mod()))
-})
+  updateSelectInput(inputId = "max_predictors", choices = predictors()) })
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "max_predictors_f", choices = colnames(ready_df_mod())[ !colnames(ready_df_mod()) %in% input$max_predictors])
-})
-observe({
-  if ("default" %in% input$max_classes) {
-    updateSelectInput(inputId = "max_classes",
-                      choices = c("Default" = "default"),
-                      selected = "default"
-    )
-  } else {
-    updateSelectInput(inputId = "max_classes",
-                      choices = c("Default" = "default", "Linear" = "l", "Quadratic" = "q", "Hinge" = "h", "Product" = "p", "Threshold" = "t"),
-                      selected = input$max_classes
-    )
-  }
-})
+  updateSelectInput(inputId = "max_predictors_f", choices = predictors()[ !predictors() %in% input$max_predictors]) })
+## update for MAX fit_formula placholder
+
 ## NET
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "net_predictors", choices = colnames(ready_df_mod()))
-})
+  updateSelectInput(inputId = "net_predictors", choices = predictors()) })
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "net_predictors_f", choices = colnames(ready_df_mod())[ !colnames(ready_df_mod()) %in% input$net_predictors])
-})
+  updateSelectInput(inputId = "net_predictors_f", choices = predictors()[ !predictors() %in% input$net_predictors]) })
 observe({
-  req(ready_df_mod())
-  if (!is.null(input$net_predictors_f)) {
-    formula_str <- paste("pr_ab", "~",
-                         paste(input$net_predictors, collapse = " + ", sep = ""),
-                         "+", paste(input$net_predictors_f, collapse = " + ", sep = ""))
+  if (!is.null(input$max_fit_formula)) {
+    formula_str <- stats::formula(as.formula(input$max_fit_formula))
   }else{
-    formula_str <- paste("pr_ab", "~",
-                         paste(input$net_predictors, collapse = " + ", sep = ""))
+    formula_str <- NULL
   }
-  updateTextInput(inputId = "net_fit_formula", value = formula_str)
-})
+  updateTextInput(inputId = "max_fit_formula", value = formula_str) })
 
 ## RAF
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "raf_predictors", choices = colnames(ready_df_mod()))
+  updateSelectInput(inputId = "raf_predictors", choices = predictors())
 })
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "raf_predictors_f", choices = colnames(ready_df_mod())[ !colnames(ready_df_mod()) %in% input$raf_predictors])
+  updateSelectInput(inputId = "raf_predictors_f", choices = predictors()[ !predictors() %in% input$raf_predictors])
 })
 observe({
-  req(ready_df_mod())
   if (!is.null(input$raf_predictors_f)) {
     formula_str <- paste("pr_ab", "~",
                          paste(input$raf_predictors, collapse = " + ", sep = ""),
@@ -150,15 +104,12 @@ observe({
 
 ## SVM
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "svm_predictors", choices = colnames(ready_df_mod()))
+  updateSelectInput(inputId = "svm_predictors", choices = predictors())
 })
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "svm_predictors_f", choices = colnames(ready_df_mod())[ !colnames(ready_df_mod()) %in% input$svm_predictors])
+  updateSelectInput(inputId = "svm_predictors_f", choices = predictors()[ !predictors() %in% input$svm_predictors])
 })
 observe({
-  req(ready_df_mod())
   if (!is.null(input$svm_predictors_f)) {
     formula_str <- paste("pr_ab", "~",
                          paste(input$svm_predictors, collapse = " + ", sep = ""),
@@ -173,42 +124,105 @@ observe({
 ################################### ESM ########################################
 ## GAM -----
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "gam_esm_predictors", choices = colnames(ready_df_mod()))
+  updateSelectInput(inputId = "gam_esm_predictors", choices = predictors())
 })
 
 
 ## GAU -------
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "gau_esm_predictors", choices = colnames(ready_df_mod()))
+  updateSelectInput(inputId = "gau_esm_predictors", choices = predictors())
 })
 
 ## GBM ------
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "gbm_esm_predictors", choices = colnames(ready_df_mod()))
+  updateSelectInput(inputId = "gbm_esm_predictors", choices = predictors())
 })
 
 ## GLM ---------
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "glm_esm_predictors", choices = colnames(ready_df_mod()))
+  updateSelectInput(inputId = "glm_esm_predictors", choices = predictors())
 })
 
 ## MAX -----------
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "max_esm_predictors", choices = colnames(ready_df_mod()))
+  updateSelectInput(inputId = "max_esm_predictors", choices = predictors())
 })
 ## NET ---------
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "net_esm_predictors", choices = colnames(ready_df_mod()))
+  updateSelectInput(inputId = "net_esm_predictors", choices = predictors())
 })
 
 ## SVM
 observe({
-  req(ready_df_mod())
-  updateSelectInput(inputId = "svm_esm_predictors", choices = colnames(ready_df_mod()))
+  updateSelectInput(inputId = "svm_esm_predictors", choices = predictors())
 })
+
+############ ------------ TUNING ----------------###################
+## GBM
+observe({
+  updateSelectInput(inputId = "t_gbm_predictors", choices = predictors()) })
+observe({
+  updateSelectInput(inputId = "t_gbm_predictors_f", choices = predictors()[ !predictors() %in% input$t_gbm_predictors]) })
+## update for GBM fit_formula placholder
+observe({
+  if (!is.null(input$t_gbm_predictors_f)) {
+    formula_str <- paste("pr_ab", "~",
+                         paste(input$t_gbm_predictors, collapse = " + ", sep = ""),
+                         "+", paste(input$t_gbm_predictors_f, collapse = " + ", sep = ""))
+  }else{
+    formula_str <- paste("pr_ab", "~",
+                         paste(input$t_gbm_predictors, collapse = " + ", sep = ""))
+  }
+  updateTextInput(inputId = "t_gbm_fit_formula", value = formula_str) })
+
+## MAX
+observe({
+  updateSelectInput(inputId = "t_max_predictors", choices = predictors()) })
+observe({
+  updateSelectInput(inputId = "t_max_predictors_f", choices = predictors()[ !predictors() %in% input$max_predictors]) })
+
+
+## NET
+observe({
+  updateSelectInput(inputId = "t_net_predictors", choices = predictors()) })
+observe({
+  updateSelectInput(inputId = "t_net_predictors_f", choices = predictors()[ !predictors() %in% input$net_predictors]) })
+
+## RAF
+observe({
+  updateSelectInput(inputId = "t_raf_predictors", choices = predictors())
+})
+observe({
+  updateSelectInput(inputId = "t_raf_predictors_f", choices = predictors()[ !predictors() %in% input$t_raf_predictors])
+})
+observe({
+  if (!is.null(input$t_raf_predictors_f)) {
+    formula_str <- paste("pr_ab", "~",
+                         paste(input$t_raf_predictors, collapse = " + ", sep = ""),
+                         "+", paste(input$t_raf_predictors_f, collapse = " + ", sep = ""))
+  }else{
+    formula_str <- paste("pr_ab", "~",
+                         paste(input$t_raf_predictors, collapse = " + ", sep = ""))
+  }
+  updateTextInput(inputId = "t_raf_formula", value = formula_str)
+})
+
+## SVM
+observe({
+  updateSelectInput(inputId = "t_svm_predictors", choices = predictors())
+})
+observe({
+  updateSelectInput(inputId = "t_svm_predictors_f", choices = predictors()[ !predictors() %in% input$svm_predictors])
+})
+observe({
+  if (!is.null(input$t_svm_predictors_f)) {
+    formula_str <- paste("pr_ab", "~",
+                         paste(input$t_svm_predictors, collapse = " + ", sep = ""),
+                         "+", paste(input$t_svm_predictors_f, collapse = " + ", sep = ""))
+  }else{
+    formula_str <- paste("pr_ab", "~",
+                         paste(input$t_svm_predictors, collapse = " + ", sep = ""))
+  }
+  updateTextInput(inputId = "t_svm_formula", value = formula_str)
+})
+

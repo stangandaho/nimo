@@ -76,7 +76,6 @@
 
   max_fitting <- eventReactive(input$fit_max, {
     req(input$max_predictors)
-    classes <- paste0(input$max_classes, collapse = "")
     tryCatch({
       fit_max(
         data = ready_df_mod(),
@@ -85,11 +84,12 @@
         predictors_f = input$max_predictors_f,
         #fit_formula = stats::formula(as.formula(input$max_fit_formula)),
         partition = ".part",
+        background = ready_df_mod(),
         thr = if(any(input$max_thr %in% c("sensitivity"))) {
           c(input$max_thr, "sens" = as.character(input$max_sens))
         } else{input$max_thr},
         clamp = input$max_clamp,
-        classes = classes,
+        classes = input$max_classes,
         pred_type = input$max_pred_type,
         regmult = input$max_regmult
       )
@@ -104,7 +104,7 @@
         response = "pr_ab",
         predictors = input$net_predictors,
         predictors_f = input$net_predictors_f,
-        fit_formula = stats::formula(as.formula(input$net_fit_formula)),
+        #fit_formula = stats::formula(as.formula(input$net_fit_formula)),
         partition = ".part",
         thr = if(any(input$net_thr %in% c("sensitivity"))) {
           c(input$net_thr, "sens" = as.character(input$net_sens))
