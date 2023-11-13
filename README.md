@@ -66,7 +66,7 @@ All necessaries concept and part of **nimo** are explained with screenshot and e
 |----------------------------------------|----------------|----------------------------------------------------------------------------------------------- |
 | Pre-modeling user interface            | 5              | Completed  ✅ |
 | Construct and validate models with default hyper-parameter [(model fitting)](https://sjevelazco.github.io/flexsdm/articles/v02_modeling.html)| 5 | Completed  ✅ |
-|  Model tuning by searching for the best combination of hyper-parameter| 4 | In progess|
+|  Model tuning by searching for the best combination of hyper-parameter| 5 | Completed ✅|
 | Documentation                          | 5              | Completed  ✅     |
 | Add tooltip to briefly explain inputs by mouse hovering | 2               | Not started   |
 
