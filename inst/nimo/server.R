@@ -33,8 +33,9 @@ server <- function(input, output, session) {
   source(paste0(src_root, "find_highly_coor_var.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "predictors_selection_update.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "render_model_fitting.R"), local = TRUE)[1]
-  source(paste0(src_root, "render_esm_model_fitting.R"), verbose = FALSE, local = TRUE)$value
+  #source(paste0(src_root, "render_esm_model_fitting.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "model_fitting.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "model_tuning.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "esm_model_fitting.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "handle_sf.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "leaflet_map.R"), verbose = FALSE, local = TRUE)$value
@@ -118,7 +119,7 @@ server <- function(input, output, session) {
                   column(6, selectInput("species_var", "Species column",
                                         choices = colnames(sdm_data))),
                   column(6, selectInput("unique_species", "Species",
-                                        choices = c(), multiple = TRUE))
+                                        choices = c(), multiple = FALSE))
                 ),
                 fluidRow(
                   column(4, selectInput("long_var", "Longitude", choices = colnames(sdm_data))),
@@ -154,7 +155,8 @@ server <- function(input, output, session) {
   ### update unique_species selection
   observeEvent(input$species_var, {
     updateSelectInput(session, "unique_species",
-                      choices = unique(species_data()[, input$species_var]))
+                      choices = unique(species_data()[, input$species_var]),
+                      selected = unique(species_data()[, input$species_var])[1])
   })
   observeEvent(input$occ_var, {
     updateSelectInput(session, "presence",
@@ -301,7 +303,7 @@ server <- function(input, output, session) {
   observeEvent(input$area_calibration, {
     req(layer_file_path())
     updateSelectInput(session, "clusters_field",
-                      choices = colnames(shp_layer()))
+                      choices = colnames(shp_layer())[colnames(shp_layer()) != "geometry"])
   })
 
   ## function to calibrate area
@@ -962,8 +964,8 @@ occ_dt <- reactive({
     req(valided_dp())
     sdm_extract(
       data = valided_dp(),
-      x = input$long_var,
-      y = input$lat_var,
+      x = ifelse(input$partition_type %in% c("part_sband", "part_sblock", "part_senv"), "x", input$long_var),
+      y = ifelse(input$partition_type %in% c("part_sband", "part_sblock", "part_senv"), "y", input$lat_var),
       env_layer = env_layers(),
       variables = input$extract_variables,
       filter_na = TRUE
@@ -985,6 +987,17 @@ occ_dt <- reactive({
 
   ## MODELING -----------
   ### import existing data
+  observe({
+    if (input$esm == TRUE) {
+      updateCheckboxInput(inputId = "tuning", value = FALSE)
+      updateCheckboxInput(inputId = "esm", value = TRUE)
+    }
+    if (input$tuning == TRUE) {
+      updateCheckboxInput(inputId = "esm", value = FALSE)
+      updateCheckboxInput(inputId = "tuning", value = TRUE)
+    }
+  })
+
   shinyFileChoose(input, id = "import_exiting_df4mod", roots = root,
                   filetype = c("txt", "csv"))
   exiting_df4mod_path <- reactive({
@@ -992,8 +1005,10 @@ occ_dt <- reactive({
   })
 
   exiting_df4mod <- reactive({
-    req(exiting_df4mod_path())
-    read.csv(file = exiting_df4mod_path(), header = T)
+    tryCatch({
+      req(exiting_df4mod_path())
+      read.csv(file = exiting_df4mod_path(), header = T)
+    }, error = error)
   })
 
   ## update algorithm to use selection
@@ -1006,7 +1021,8 @@ occ_dt <- reactive({
   })
   ## data frame to use for modeling
   ready_df_mod <- reactive({
-    if(input$use_existing_df4mod == TRUE){
+    req(exiting_df4mod_path())
+    if(exiting_df4mod_path() != ""){
       req(exiting_df4mod())
       data <- exiting_df4mod()
     } else {
@@ -1033,8 +1049,9 @@ occ_dt <- reactive({
                      type = loader_type, color = loader_color)
                    ),
           ),
-        tabPanel("Performance metric", value = "xx_performance_metric" , DT::DTOutput("xx_performance_metric")),
-        tabPanel("Predicted suitability", DT::DTOutput("xx_predicted_suitability"))
+        tabPanel("Performance metric", value = "xx_pm" , DT::DTOutput("xx_performance_metric")),
+        tabPanel("Predicted suitability", DT::DTOutput("xx_predicted_suitability")),
+        tabPanel("Hyper-parameters performance", DT::DTOutput("xx_hyper_performance"))
       )
     )
   })
@@ -1082,6 +1099,15 @@ output$export_ens_table <- downloadHandler(
   },
   contentType = "text/csv"
 )
+## Hide
+observe({
+  shinyjs::hide("xx_hyper_performance")
+  if (input$tuning == TRUE) {
+    shinyjs::show("xx_hyper_performance")
+  }else{
+    shinyjs::hide("xx_hyper_performance")
+  }
+})
 
 ## POST-MODELING
 ## PREDICTIONS
@@ -1154,26 +1180,29 @@ predict_modal <- function(){
   modalDialog(title = h3("Spatial predictions", style = "text-align:left;"),
               footer = modalButton("Ok"), size = "l",
               fluidRow(column(9,
-                              plotOutput("predict_raster_plot")),
+                              shinycssloaders::withSpinner(
+                                plotOutput("predict_raster_plot"),
+                                color = loader_color, type = loader_type)
+                              ),
                        column(3,
                               selectInput("pred_rasters", "Prediction", choices = c()),
-                              tagList(
-                                actionButton("reload_pred_out", "Load", icon = icon("refresh")),
                                 downloadButton("download_predict", "Download", icon = icon("download"))
-                              )
                               ))
               )
 }
+
+observeEvent(input$predict, {showModal(predict_modal())})
 
 pred_rst <- eventReactive(input$predict, {
   tryCatch({
     predict_rasters(prediction = prediction())
   }, error = error)
 })
-observeEvent(input$predict, {showModal(predict_modal())})
 
-observeEvent(input$reload_pred_out, {
-  updateSelectInput(inputId = "pred_rasters", choices = names(pred_rst()))
+observeEvent(input$predict, {
+  req(pred_rst())
+  updateSelectInput(inputId = "pred_rasters", choices = names(pred_rst()),
+                    selected = names(pred_rst())[1])
   ### add from posteriori - overprediction correction
   updateSelectInput(inputId = "ov_p_cont_suit", choices = names(pred_rst()),
                     selected = names(pred_rst())[1])
@@ -1183,8 +1212,7 @@ observeEvent(input$pred_rasters, {
   req(input$pred_rasters)
   tryCatch({
     output$predict_raster_plot <- renderPlot({
-      terra::plot(x = pred_rst()[[input$pred_rasters]],
-                  y = names(pred_rst()[[input$pred_rasters]]),
+      terra::plot(pred_rst()[[input$pred_rasters]],
                   main = names(pred_rst()[[input$pred_rasters]]))
     })
   }, error = error)
@@ -1235,9 +1263,10 @@ observe({
 })
 
 ## Download model output
-observe(
-{  req(input$models_output)
-  if (input$models_output == "xx_performance_metric") {
+observe({
+  req(input$models_output)
+  shinyjs::hide("download_models_output")
+  if (input$models_output == "xx_pm") {
     shinyjs::show("download_models_output")
   } else{
     shinyjs::hide("download_models_output")
@@ -1334,19 +1363,28 @@ output$ov_p_raster <- renderPlot({
 })
 
 ## Download overprediction correction
-observe({shinyjs::hide("download_ov_p_correct")})
-observe({
+observeEvent(input$id_download_ov_p_correct, {
   req(over_correct())
-  if (class(over_correct()) == "SpatRaster") {
-    shinyjs::show("download_ov_p_correct")
-  }
+  showModal(
+    modalDialog(
+      size = "m",
+      selectInput(inputId = "correction_chosen", "Choose a correction",
+                  choices = names(over_correct()),
+                  selected = names(over_correct()[1])),
+      footer = tagList(modalButton("Ok"), downloadButton("download_ov_p_correct"))
+    )
+  )
 })
+
+
 output$download_ov_p_correct <- downloadHandler(
   filename = function() {
-    paste0(names(over_correct()[1]),"_overp_corrected", ".tiff")
+    req(over_correct())
+    prefix <- names(over_correct())[which(names(over_correct()) == input$correction_chosen)]
+    paste0(prefix,"_overp_corrected", ".tiff")
   },
   content = function(file) {
-    terra::writeRaster(over_correct(), file, overwrite = T)
+    terra::writeRaster(over_correct()[input$correction_chosen], file, overwrite = T)
   }
 )
 

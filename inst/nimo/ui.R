@@ -9,6 +9,9 @@ thr <- c("No omission" = "lpt", "Sensitivity = specificity" = "equal_sens_spec",
          "Sorensen" = "max_sorensen", "FPB" = "max_fpb",
          "Sensitivity" = "sensitivity")
 
+# Metric
+metric <- c("SORENSEN", "JACCARD", "FPB", "TSS", "KAPPA", "AUC", "IMAE", "BOYCE")
+
 # Button style
 bttn_primary_style <-  paste0("background-color:", "#065325;", "color:#ffffff;")
 bttn_second_style <- paste0("background-color:#065325;", "color:#ffffff;", "hover:red")
@@ -415,21 +418,21 @@ nimo_body <- shinydashboard::dashboardBody(
     ## MODELING
     ## Model fiting ----
     tabItem("model_fiting",
-            fluidPage(
-              fluidRow(column(6,
-                              selectInput("fit_model_algorithm", label = "Algorithm", choices = c(),
-                                          multiple = TRUE, selected = c(), width = "100%")),
-                       column(2, br(), checkboxInput("use_existing_df4mod", "Use existing data")),
-                       column(2, br(), conditionalPanel("input.use_existing_df4mod == true",
-                                                        shinyFilesButton("import_exiting_df4mod", "Load data",
-                                                                         title = "Import data for modeling",
-                                                                         icon = icon("upload"), multiple = FALSE))
+              fluidRow(
+                column(6,
+                       selectInput("fit_model_algorithm", label = "Algorithm", choices = c(),
+                                   multiple = TRUE, selected = c(), width = "100%")),
+                column(2,
+                       tagList(checkboxInput("esm", "ESM"))
+                ),
+                column(2,
+                       checkboxInput("tuning", "Tune")),
+                column(2,
+                       shinyFilesButton("import_exiting_df4mod", "Load data",
+                                        title = "Import data for modeling",
+                                        icon = icon("upload"), multiple = FALSE))
                        ),
-                       column(2, br(), conditionalPanel("input.import_exiting_df4mod",
-                                                        checkboxInput("esm", "ESM"))
-                       )),
               uiOutput("dynamic_model_fitting")
-            )
             ),
     tabItem("model_ensembling",
             fluidPage(
@@ -448,7 +451,7 @@ nimo_body <- shinydashboard::dashboardBody(
                                       selectInput("ens_thr_model", "Model threshold", choices = thr, selected = "equal_sens_spec")),
                      conditionalPanel("input.ens_thr_model.includes('sensitivity')",
                                       numericInput("ens_sens_model", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
-                     selectInput("ens_metric", "Metric", choices = c("SORENSEN", "JACCARD", "FPB", "TSS", "KAPPA", "AUC", "IMAE", "BOYCE"), selected = "TSS"),
+                     selectInput("ens_metric", "Metric", choices = metric, selected = "TSS"),
                      tagList(
                        actionButton("fit_ens", "Assemble", style = bttn_primary_style),
                        shiny::downloadButton("export_ens_table", "Download")
@@ -538,7 +541,8 @@ nimo_body <- shinydashboard::dashboardBody(
                                         numericInput("ov_p_buffer", "Buffer (m)", min = 1, value = 1500)),
                        tagList(
                          actionButton("ov_p_correct", "Correct", style = bttn_primary_style),
-                         downloadButton("download_ov_p_correct")
+                         actionButton("id_download_ov_p_correct", label = "Download",
+                                      icon = shiny::icon("download"))
                        )
                        )
               )
