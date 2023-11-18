@@ -20,8 +20,10 @@ jobs:
         with:
           use-public-rspm: true
 
-      - name: Install flexsdm
-        run: Rscript -e 'remotes::install_github("sjevelazco/flexsdm")'
+      - name: Query dependencies
+        run: |
+          install.packages('remotes')
+          remotes::install_github("sjevelazco/flexsdm")
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
