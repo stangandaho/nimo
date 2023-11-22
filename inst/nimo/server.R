@@ -54,7 +54,7 @@ server <- function(input, output, session) {
                                                     title = "Project Directory",
                                                     icon = icon("folder"))),
                column(6, checkboxInput("cali_area", "Calibrate area", value = TRUE))),
-      fluidRow(column(6, selectInput("algorithm", "Algorithm", choices = algorithm, multiple = TRUE)),
+      fluidRow(column(6, selectInput("algorithm", "Algorithm", choices = algorithm, multiple = TRUE, selected = "raf")),
                column(6, selectInput("ensemble", "Ensemble", choices = ensemble, selected = "mean"))),
       verbatimTextOutput("dir_setup_success")
     )
@@ -154,17 +154,21 @@ server <- function(input, output, session) {
     })
   ### update unique_species selection
   observeEvent(input$species_var, {
-    updateSelectInput(session, "unique_species",
-                      choices = unique(species_data()[, input$species_var]),
-                      selected = unique(species_data()[, input$species_var])[1])
+    tryCatch({
+      updateSelectInput(session, "unique_species",
+                        choices = unique(species_data()[, input$species_var]),
+                        selected = unique(species_data()[, input$species_var])[1])
+    }, error = error)
   })
   observeEvent(input$occ_var, {
-    updateSelectInput(session, "presence",
-                      choices = unique(species_data()[, input$occ_var]))
-    updateSelectInput(session, "abscence",
-                      choices = unique(species_data()[, input$occ_var]))
-    updateSelectInput(session, "var_to_conserve",
-                      choices = colnames(species_data()))
+    tryCatch({
+      updateSelectInput(session, "presence",
+                        choices = unique(species_data()[, input$occ_var]))
+      updateSelectInput(session, "abscence",
+                        choices = unique(species_data()[, input$occ_var]))
+      updateSelectInput(session, "var_to_conserve",
+                        choices = colnames(species_data()))
+    }, error = error)
   })
   ## wrangle data imported -----
   wrangle_data <- eventReactive(input$valid_data, {
@@ -276,7 +280,7 @@ server <- function(input, output, session) {
                   column(4,
                     strong(textOutput("da_la_unav"), style = "color:#c52323; text-align:justify"),
                     br(),
-                    selectInput("calib_area_method", "Methode", choices = calib_area_method),
+                    selectInput("calib_area_method", "Method", choices = calib_area_method),
                     conditionalPanel("input.calib_area_method == 'buffer' | input.calib_area_method == 'bmcp'",
                                      numericInput("calib_area_width", "Width (m)", value = 3000, min = 5, width = "100%")),
                     conditionalPanel("input.calib_area_method == 'mask'",
@@ -881,10 +885,11 @@ occ_dt <- reactive({
     return(bg)
   })
 
-  c_occ_data <- reactive({dplyr::bind_rows(wrangle_data()[[1]], sd_occ_data())})
-  output$new_points <- st_render_dt({sd_occ_data()})
-  output$complete_occ_data <- st_render_dt({c_occ_data()})
-  output$pbas_plot <- renderPlot({
+  c_occ_data <- reactive({
+    dplyr::bind_rows(wrangle_data()[[1]], sd_occ_data())})
+    output$new_points <- st_render_dt({sd_occ_data()})
+    output$complete_occ_data <- st_render_dt({c_occ_data()})
+    output$pbas_plot <- renderPlot({
     req(c_occ_data())
     ggplot()+
       geom_sf(data = shp_layer())+
@@ -948,9 +953,20 @@ occ_dt <- reactive({
       val_dp <- partion$part
     }
     return(val_dp)
-
   })
-
+observeEvent(input$valided_dp, {
+  tryCatch({
+    if (is.data.frame(valided_dp())) {
+      showNotification(
+        id = "valided_dp",
+        ui = "Partition validated",
+        duration = 4,
+        closeButton = TRUE,
+        type = "message"
+      )
+    }
+  })
+})
   ## ETRACTION ---------
   ## update predictor selection
   observe({
@@ -1047,14 +1063,15 @@ occ_dt <- reactive({
                    shinycssloaders::withSpinner(
                      verbatimTextOutput("xx_model"),
                      type = loader_type, color = loader_color)
-                   ),
+                   )
           ),
         tabPanel("Performance metric", value = "xx_pm" , DT::DTOutput("xx_performance_metric")),
         tabPanel("Predicted suitability", DT::DTOutput("xx_predicted_suitability")),
-        tabPanel("Hyper-parameters performance", DT::DTOutput("xx_hyper_performance"))
+        if(input$tuning) tabPanel(title = "Hyper-parameters performance", DT::DTOutput("xx_hyper_performance"))
       )
     )
   })
+
 
 ## ENSEMBLING ----
 observeEvent(input$ensemble,
@@ -1100,14 +1117,14 @@ output$export_ens_table <- downloadHandler(
   contentType = "text/csv"
 )
 ## Hide
-observe({
-  shinyjs::hide("xx_hyper_performance")
-  if (input$tuning == TRUE) {
-    shinyjs::show("xx_hyper_performance")
-  }else{
-    shinyjs::hide("xx_hyper_performance")
-  }
-})
+# observe({
+#   shinyjs::hide("xx_hyper_performance")
+#   if (input$tuning == TRUE) {
+#     shinyjs::show("xx_hyper_performance")
+#   }else{
+#     shinyjs::hide("xx_hyper_performance")
+#   }
+# })
 
 ## POST-MODELING
 ## PREDICTIONS

@@ -530,7 +530,7 @@ nimo_body <- shinydashboard::dashboardBody(
                          selectInput("ov_p_lon", "Longitude", choices = c(), width = "60%"),
                          selectInput("ov_p_lat", "Latitude", choices = c(), width = "60%")
                        ),
-                       selectInput("ov_p_method", "Methode",
+                       selectInput("ov_p_method", "Method",
                                    choices = c("Occurrences Based Restriction" = "obr",
                                                "Presence" = "pres",
                                                "Lower Quantile" = "lq",
@@ -628,7 +628,7 @@ nimo_body <- shinydashboard::dashboardBody(
             fluidPage(
               shinyWidgets::panel(
                 tagList(numericInput("set_seed", "Set seed", value = 123, min = 0, step = 1),
-                        numericInput("sys_timeout", "Timeout (min)", value = 1, min = 1, step = 0.1),
+                        numericInput("sys_timeout", "Timeout (min)", value = 5, min = 1, step = 0.1),
                         actionButton("save_config", "Save change", style = bttn_primary_style))
               )
             )
