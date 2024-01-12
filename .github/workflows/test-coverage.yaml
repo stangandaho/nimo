@@ -22,6 +22,7 @@ jobs:
 
       - name: Query dependencies
         run: |
+          install.packages("remotes")
           Rscript -e 'remotes::install_github("sjevelazco/flexsdm")'
 
       - uses: r-lib/actions/setup-r-dependencies@v2
