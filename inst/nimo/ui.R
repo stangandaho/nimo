@@ -59,14 +59,14 @@ countries <- ccode$iso
 names(countries) <- ccode$country
 
 #--- Copy citation ---
-## --> ALL OBJECT IMPORTED FROM shinyCopy2clipboard: https://github.com/deepanshu88/shinyCopy2clipboard/tree/main
+## --> OBJECT IMPORTED FROM shinyCopy2clipboard: https://github.com/deepanshu88/shinyCopy2clipboard/tree/main
 usecopy <- function (){
   tagList(shiny::singleton(shiny::tags$head(shiny::tags$script(src = "nimo/clipboard.min.js"),
                                             shiny::tags$script(src = "nimo/copy2clipboard.js"))),
           shiny::tags$body(shiny::tags$script(src = "nimo/tooltip.js")))
 }
 
-###
+##
 copy_button <- function (id, label, text = "No Text", icon = NULL, width = NULL,
                          class = NULL, modal = FALSE, ...){
   shiny::actionButton(inputId = id, label = label, icon = icon,
@@ -170,7 +170,6 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
 
 # BODY ----
 nimo_body <- shinydashboard::dashboardBody(
- # customTheme,
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "nimo/style.css"),
     tags$link(rel = "icon", type = "image/png", href = nimo_logo),
@@ -234,7 +233,7 @@ nimo_body <- shinydashboard::dashboardBody(
                            div(h5("nimo is open-source and freely available for use, distributed under the MIT license.")),
                            # div(h5("When they are used in a publication, we ask that authors to cite the following reference:")),
                            # br(),
-                           # div(h5("GANDAHO, S.M. . (2023).", strong(" nimo: A GUI for flexible"))),
+                           # div(h5("GANDAHO, S.M. . (2023).", strong(" nimo: ..."))),
                            # div(h5(strong("species distribution modeling."), em("Journal of ..."),", xx(6), xxx-xxx.")),
                            # br(),
                            # div(h5(strong("Failure to properly cite the software is considered a violation of the license🥺"),

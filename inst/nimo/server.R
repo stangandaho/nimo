@@ -1,34 +1,9 @@
-# Algotithm
-algorithm <- c("Generalized Additive Models" = "gam", "Maximum Entropy" = "max",
-               "Neural Networks" = "net", "Generalized Linear Models" = "glm",
-               "Gaussian Process" = "gau", "Generalized Boosted Regression" = "gbm",
-               "Random Forest" = "raf", "Support Vector Machine" = "svm")
-# Ensemble method
-ensemble <- c("Average" = "mean", "Super average" = "meansup", "Weighted average" = "meanw",
-              "Median" = "median", "Based on Threshold" = "meanthr")
-# Calibration area method
-calib_area_method <- c("Buffer" = "buffer", "Minimum convex polygon" = "mcp",
-                       "Buffered minimum convex polygon" = "bmcp", "Mask" = "mask")
-# Occurrence filtering method
-occ_filt_method <- c("Moran" = "moran", "Cellsize" = "cellsize", "Defined" = "defined")
-bg_metho <- c("Random" = "random", "Thickening" = "thickening")
-pseudo_abs_method <- c("Random" = "random", "Env constrained" = "env_const",
-                "Geo contrained" = "geo_const", "Env & Geo contrained" = "geo_env_const",
-                "Env clustering" = "geo_env_km_const")
-# Set source file access
-src_root <- paste0(system.file("nimo", package = "nimo"), "/src/")#"./inst/nimo/src/"
-## Add ressource
-addResourcePath("nimo", paste0(system.file("nimo", package = "nimo"), "/www"))#addResourcePath("nimo", "./inst/nimo/www")
-
-# button style
-bttn_primary_style <-  paste0("background-color:", "#065325;", "color:#ffffff;")
-bttn_second_style <- paste0("background-color:#065325;", "color:#ffffff;", "hover:red")
-bttn_third_style <- paste0("background-color:#B7C1C6")
-bttn_warn <- paste0("background-color:#f0b0a9", "border-color:#f0b0a9")
-loader_color <- "#042d0f"; loader_type  <- 7
 
 ## SERVER
 server <- function(input, output, session) {
+  src_root <- paste0(system.file("nimo", package = "nimo"), "/src/")#"./inst/nimo/src/"
+
+  source(paste0(src_root, "global_variables.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "cust_functions.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "find_highly_coor_var.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "predictors_selection_update.R"), verbose = FALSE, local = TRUE)$value
@@ -634,6 +609,7 @@ occ_dt <- reactive({
   ## data partition
   data_partition <- eventReactive(input$divvy_data, {
     grid_env <- NULL
+    set.seed(global_seed())
     if(input$partition_type == "part_random" && input$part_random_method == "kfold"){
       partion <- part_random(data = wrangle_data()[[1]], pr_ab = "pr_ab",
                              method = c(method = "kfold", folds = input$kfold_number))
@@ -784,7 +760,6 @@ occ_dt <- reactive({
   observeEvent(input$back_ps_ab_samp , { showModal(bpas_modal()) })
   ########----
   sd_occ_data <- eventReactive(input$generate_bpas, {
-    set.seed(global_seed())
     req(wrangle_data()[[1]])
     prt <- data_partition()[[3]] %>% table() %>% as.data.frame() %>% dplyr::select(2)
     if(input$partition_type == "part_random" && !input$part_random_method %in% c("rep_kfold", "loocv", "boot")){
@@ -1436,11 +1411,10 @@ observe({
 
 # Function to fetch species suggestions from GBIF API
 fetch_species_suggestions <- function(search_term) {
-
   tryCatch({
     if (having_ip()) {
       url <- paste0("https://api.gbif.org/v1/species/suggest?q=", URLencode(search_term))
-      response <- httr::GET(url, httr::timeout((input$sys_timeout)*60))
+      response <- httr::GET(url, httr::timeout(tmout()*60))
       species_list <- jsonlite::fromJSON(httr::content(response, "text", encoding = "UTF-8"))
       if (!is.null(species_list)) {
         return(species_list)
@@ -1683,7 +1657,20 @@ observeEvent(input$valid_data, {
 })
 
 # CONFIGURATION
-global_seed <- reactive(input$set_seed)
+
+observeEvent(input$save_config, {
+  global_seed <<- reactive(input$set_seed)
+  tmout <<- reactive(input$sys_timeout)
+  showNotification(
+    id = "save_config",
+    ui = "Change saved",
+    duration = 4,
+    closeButton = FALSE,
+    type = "message"
+  )
+})
+
+observeEvent(input$save_config, {print(paste(global_seed(), tmout()))})
 
 
 ## END SERVER
