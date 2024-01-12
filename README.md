@@ -1,6 +1,6 @@
   [![R-CMD-check](https://github.com/stangandaho/nimo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stangandaho/nimo/actions/workflows/R-CMD-check.yaml)
   [![Code coverage](https://codecov.io/gh/stangandaho/nimo/graph/badge.svg?token=ehmZyEafyI)](https://codecov.io/gh/stangandaho/nimo)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10152868.svg)](https://doi.org/10.5281/zenodo.10152868)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10495310.svg)](https://doi.org/10.5281/zenodo.10495310)
 
 
 # **`{nimo}`** in brief

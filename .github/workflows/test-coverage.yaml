@@ -20,11 +20,6 @@ jobs:
         with:
           use-public-rspm: true
 
-      - name: Query dependencies
-        run: |
-          install.packages("remotes")
-          Rscript -e 'remotes::install_github("sjevelazco/flexsdm")'
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: covr
