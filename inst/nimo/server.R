@@ -1657,10 +1657,12 @@ observeEvent(input$valid_data, {
 })
 
 # CONFIGURATION
+global_seed <- reactive(123)
+tmout <- reactive(5)
 
 observeEvent(input$save_config, {
-  global_seed <<- reactive(input$set_seed)
-  tmout <<- reactive(input$sys_timeout)
+global_seed <<- reactive(input$set_seed)
+tmout <<- reactive(input$sys_timeout)
   showNotification(
     id = "save_config",
     ui = "Change saved",
@@ -1669,9 +1671,6 @@ observeEvent(input$save_config, {
     type = "message"
   )
 })
-
-observeEvent(input$save_config, {print(paste(global_seed(), tmout()))})
-
 
 ## END SERVER
 

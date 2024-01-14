@@ -1,4 +1,4 @@
-
+## Set leaflet map
 llf <- function() {
   simple_lft <- leaflet::leaflet() %>%
     setView(lng = 1.8, lat = 11, zoom = 8)%>%
@@ -25,17 +25,19 @@ llf <- function() {
   return(simple_lft)
 }
 
-
+## customize and control a map that has already been rendered adding occurrence
 lft_proxy <- function() {
     req(gbif_data())
     lng <- gbif_data()[[1]]$decimalLongitude; lat <- gbif_data()[[1]]$decimalLatitude
-    simple_lft <-   leafletProxy("occ_map") %>%
+    simple_lft <- leafletProxy("occ_map") %>%
       addMarkers(lng = lng, lat = lat,
                  popup = paste("Lon:", round(lng, 2), "  |  ", "Lat:", round(lat, 2))
-      )
+      ) %>%
+      setView(lng = lng[1], lat = lat[1], zoom = 8)%>% # move to occurrence
     return(simple_lft)
 }
 
+## Add polygon
 lft_geom <- function() {
   geom_vect <- geom_vect(); req(geom_vect)
   if (all(sf::st_is_valid(geom_vect))) {
