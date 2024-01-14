@@ -37,12 +37,6 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v2
 
-      - name: Install flexsdm from GitHub
-        run: |
-          install.packages("remotes")
-          remotes::install_github("sjevelazco/flexsdm")
-        shell: Rscript {0}
-
       - name: Cache R packages
         uses: actions/cache@v2
         with:
@@ -52,7 +46,7 @@ jobs:
 
       - name: Install pak
         run: |
-          install.packages("pak", repos = "https://r-lib.github.io/p/pak/dev/")
+          install.packages("pak")
         shell: Rscript {0}
 
       - name: Install system dependencies
@@ -67,6 +61,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          install.packages("remotes")
           remotes::install_deps(dependencies = TRUE)
           remotes::install_github("sjevelazco/flexsdm")
           remotes::install_cran(c("rcmdcheck", "curl"))

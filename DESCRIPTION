@@ -7,6 +7,7 @@ Depends: R (>= 3.5.0)
 Imports: flexsdm, shiny, shinyFiles, shinydashboard, shinydashboardPlus, shinyjs,
         plotly, leaflet, leaflet.extras, httr, jsonlite, sf, terra, 
         DT, shinyWidgets, shinycssloaders, methods, dplyr, ggplot2
+Remotes: sjevelazco/flexsdm
 Author: Stanislas Mahussi GANDAHO
 Maintainer: Stanislas Mahussi GANDAHO <stangandaho@gmail.com>
 URL: https://github.com/stangandaho/nimo
