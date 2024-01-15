@@ -1,4 +1,3 @@
-
 ## SERVER
 server <- function(input, output, session) {
   src_root <- paste0(system.file("nimo", package = "nimo"), "/src/")#"./inst/nimo/src/"
@@ -431,9 +430,8 @@ occ_dt <- reactive({
                                     method = c("pearson", th = as.character(input$pearson_threshold)))
       cr_df <- colin_var$cor_table # table
       enlayer <- colin_var$cor_variables # layer
-      #corr_matrix <- col_red$cor_table
-      highly_corr_vars <- find_coor(cr_df, cutoff = input$pearson_threshold, names = T)#find_coor function from src folder
-      #keep_var <- cr_df[, !colnames(cr_df) %in% highly_corr_vars]
+      highly_corr_vars <- find_coor(cr_df, cutoff = input$pearson_threshold,
+                                    names = T)#find_coor function from inst/nimo/src folder
       rm_enlayer <- highly_corr_vars
     } else if(input$coli_method == "vif"){
       colin_var <- correct_colinvar(env_layer = env_layers(), method = c("vif", th = as.character(input$vif_threshold)))
@@ -1055,7 +1053,7 @@ observeEvent(input$ensemble,
 )
 
 output$selected_mod_lenght <- renderText(
-  paste("The number of models selected for assemblage:", length(sst()) ))
+  paste("The number of models selected for ensemble:", length(sst()) ))
 
 
 ens_fitting <- eventReactive(input$fit_ens, {
@@ -1445,7 +1443,7 @@ observeEvent(input$species_input, {
 gbif_data <- eventReactive(input$load_gbif_data, {
   if (!is.null(drawn_poly())) {
     list(
-      inside_drawn_ply()[[1]],
+      inside_drawn_ply()[[1]], # inside_drawn_ply() from ./inst/nimo/src/handle_sf.R
       inside_drawn_ply()[[2]]
     )}
   else if (input$country_filter != "" & input$use_geom_gbif == FALSE) {
@@ -1564,12 +1562,6 @@ observe({
   }
 })
 observeEvent(input$clear_map, {polyg$point <- data.frame(lon = c(), lat = c())})
-
-drawn_poly <- eventReactive(input$acces_gbif_data, {
-  if (!is.null(polyg$point$lon) & !is.null(polyg$point$lat)) {
-    sf::st_as_sf(x = polyg$point, coords = c("lon", "lat"), crs = 4326)
-  }
-})
 
 ## clear button
 observe({
