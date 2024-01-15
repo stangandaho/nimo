@@ -1,8 +1,11 @@
 ## Define predictors from data clomuns name
+
+################################## Standard Models ###########################
 predictors <- reactive({
-  req(ready_df_mod())
-  if(any(startsWith(colnames(ready_df_mod()), ".part"))) {
-    colnames(ready_df_mod())[!startsWith(colnames(ready_df_mod()), ".part")] }else{colnames(ready_df_mod())}
+    req(ready_df_mod())
+    if(any(startsWith(colnames(ready_df_mod()), ".part"))) {
+      colnames(ready_df_mod())[!startsWith(colnames(ready_df_mod()), ".part")]
+    }else{colnames(ready_df_mod())}
 })
 ## GAM
 observe({

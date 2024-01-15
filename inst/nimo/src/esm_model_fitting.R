@@ -1,4 +1,5 @@
-## fitting
+# Fitting of Ensemble of Small Models (ESM)
+## Generalized Additive Models
 gam_esm_fitting <- eventReactive(input$fit_gam_esm, {
   req(input$gam_esm_predictors)
   tryCatch({
@@ -15,6 +16,7 @@ gam_esm_fitting <- eventReactive(input$fit_gam_esm, {
   }, error = error)
 })
 
+## Gaussian Process Models
 gau_esm_fitting <- eventReactive(input$fit_gau_esm, {
   req(input$gau_esm_predictors)
   tryCatch({
@@ -30,6 +32,7 @@ gau_esm_fitting <- eventReactive(input$fit_gau_esm, {
   }, error = error)
 })
 
+## Generalized Boosted Regression
 gbm_esm_fitting <- eventReactive(input$fit_gbm_esm, {
   req(input$gbm_esm_predictors)
   tryCatch({
@@ -49,6 +52,7 @@ gbm_esm_fitting <- eventReactive(input$fit_gbm_esm, {
   }, error = error)
 })
 
+## Generalized Linear Models
 glm_esm_fitting <- eventReactive(input$fit_glm_esm, {
   req(input$glm_esm_predictors)
   tryCatch({
@@ -66,6 +70,7 @@ glm_esm_fitting <- eventReactive(input$fit_glm_esm, {
   }, error = error)
 })
 
+## Maximum Entropy Models
 max_esm_fitting <- eventReactive(input$fit_max_esm, {
   req(input$max_esm_predictors)
   classes <- paste0(input$max_esm_classes, collapse = "")
@@ -86,6 +91,7 @@ max_esm_fitting <- eventReactive(input$fit_max_esm, {
   }, error = error)
 })
 
+## Neural Networks Models
 net_esm_fitting <- eventReactive(input$fit_net_esm, {
   req(input$net_esm_predictors)
   tryCatch({
@@ -103,7 +109,7 @@ net_esm_fitting <- eventReactive(input$fit_net_esm, {
   }, error = error)
 })
 
-
+## Support Vector Machine Models
 svm_esm_fitting <- eventReactive(input$fit_svm_esm, {
   req(input$svm_esm_predictors)
   tryCatch({
@@ -201,7 +207,7 @@ observeEvent(input$fit_svm_esm, {
 })
 
 
-## ES models
+## Ensemble Small Models name in dataframe for selection
 esm_models_names_df <- reactive({
   model_data <- data.frame(Model = names(es_model_list$models))
   return(model_data)

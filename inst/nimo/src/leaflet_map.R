@@ -25,7 +25,7 @@ llf <- function() {
   return(simple_lft)
 }
 
-## customize and control a map that has already been rendered adding occurrence
+## Control the map that has already been rendered adding occurrence
 lft_proxy <- function() {
     req(gbif_data())
     lng <- gbif_data()[[1]]$decimalLongitude; lat <- gbif_data()[[1]]$decimalLatitude
@@ -37,7 +37,7 @@ lft_proxy <- function() {
     return(simple_lft)
 }
 
-## Add polygon
+## Add polygon or vector from shapefile
 lft_geom <- function() {
   geom_vect <- geom_vect(); req(geom_vect)
   if (all(sf::st_is_valid(geom_vect))) {

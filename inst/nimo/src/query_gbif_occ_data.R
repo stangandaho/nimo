@@ -16,7 +16,6 @@ query_params <- function() {
     query_params <- list(
       "limit" = 300,
       "offset" = 0,
-      #"q" = input$species_suggestions,
       "hasCoordinate" = "true",
       "hasGeospatialIssue" = "false",
       "hl" = "true"
@@ -51,7 +50,7 @@ query_occ <- function(query_params) {
     while (more_results) {
       # Update the offset parameter
       query_params$offset <- offset
-      response <- GET(base_url, query = query_params) # Make the API request
+      response <- GET(base_url, query = query_params, httr::timeout((input$sys_timeout)*60)) # Make the API request
       # Check if the request was successful
       if (response$status_code == 200) {
         json_data <- fromJSON(content(response, "text", encoding = "UTF-8")) # Parse the JSON response
@@ -74,7 +73,7 @@ query_occ <- function(query_params) {
           }
 
         }
-          markdown_text <- sub("accessed via GBIF.org", "accessed via nimo", paste(metadata_list))
+          markdown_text <- sub("accessed via GBIF.org", "accessed via GBIF.org using nimo", paste(metadata_list))
       }
     }
     # Combine all_occurrences list into a single data frame

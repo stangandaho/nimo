@@ -1,4 +1,5 @@
-## tuning
+# Model Tuning
+## Generalized Boosted Regression
 gbm_tuning <- eventReactive(input$t_gbm, {
   req(input$t_gbm_predictors)
   tryCatch({
@@ -23,7 +24,7 @@ gbm_tuning <- eventReactive(input$t_gbm, {
   }, error = error)
 })
 
-
+## Maximum Entropy Models
 max_tuning <- eventReactive(input$t_max, {
   req(input$t_max_predictors)
   tryCatch({
@@ -48,6 +49,7 @@ max_tuning <- eventReactive(input$t_max, {
   }, error = error)
 })
 
+## Neural Networks Models
 net_tuning <- eventReactive(input$t_net, {
   req(input$t_net_predictors)
   #tryCatch({
@@ -71,6 +73,7 @@ net_tuning <- eventReactive(input$t_net, {
   #}, error = error)
 })
 
+## Random Forests Models
 raf_tuning <- eventReactive(input$t_raf, {
   req(input$t_raf_predictors)
   tryCatch({
@@ -91,6 +94,7 @@ raf_tuning <- eventReactive(input$t_raf, {
   }, error = error)
 })
 
+## Support Vector Machine Models
 svm_tuning <- eventReactive(input$t_svm, {
   req(input$t_svm_predictors)
   tryCatch({

@@ -18,7 +18,7 @@ pseudo_abs_method <- c("Random" = "random", "Env constrained" = "env_const",
 ## Add ressource
 addResourcePath("nimo", paste0(system.file("nimo", package = "nimo"), "/www"))#addResourcePath("nimo", "./inst/nimo/www")
 
-# button style
+# Button style
 bttn_primary_style <-  paste0("background-color:", "#065325;", "color:#ffffff;")
 bttn_second_style <- paste0("background-color:#065325;", "color:#ffffff;", "hover:red")
 bttn_third_style <- paste0("background-color:#B7C1C6")

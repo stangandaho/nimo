@@ -1,5 +1,5 @@
-## geometry handle
-## set vector files path
+# Geometry handle
+## Set vector files path
 shinyFiles::shinyFileChoose(input, "location_filter", roots = root,
                             filetypes = c("shp", "kml"))
 lf_path <- reactive({
@@ -32,11 +32,11 @@ geom_gbif <- reactive({
 
 })
 
-## Local vector
+## Local vector/shapefile
 loc_geom <- reactive({
-  query_params <- query_params()
+  query_params <- query_params()# query_params() from ./inst/nimo/src/query_gbif_occ_data.R
   if (nrow(geom_gbif()) > 1) {
-    g <- sf::st_union(geom_gbif()) %>% sf::st_as_sf()
+    g <- sf::st_union(geom_gbif()) %>% sf::st_sas_sf()
     geom_wkt <- sf::st_as_text(g$x)
   } else {
     geom_wkt <- sf::st_as_text(geom_gbif()$geometry)
@@ -51,6 +51,14 @@ loc_geom <- reactive({
   qp[["geometry"]] <- noquote(geom_wkt)
   all_occurrences_df <- query_occ(query_params = qp)
   all_occurrences_df
+})
+
+## Drawn polygon
+
+drawn_poly <- eventReactive(input$acces_gbif_data, {
+  if (!is.null(polyg$point$lon) & !is.null(polyg$point$lat)) {
+    sf::st_as_sf(x = polyg$point, coords = c("lon", "lat"), crs = 4326)
+  }
 })
 
 inside_drawn_ply <- reactive({
