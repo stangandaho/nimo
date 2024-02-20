@@ -15,7 +15,6 @@ server <- function(input, output, session) {
   source(paste0(src_root, "leaflet_map.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "query_gbif_occ_data.R"), verbose = FALSE, local = TRUE)$value
 
-
   # DIRECTORY SET UP ----
   set_dir_modal <- function() {
     modalDialog(
@@ -1515,7 +1514,11 @@ output$export_occ <- downloadHandler(
     gsub("\\s", "_", paste0(input$species_suggestions, "_occurrence", ".csv"))
   },
   content = function(file) {
-    write.csv(gbif_data()[[1]], file)
+    occ_to_export <- gbif_data()[[1]] %>%
+      dplyr::mutate(obs = paste0(decimalLatitude, decimalLongitude)) %>%
+      dplyr::distinct(.data = ., obs, .keep_all = T) %>%
+      dplyr::select(-obs)
+    write.csv(occ_to_export, file)
   },
   contentType = "text/csv"
 )
