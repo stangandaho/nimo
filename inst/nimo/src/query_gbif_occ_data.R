@@ -14,7 +14,7 @@ gbif_q <- c(
 # Prepare the query parameters
 query_params <- function() {
     query_params <- list(
-      "limit" = 300,
+      "limit" = 200,
       "offset" = 0,
       "hasCoordinate" = "true",
       "hasGeospatialIssue" = "false",
@@ -44,46 +44,70 @@ query_params <- function() {
 query_occ <- function(query_params) {
     base_url <- "https://api.gbif.org/v1/occurrence/search" # GBIF API base URL
     # Initialize variables
-    all_occurrences <- list()
+    occ <- data.frame()
     offset <- 0
     more_results <- TRUE
     while (more_results) {
       # Update the offset parameter
       query_params$offset <- offset
-      response <- GET(base_url, query = query_params, httr::timeout((input$sys_timeout)*60)) # Make the API request
+
+      print(
+        httr2::request(base_url = base_url) %>%
+          httr2::req_url_query(!!!query_params)
+      )
+
+      response <- httr2::request(base_url = base_url) %>%
+        httr2::req_timeout((input$sys_timeout)*60) %>%
+        httr2::req_url_query(!!!query_params) %>%
+        httr2::req_perform()
+
       # Check if the request was successful
       if (response$status_code == 200) {
-        json_data <- fromJSON(content(response, "text", encoding = "UTF-8")) # Parse the JSON response
-        occurrences <- json_data$results # Extract the occurrence data
-        more_results <- json_data$endOfRecords == FALSE # Check if there are more results
-        offset <- offset + query_params$limit # Update the offset for the next request
-        all_occurrences <- append(all_occurrences, list(occurrences))
+        resultats <- response %>%
+          httr2::resp_body_json(simplifyDataFrame = T) # Extract the occurrence data
+        occurrences <- resultats$results
+        more_results <- resultats$endOfRecords == FALSE # Check if there are more results
 
+        offset <- offset + query_params$limit # Update the offset for the next request
+
+        occdt_col <- colnames(occurrences)
+        basic_col <- c("basisOfRecord", "decimalLatitude", "decimalLongitude",
+                       "country", "occurrenceStatus", "scientificName", "taxonomicStatus", "sex",
+                       "continent", "stateProvince", "locality", "year", "month", "day",
+                       "recordedBy", "institutionCode", "samplingProtocol", "habitat", "license")
+
+        absent_col <- basic_col[!basic_col %in% occdt_col[which(occdt_col %in% basic_col)]]
+        if (length(absent_col) > 0) {
+          df <- data.frame(matrix(NA, nrow = nrow(occurrences), ncol = length(absent_col)))
+          colnames(df) <- absent_col
+          occurrences <- occurrences %>% dplyr::bind_cols(df)
+        }
+        #col <- basic_col[which(basic_col %in% occdt_col)]
+
+        occurrences <- occurrences %>%
+          dplyr::select(dplyr::all_of(basic_col))
+        occ <- dplyr::bind_rows(occ, occurrences)
         # Get dataset keys for metadata retrieval
-        dataset_keys <- unique(occurrences$datasetKey)
+        dataset_keys <- unique(resultats$results[, "datasetKey"])#unique(occurrences$datasetKey)
         # Fetch metadata for each dataset
         metadata_list <- list()
         for (dataset_key in dataset_keys) {
           metadata_url <- paste0("https://api.gbif.org/v1/dataset/", dataset_key)
-          metadata_response <- GET(metadata_url)
+          metadata_response <- httr2::request(base_url = metadata_url) %>%
+            httr2::req_perform()
+
           # Check if the request for dataset metadata was successful
           if (metadata_response$status_code == 200) {
-            metadata <- content(metadata_response, "parsed")
+            metadata <- metadata_response %>%
+              httr2::resp_body_json()
             metadata_list[[dataset_key]] <- metadata$citation$text
           }
 
         }
           markdown_text <- sub("accessed via GBIF.org", "accessed via GBIF.org using nimo", paste(metadata_list))
       }
+
     }
-    # Combine all_occurrences list into a single data frame
-    all_occurrences_df <- dplyr::bind_rows(all_occurrences)
-    occdt_col <- colnames(all_occurrences_df)
-    basic_col <- c("basisOfRecord", "decimalLatitude", "decimalLongitude",
-                   "country", "occurrenceStatus", "scientificName", "taxonomicStatus", "sex",
-                   "continent", "stateProvince", "locality", "year", "month", "day",
-                   "recordedBy", "institutionCode", "samplingProtocol", "habitat", "license")
-    col <- basic_col[which(basic_col %in% occdt_col)]
-    occ <- all_occurrences_df %>% dplyr::select(dplyr::all_of(col))
+
     return(list(occ, markdown_text))
 }

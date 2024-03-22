@@ -10,6 +10,6 @@ library(sf)
 library(DT)
 library(leaflet)
 library(leaflet.extras)
-library(httr)
-library(jsonlite)
+library(httr2)
+library(dismo)
 

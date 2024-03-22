@@ -4,10 +4,8 @@ server <- function(input, output, session) {
 
   source(paste0(src_root, "global_variables.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "cust_functions.R"), verbose = FALSE, local = TRUE)$value
-  source(paste0(src_root, "find_highly_coor_var.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "predictors_selection_update.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "render_model_fitting.R"), local = TRUE)[1]
-  #source(paste0(src_root, "render_esm_model_fitting.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "model_fitting.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "model_tuning.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "esm_model_fitting.R"), verbose = FALSE, local = TRUE)$value
@@ -429,8 +427,7 @@ occ_dt <- reactive({
                                     method = c("pearson", th = as.character(input$pearson_threshold)))
       cr_df <- colin_var$cor_table # table
       enlayer <- colin_var$cor_variables # layer
-      highly_corr_vars <- find_coor(cr_df, cutoff = input$pearson_threshold,
-                                    names = T)#find_coor function from inst/nimo/src folder
+      highly_corr_vars <- nm_find_hcv(cr_df, cutoff = input$pearson_threshold)
       rm_enlayer <- highly_corr_vars
     } else if(input$coli_method == "vif"){
       colin_var <- correct_colinvar(env_layer = env_layers(), method = c("vif", th = as.character(input$vif_threshold)))
@@ -1152,7 +1149,7 @@ predict_area <- reactive({
 prediction <- eventReactive(input$predict, {
   req(env_layers())
   tryCatch({
-    sdm_predict(
+    nm_predict(
       models = predict_models(),
       pred = env_layers(),
       thr = if(any(input$predict_thr %in% c("sensitivity"))) {
@@ -1406,19 +1403,6 @@ observe({
   internet_status()
 })
 
-# Function to fetch species suggestions from GBIF API
-fetch_species_suggestions <- function(search_term) {
-  tryCatch({
-    if (having_ip()) {
-      url <- paste0("https://api.gbif.org/v1/species/suggest?q=", URLencode(search_term))
-      response <- httr::GET(url, httr::timeout(tmout()*60))
-      species_list <- jsonlite::fromJSON(httr::content(response, "text", encoding = "UTF-8"))
-      if (!is.null(species_list)) {
-        return(species_list)
-      }
-    }
-  }, error = error)
-}
 
 # Update species suggestions as user types
 observeEvent(input$search_by, {
@@ -1432,7 +1416,8 @@ observeEvent(input$search_by, {
 observeEvent(input$species_input, {
   search_term <- input$species_input
   search_by <- input$search_by
-  species_suggested <- fetch_species_suggestions(search_term)
+  species_suggested <- nm_gbif_suggestion(search_term, time_out = tmout()*60)
+
   tryCatch({
     shinyWidgets::updatePickerInput(inputId = "species_suggestions", session = session,
                       choices = species_suggested[, search_by], selected = input$species_suggestions)

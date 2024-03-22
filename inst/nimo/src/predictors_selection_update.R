@@ -124,6 +124,14 @@ observe({
   updateTextInput(inputId = "svm_fit_formula", value = formula_str)
 })
 
+## BIOC
+observe({
+  updateSelectInput(inputId = "bioc_response", choices = predictors())
+})
+observe({
+  updateSelectInput(inputId = "bioc_predictors", choices = predictors()[ !predictors() %in% input$bioc_response])
+})
+
 ################################### ESM ########################################
 ## GAM -----
 observe({

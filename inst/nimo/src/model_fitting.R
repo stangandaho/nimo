@@ -159,6 +159,22 @@ svm_fitting <- eventReactive(input$fit_svm, {
   }, error = error)
 })
 
+## Bioclim
+bioc_fitting <- eventReactive(input$fit_bioc, {
+  req(input$bioc_predictors)
+  tryCatch({
+    nm_fit_bioclim(
+      data = ready_df_mod(),
+      response = input$bioc_response,
+      predictors = input$bioc_predictors,
+      partition = ".part",
+      thr = if(any(input$bioc_thr %in% c("sensitivity"))) {
+        c(input$bioc_thr, "sens" = as.character(input$bioc_sens))
+      } else{input$bioc_thr}
+    )
+  }, error = error)
+})
+
 ######
 model_list <- reactiveValues( models = list() )
 
@@ -258,6 +274,19 @@ tryCatch({
 }, error = error)
 })
 
+observeEvent(input$fit_bioc, {
+  tryCatch({
+    showModal(models_modals("Bioclim Models output"))
+    output$xx_model <- renderPrint(bioc_fitting()$model)
+    output$xx_performance_metric <- render_dt(bioc_fitting()[[3]])
+    performance_metric <<- bioc_fitting()$performance
+    output$xx_predicted_suitability <- DT::renderDT(bioc_fitting()$data_ens,
+                                                    options = list(scrollX = TRUE))
+    model_list$models$`Bioclim Models` <- bioc_fitting()
+  }, error = error)
+})
+
+#--------------------------------------------------------------#
 ## Models name in dataframe
 models_names_df <- reactive({
   model_data <- data.frame(Model = names(model_list$models))

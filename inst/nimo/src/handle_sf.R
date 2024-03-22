@@ -5,10 +5,11 @@ shinyFiles::shinyFileChoose(input, "location_filter", roots = root,
 lf_path <- reactive({
   shinyFiles::parseFilePaths(roots = root, selection = input$location_filter)$datapath
 })
+## Process vector file reading
 geom_vect <- reactive({
   req(lf_path())
   sf_use_s2(FALSE)
-  geom_vect <- sf::st_simplify(sf::st_make_valid(sf::read_sf(lf_path())))
+  suppressWarnings({geom_vect <- sf::st_simplify(sf::st_make_valid(sf::read_sf(lf_path())))})
   sf_use_s2(TRUE)
   if(is.na(sf::st_crs(geom_vect))){
     geom_vect <- sf::st_set_crs(geom_vect, 4326); geom_vect
@@ -36,7 +37,7 @@ geom_gbif <- reactive({
 loc_geom <- reactive({
   query_params <- query_params()# query_params() from ./inst/nimo/src/query_gbif_occ_data.R
   if (nrow(geom_gbif()) > 1) {
-    g <- sf::st_union(geom_gbif()) %>% sf::st_sas_sf()
+    g <- sf::st_union(geom_gbif()) %>% sf::st_as_sf()
     geom_wkt <- sf::st_as_text(g$x)
   } else {
     geom_wkt <- sf::st_as_text(geom_gbif()$geometry)
@@ -63,14 +64,16 @@ drawn_poly <- eventReactive(input$acces_gbif_data, {
 
 inside_drawn_ply <- reactive({
   query_params <- query_params()
-  pl <- sf::st_cast(x = st_union(drawn_poly()), to = "POLYGON")
-    drawn_poly_wkt <- sf::st_as_text(pl)
+  pl <- st_union(drawn_poly()) %>%
+    sf::st_cast(x = ., to = "POLYGON")
+    drawn_poly_wkt <- sf::st_as_text(pl, pretty = TRUE)
     if (!is.null(query_params[["country"]])) {
       qp <- query_params[names(query_params) != "country"]
     } else {
       qp <- query_params
     }
     qp[["geometry"]] <- noquote(drawn_poly_wkt)
+
     all_occurrences_df <- query_occ(query_params = qp)
     all_occurrences_df
 })

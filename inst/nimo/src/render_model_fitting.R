@@ -300,11 +300,22 @@ output$dynamic_model_fitting <- renderUI({
              selectInput("svm_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
              selectInput("svm_thr", "Threshold", choices = thr, multiple = T),
              conditionalPanel("input.svm_thr.includes('sensitivity')",
-                              numericInput("svm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
+                              numericInput("svm_sens", label = "Sensitivity value",
+                                           value = 0.9, min = 0, max = 1, step = 0.01)),
              textInput("svm_fit_formula", "Model formula"),
              #selectInput("svm_sigma", "Inverse kernel width", choices = c("automatic"), selected = "automatic"),
              numericInput("svm_C", "Cost of constraints violation", value = 1, min = 1),
              actionButton("fit_svm", "Fit SVM", icon = fit_model_btn_icon, style = fit_model_btn_style))
+    }else if (order  %in% c("bioc") && input$tuning == FALSE) {
+      div(style = "flex: 1; margin-right: 20px;",
+          h4("Bioclim Models"),
+          selectInput("bioc_response", "Response", choices = c(), multiple = F),
+          selectInput("bioc_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("bioc_thr", "Threshold", choices = thr, multiple = T),
+          conditionalPanel("input.bioc_thr.includes('sensitivity')",
+                           numericInput("bioc_sens", label = "Sensitivity value",
+                                        value = 0.9, min = 0, max = 1, step = 0.01)),
+          actionButton("fit_bioc", "Fit BIOC", icon = fit_model_btn_icon, style = fit_model_btn_style))
     }
 
   })
