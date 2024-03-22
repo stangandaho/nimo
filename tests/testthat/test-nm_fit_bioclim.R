@@ -43,7 +43,7 @@ test_that("test different function setting ", {
   )
 
   expect_equal(class(bioc2), "list")
-  expect_length(max_t1, 4)
+  expect_length(bioc2, 4)
 
   # What about no predictors? Does not work
   expect_error(nm_fit_bioclim(

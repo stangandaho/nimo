@@ -5,7 +5,7 @@ Version: 0.2.1
 Date: 2023-10-05
 Depends: R (>= 3.5.0)
 Imports: flexsdm, shiny, shinyFiles, shinydashboard, shinydashboardPlus, shinyjs,
-        plotly, leaflet, leaflet.extras, httr2, jsonlite, sf, terra, dismo,
+        plotly, leaflet, leaflet.extras, httr2, sf, terra, dismo,
         DT, shinyWidgets, shinycssloaders, methods, dplyr, ggplot2
 Remotes: sjevelazco/flexsdm
 Author: Stanislas Mahussi GANDAHO
