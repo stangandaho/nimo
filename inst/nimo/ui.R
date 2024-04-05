@@ -158,6 +158,7 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
              ),
     ## CONFIGURATION
     div(
+      #menuItem("Report", tabName = "nm_report", icon = icon("doc")),
       menuItem("", tabName = "configuration", icon = icon("wrench")),
       style = "position:absolute; bottom:0; left:0; right:0; margin:15px 15px;
     list-style-type: none"
@@ -631,7 +632,13 @@ nimo_body <- shinydashboard::dashboardBody(
                         actionButton("save_config", "Save change", style = bttn_primary_style))
               )
             )
-    )
+    )#,
+    # ## Report
+    # tabItem("nm_report",
+    #         fluidPage(
+    #           actionButton("render_report", "Render", style = bttn_primary_style)
+    #         )
+    #         )
 
 )
 )

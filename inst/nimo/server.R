@@ -155,7 +155,10 @@ server <- function(input, output, session) {
       dplyr::rename("pr_ab" = input$occ_var) %>%
       dplyr::filter(!is.na(pr_ab)) %>%
       dplyr::mutate(pr_ab = dplyr::case_when(pr_ab == input$presence ~ 1,
-                                      pr_ab == input$abscence ~ 0))
+                                      pr_ab == input$abscence ~ 0))%>%
+      # Remove NA in Long and Lat
+      dplyr::filter(!is.na(!!sym(input$long_var))) %>%
+      dplyr::filter(!is.na(!!sym(input$lat_var)))
 
       ## duplicate
     w_df_dupl <- df %>% dplyr::filter(duplicated(uni)) %>%
@@ -171,7 +174,11 @@ server <- function(input, output, session) {
         dplyr::select(-uni) %>%
         dplyr::mutate("pr_ab" = 1,
                       "{input$long_var}" := as.numeric(!!sym(input$long_var)),
-                      "{input$lat_var}" := as.numeric(!!sym(input$lat_var)))
+                      "{input$lat_var}" := as.numeric(!!sym(input$lat_var))) %>%
+        # Remove NA in Long and Lat
+        dplyr::filter(!is.na(!!sym(input$long_var))) %>%
+        dplyr::filter(!is.na(!!sym(input$lat_var)))
+
       ## duplicate
       w_df_dupl <- df %>% dplyr::filter(duplicated(uni)) %>%
         dplyr::select(-uni)
@@ -210,10 +217,16 @@ server <- function(input, output, session) {
   ## set shp data
   shp_layer <- reactive({
     req(layer_file_path())
-    sf::read_sf(layer_file_path()) })
+    sf::read_sf(layer_file_path())
+    })
 
-  occ_data <- reactive({sf::st_as_sf(x = wrangle_data()[[1]], coords = c(input$long_var, input$lat_var),
-                                     crs = sf::st_crs(shp_layer())) %>% mutate(pr_ab = as.character(pr_ab))
+  occ_data <- reactive({
+    tryCatch({
+      sf::st_as_sf(x = wrangle_data()[[1]],
+                   coords = c(input$long_var, input$lat_var),
+                   crs = sf::st_crs(shp_layer())) %>%
+        mutate(pr_ab = as.character(pr_ab))
+    }, error = error)
     })
   observe({
     req(shp_layer())
@@ -285,12 +298,14 @@ server <- function(input, output, session) {
   # drop point outside area
 occ_dt <- reactive({
   req(shp_layer())
-  wd <- wrangle_data()[[1]]
-  occ_dt <- sf::st_as_sf(wd, coords = c(input$long_var, input$lat_var), crs = crs(shp_layer())) %>%
-    dplyr::bind_cols(wd[, c(input$long_var, input$lat_var)])
-  occ_dt <- sf::st_intersection(x = occ_dt, y = shp_layer()) %>%
-    as.data.frame() %>% dplyr::select(-geometry)
-  occ_dt
+  tryCatch({
+    wd <- wrangle_data()[[1]]
+    occ_dt <- sf::st_as_sf(wd, coords = c(input$long_var, input$lat_var), crs = crs(shp_layer())) %>%
+      dplyr::bind_cols(wd[, c(input$long_var, input$lat_var)])
+    occ_dt <- sf::st_intersection(x = occ_dt, y = shp_layer()) %>%
+      as.data.frame() %>% dplyr::select(-geometry)
+    occ_dt
+  }, error = error)
 })
 
   calib_area_nimo <- function(){
@@ -938,11 +953,26 @@ observeEvent(input$valided_dp, {
 })
   ## ETRACTION ---------
   ## update predictor selection
+kept_colin_var <- reactiveValues(rc = NULL)
+
+rc <- reactive({
+  req(env_layers())
+  kept_colin_var$rc <- reduce_colin()[[3]]
+})
+
+
   observe({
     req(env_layers())
+    print(kept_colin_var$rc)
+    #print(kept_colin_var)
+    if (is.null(rc())) {
+      reduce_colin <- names(env_layers())
+    }else{
+      reduce_colin <- names(env_layers())[!names(env_layers()) %in% reduce_colin()[[3]]]
+    }
+
     updateSelectInput(inputId = "extract_variables", choices = names(env_layers()),
-                      selected = names(env_layers()) [ !names(env_layers()) %in% reduce_colin()[[3]] ]
-                      )
+                      selected = reduce_colin)
   })
   ## process extraction
   extracted_df <- eventReactive(input$extract_data, {
@@ -1414,11 +1444,11 @@ observeEvent(input$search_by, {
 })
 
 observeEvent(input$species_input, {
-  search_term <- input$species_input
-  search_by <- input$search_by
-  species_suggested <- nm_gbif_suggestion(search_term, time_out = tmout()*60)
-
+  req(input$species_input)
   tryCatch({
+    search_term <- input$species_input
+    search_by <- input$search_by
+    species_suggested <- nm_gbif_suggestion(search_term, time_out = tmout()*60)
     shinyWidgets::updatePickerInput(inputId = "species_suggestions", session = session,
                       choices = species_suggested[, search_by], selected = input$species_suggestions)
   }, error = function(e){return(e)})
@@ -1652,10 +1682,9 @@ tmout <<- reactive(input$sys_timeout)
   )
 })
 
+
 ## END SERVER
 
 
 }
-
-
 
