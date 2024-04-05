@@ -437,39 +437,41 @@ occ_dt <- reactive({
 
   reduce_colin <- eventReactive(input$reduce_collin, {
     req(env_layers())
-    if(input$coli_method == "pearson"){
-      colin_var <- correct_colinvar(env_layer = env_layers(),
-                                    method = c("pearson", th = as.character(input$pearson_threshold)))
-      cr_df <- colin_var$cor_table # table
-      enlayer <- colin_var$cor_variables # layer
-      highly_corr_vars <- nm_find_hcv(cr_df, cutoff = input$pearson_threshold)
-      rm_enlayer <- highly_corr_vars
-    } else if(input$coli_method == "vif"){
-      colin_var <- correct_colinvar(env_layer = env_layers(), method = c("vif", th = as.character(input$vif_threshold)))
-      cr_df <- colin_var$vif_table # table
-      enlayer <- list()
-      for (i in 1:terra::nlyr(colin_var$env_layer)) {
-        l <- colin_var$env_layer[[i]]
-        enlayer[[i]] <- l
-      }
-      rm_enlayer <- colin_var$removed_variables
-    } else if(input$coli_method == "pca"){
-      colin_var <- correct_colinvar(env_layer = env_layers(), method = c("pca"))
-      cr_df <- colin_var$coefficients # table
-      enlayer <- list()
-      for (i in 1:terra::nlyr(colin_var$env_layer)) {
-        l <- colin_var$env_layer[[i]]
-        enlayer[[i]] <- l
-      }
-      rm_enlayer <- colin_var$cumulative_variance
-    } else if(input$coli_method == "fa" & terra::nlyr(env_layers()) > 2){
+    tryCatch({
+      if(input$coli_method == "pearson"){
+        colin_var <- correct_colinvar(env_layer = env_layers(),
+                                      method = c("pearson", th = as.character(input$pearson_threshold)))
+        cr_df <- colin_var$cor_table # table
+        enlayer <- colin_var$cor_variables # layer
+        highly_corr_vars <- nm_find_hcv(cr_df, cutoff = input$pearson_threshold)
+        rm_enlayer <- highly_corr_vars
+      } else if(input$coli_method == "vif"){
+        colin_var <- correct_colinvar(env_layer = env_layers(), method = c("vif", th = as.character(input$vif_threshold)))
+        cr_df <- colin_var$vif_table # table
+        enlayer <- list()
+        for (i in 1:terra::nlyr(colin_var$env_layer)) {
+          l <- colin_var$env_layer[[i]]
+          enlayer[[i]] <- l
+        }
+        rm_enlayer <- colin_var$removed_variables
+      } else if(input$coli_method == "pca"){
+        colin_var <- correct_colinvar(env_layer = env_layers(), method = c("pca"))
+        cr_df <- colin_var$coefficients # table
+        enlayer <- list()
+        for (i in 1:terra::nlyr(colin_var$env_layer)) {
+          l <- colin_var$env_layer[[i]]
+          enlayer[[i]] <- l
+        }
+        rm_enlayer <- colin_var$cumulative_variance
+      } else if(input$coli_method == "fa" & terra::nlyr(env_layers()) > 2){
         colin_var <- correct_colinvar(env_layer = env_layers(), method = c("fa"))
         cr_df <- colin_var$loadings # table
         enlayer <- colin_var$env_layer
         rm_enlayer <- colin_var$removed_variables
-    }
+      }
 
       return(list(cr_df, enlayer, rm_enlayer, colin_var))
+    }, error = error)
   })
 
   cr_env <- eventReactive(input$reduce_collin, {
@@ -955,33 +957,30 @@ observeEvent(input$valided_dp, {
   ## update predictor selection
 kept_colin_var <- reactiveValues(rc = NULL)
 
-rc <- reactive({
-  req(env_layers())
-  kept_colin_var$rc <- reduce_colin()[[3]]
-})
-
-
   observe({
     req(env_layers())
-    print(kept_colin_var$rc)
-    #print(kept_colin_var)
-    if (is.null(rc())) {
-      reduce_colin <- names(env_layers())
-    }else{
-      reduce_colin <- names(env_layers())[!names(env_layers()) %in% reduce_colin()[[3]]]
-    }
-
+    reduce_colin <- names(env_layers())
     updateSelectInput(inputId = "extract_variables", choices = names(env_layers()),
                       selected = reduce_colin)
+
+    tryCatch({kept_colin_var$rc <- reduce_colin()[[3]]}, error = function(e)print(e))
+    if (!is.null(isolate(kept_colin_var$rc))) {
+      reduce_colin <- names(env_layers())[!names(env_layers()) %in% reduce_colin()[[3]]]
+      updateSelectInput(inputId = "extract_variables", choices = names(env_layers()),
+                        selected = reduce_colin)
+    }
+
+
   })
   ## process extraction
   extracted_df <- eventReactive(input$extract_data, {
     req(valided_dp())
-    sdm_extract(
+    nm_extract(
       data = valided_dp(),
-      x = ifelse(input$partition_type %in% c("part_sband", "part_sblock", "part_senv"), "x", input$long_var),
-      y = ifelse(input$partition_type %in% c("part_sband", "part_sblock", "part_senv"), "y", input$lat_var),
+      longitude = ifelse(input$partition_type %in% c("part_sband", "part_sblock", "part_senv"), "x", input$long_var),
+      latitude = ifelse(input$partition_type %in% c("part_sband", "part_sblock", "part_senv"), "y", input$lat_var),
       env_layer = env_layers(),
+      current_crs = input$occ_current_crs,
       variables = input$extract_variables,
       filter_na = TRUE
     )

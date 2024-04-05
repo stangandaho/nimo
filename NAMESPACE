@@ -8,6 +8,7 @@ export(nm_eval)
 export(nm_gbif_suggestion)
 export(nm_find_hcv)
 export(nm_predict)
+export(nm_extract)
 ## Import
 importFrom("grDevices", "gray.colors", "rainbow")
 importFrom("graphics", "points")

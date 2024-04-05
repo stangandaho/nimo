@@ -268,7 +268,10 @@ nimo_body <- shinydashboard::dashboardBody(
                                                   selected = "Presence"),
                                       shinyFilesButton("choose_data_file", "Load data",
                                                        "Select Species occurrence data", multiple = FALSE,
-                                                       icon = icon("file-upload"))
+                                                       icon = icon("file-upload")),
+                                      selectInput("occ_current_crs", label = "Coordinates CRS",
+                                                  choices = c("Geographic" = "geographic", "Projected" = "projected"), multiple = FALSE,
+                                                  selected = c("Geographic" = "geographic"))
                                       ),
                      hr(),
                      conditionalPanel("output.geo_distribution != null",
