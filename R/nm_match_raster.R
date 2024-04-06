@@ -34,11 +34,13 @@
 #'@param ... additional arguments for writing raster. See [terra::writeRaster()].
 #'
 #'@examples
-#'# example code
-#' original_rast <- rast(nrows=8, ncols=6, xmin=1, xmax=22, ymin=1, ymax=22)
-#' values(original_rast) <- 1:ncell(original_rast)
-#' to_match <- rast(nrows=15, ncols=20, xmin=4, xmax=15, ymin=3, ymax=25)
-#' x <- nm_match_raster(to_match, original_rast, method="near")
+#' env_layers_path <- paste0(system.file("extdata", package = "nimo"), "/env_layers")
+#' env_layers_path <- list.files(env_layers_path, full.names = TRUE)[1:2]
+#'
+#' target <- terra::rast(env_layers_path[1]) # reference raster to get properties from
+#' to_match <- terra::rast(env_layers_path[2]) # raster that will inherit properties
+#'
+#' new_dnw <- nm_match_raster(to_match = to_match, target = target)
 #'
 #'@references
 #' - Hijmans, R. J., Bivand, R., Forner, K., Ooms, J., Pebesma, E., & Sumner, M. D. (2022). Package ‘terra.’ Maintainer: Vienna, Austria.

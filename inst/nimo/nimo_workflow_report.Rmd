@@ -1,0 +1,18 @@
+---
+title: "Workflow of Species Distribution Modeling in NIMO"
+date: " Created on `r Sys.Date() ` in `r Sys.timezone()` by `r Sys.info()[['effective_user']]`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+# Introduction
+This document provides the complete R code executed for Species Distribution Modeling (SDM).
+
+# Directory setting
+We set directory path containing main folder to save model inputs and outputs a `r if(folder_path == "") {getwd()}else{folder_path} `.
+
+```{r set_dir, eval=TRUE, echo=FALSE, comment="", }
+# We set directory path containing main folder to save model inputs and outputs a.
+folder_path

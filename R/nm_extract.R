@@ -24,7 +24,7 @@
 #'  wbv_df <- read.csv(wbv_path)
 #'
 #'  env_layers_path <- paste0(system.file("extdata", package = "nimo"), "/env_layers")
-#'  env_layers <- terra::rast(list.files(env_layers_path, full.names = TRUE))
+#'  env_layers <- terra::rast(list.files(env_layers_path, full.names = TRUE)[c(1,3)])
 #'
 #' extracted <- nm_extract(data = wbv_df, longitude = "decimalLongitude",
 #' latitude = "decimalLatitude", env_layer = env_layers)

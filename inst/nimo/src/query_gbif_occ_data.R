@@ -51,11 +51,6 @@ query_occ <- function(query_params) {
       # Update the offset parameter
       query_params$offset <- offset
 
-      print(
-        httr2::request(base_url = base_url) %>%
-          httr2::req_url_query(!!!query_params)
-      )
-
       response <- httr2::request(base_url = base_url) %>%
         httr2::req_timeout((input$sys_timeout)*60) %>%
         httr2::req_url_query(!!!query_params) %>%

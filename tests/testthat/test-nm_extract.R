@@ -5,7 +5,7 @@ test_that("test for nm_extract", {
   wbv_df <- read.csv(wbv_path)
 
   env_layers_path <- paste0(system.file("extdata", package = "nimo"), "/env_layers")
-  env_layers <- terra::rast(list.files(env_layers_path, full.names = TRUE))
+  env_layers <- terra::rast(list.files(env_layers_path, full.names = TRUE)[c(1,3)])
 
   extracted <- nimo::nm_extract(data = wbv_df,
                          longitude = "decimalLongitude",
