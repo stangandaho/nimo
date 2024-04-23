@@ -7,7 +7,7 @@
 nm_boyce(
   presence_predicted,
   contrast,
-  numBins = 101,
+  num_bins = 101,
   bin_width = 0.1,
   presence_weight = rep(1, length(presence_predicted)),
   contrast_weight = rep(1, length(contrast)),
@@ -25,6 +25,8 @@ nm_boyce(
 \item{presence_predicted}{Numeric vector. Predicted values at presence sites.}
 
 \item{contrast}{Numeric vector. Predicted values at background sites.}
+
+\item{num_bins}{Positive integer. Number of (overlapping) bins into which to divide predictions.}
 
 \item{bin_width}{Positive numeric value < 1. Size of a bin. Each bin will be \code{bin_width * (max - min)}. If \code{autoWindow} is \code{FALSE} (the default) then \code{min} is 0 and \code{max} is 1. If \code{autoWindow} is \code{TRUE} then \code{min} and \code{max} are the maximum and minimum value of all predictions in the background and presence sets (i.e., not necessarily 0 and 1).}
 
@@ -47,8 +49,6 @@ nm_boyce(
 \item{bg_weight}{Same as \code{contrast_weight}. Included for backwards compatibility. Ignored if \code{contrast_weight} is not \code{NULL}.}
 
 \item{...}{Other arguments (not used).}
-
-\item{num_bins}{Positive integer. Number of (overlapping) bins into which to divide predictions.}
 }
 \value{
 Numeric value.
@@ -65,7 +65,6 @@ set.seed(123)
 presence_predicted <- sqrt(runif(100))
 contrast <- runif(1000)
 nm_boyce(presence_predicted, contrast)
-contBoyce2x(presence_predicted, contrast)
 presence_weight <- c(rep(1, 10), rep(0.5, 90))
 nm_boyce(presence_predicted, contrast, presence_weight=presence_weight)
 

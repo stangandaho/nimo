@@ -32,7 +32,6 @@
 #' presence_predicted <- sqrt(runif(100))
 #' contrast <- runif(1000)
 #' nm_boyce(presence_predicted, contrast)
-#' contBoyce2x(presence_predicted, contrast)
 #' presence_weight <- c(rep(1, 10), rep(0.5, 90))
 #' nm_boyce(presence_predicted, contrast, presence_weight=presence_weight)
 #'
@@ -40,7 +39,7 @@
 nm_boyce <- function(
     presence_predicted,
     contrast,
-    numBins = 101,
+    num_bins = 101,
     bin_width = 0.1,
     presence_weight = rep(1, length(presence_predicted)),
     contrast_weight = rep(1, length(contrast)),
