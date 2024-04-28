@@ -246,6 +246,7 @@ test_that("test for fit_ function family", {
 
 test_that("test for ensemble, mask, and suit. values above threshold", {
   library(flexsdm)
+  library(terra)
   # Environmental variables
   somevar <- system.file("external/somevar.tif", package = "flexsdm") %>% terra::rast()
   regions <- system.file("external/regions.tif", package = "flexsdm") %>% terra::rast()
@@ -332,7 +333,7 @@ test_that("test for ensemble, mask, and suit. values above threshold", {
     con_thr = TRUE
   )
 
-  expect_true(nrow(unique(p[[1]][[2]])) > 100)
+  expect_true(length(unique(p[[1]][[2]]) %>% dplyr::pull()) > 100)
   expect_false(terra::ext(p[[1]]) == ext(somevar))
 })
 

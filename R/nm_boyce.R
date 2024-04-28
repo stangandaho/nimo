@@ -70,18 +70,18 @@ nm_boyce <- function(
 
   windowWidth <- bin_width * (highest - lowest)
 
-  lows <- seq(lowest, highest - windowWidth, length.out=numBins)
-  highs <- seq(lowest + windowWidth + .Machine$double.eps, highest, length.out=numBins)
+  lows <- seq(lowest, highest - windowWidth, length.out=num_bins)
+  highs <- seq(lowest + windowWidth + .Machine$double.eps, highest, length.out=num_bins)
 
   ##########
   ## MAIN ##
   ##########
 
   ## initiate variables to store predicted/expected (P/E) values
-  freqPres <- freqContrast <- rep(NA, length(numBins))
+  freqPres <- freqContrast <- rep(NA, length(num_bins))
 
   ### tally proportion of test presences/background sites in each class
-  for (countClass in 1:numBins) {
+  for (countClass in 1:num_bins) {
 
     # number of presence predictions in this class
     presInBin <- presence_predicted >= lows[countClass] & presence_predicted < highs[countClass]
@@ -129,9 +129,9 @@ nm_boyce <- function(
     graphics::par(mfrow=c(1, 2))
     lims <- c(0, max(P, E, na.rm=TRUE))
     plot(E, P, col='white', xlab='Expected', ylab='Predicted', main='P/E\nNumbered from lowest to highest class', xlim=lims, ylim=lims)
-    graphics::text(E, P, labels=1:numBins, col=1:20)
+    graphics::text(E, P, labels=1:num_bins, col=1:20)
     plot(meanPred, PE, type='l', xlab='Mean Prediction in Bin', ylab='P/E Ratio', main='CBI\nNumbered from lowest to highest class')
-    graphics::text(meanPred, PE, labels=1:numBins, col='blue')
+    graphics::text(meanPred, PE, labels=1:num_bins, col='blue')
   }
 
   # remove NAs
