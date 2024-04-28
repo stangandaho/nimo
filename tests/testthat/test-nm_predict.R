@@ -245,6 +245,7 @@ test_that("test for fit_ function family", {
 
 
 test_that("test for ensemble, mask, and suit. values above threshold", {
+  library(flexsdm)
   # Environmental variables
   somevar <- system.file("external/somevar.tif", package = "flexsdm") %>% terra::rast()
   regions <- system.file("external/regions.tif", package = "flexsdm") %>% terra::rast()

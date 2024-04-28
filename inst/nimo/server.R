@@ -994,9 +994,11 @@ kept_colin_var <- reactiveValues(rc = NULL)
   })
   observe({
     req(save_extracted_data_path())
-    if (nrow(save_extracted_data_path()) > 0 ) {
-      write.csv(x = extracted_df(), file = as.character(save_extracted_data_path()$datapath))
-    }
+    tryCatch({
+      if (nrow(save_extracted_data_path()) > 0 ) {
+        write.csv(x = extracted_df(), file = as.character(save_extracted_data_path()$datapath))
+      }
+    }, error = error)
   })
 
   ## MODELING -----------
