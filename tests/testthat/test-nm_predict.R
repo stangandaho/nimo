@@ -333,7 +333,7 @@ test_that("test for ensemble, mask, and suit. values above threshold", {
     con_thr = TRUE
   )
 
-  expect_true(length(unique(p[[1]][[2]]) %>% dplyr::pull()) > 100)
+  expect_true(terra::size(p[[1]][[2]]) > 100)
   expect_false(terra::ext(p[[1]]) == ext(somevar))
 })
 
