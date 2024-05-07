@@ -379,15 +379,56 @@ occ_dt <- reactive({
   })
   env_layers <- reactive({
     req(pred_list())
-  tryCatch({
-    ras <- terra::rast(pred_list())
-    if (base::any(duplicated(names(ras)))) {
-      names(ras) <- sub("\\.[^.]*$", "", basename(pred_list()))}
-    ras
-  }, error = function(e){
-    showModal(error_modal())
-    output$error_modal <- renderText(paste(e))
-  })
+    all_rast <- to_check <- n_col <- n_row <- name <- list(); rast_n <- 0
+    for (rst_path in pred_list()) {
+      rast_n <- rast_n + 1
+      rast_tc <- terra::rast(rst_path)
+      all_rast[[rast_n]] <- rast_tc
+      to_check[[rast_n]] <- paste0(terra::ncol(rast_tc), terra::nrow(rast_tc))
+      n_col[[rast_n]] <- terra::ncol(rast_tc)
+      n_row[[rast_n]] <- terra::nrow(rast_tc)
+      name[[rast_n]] <- terra::names(rast_tc)
+    }
+    to_check <- unlist(to_check)
+
+    if (!all(to_check == to_check[1])) {
+      showModal(
+        shiny::modalDialog(title = h3("Predictor properties differ", style = "text-align:left"),
+                           footer = modalButton("Ok"), size = "m",
+                             DT::dataTableOutput("rast_properties_table"),
+                             br(),
+                             textOutput("unmatched_properties_warning")
+                           )
+      )
+
+      output$rast_properties_table <- DT::renderDT(
+        data.frame(Predictor = unlist(name), Rows = unlist(n_row), Columns = unlist(n_col)),
+        options = list(scrollX = TRUE, scrollY = TRUE, lengthChange = FALSE,
+                       pageLength = 5, searching = FALSE),
+        selection = "none", rownames = FALSE
+      )
+      output$unmatched_properties_warning <- renderText(paste0(
+        "We matched all predictor properties (resolution and extend) to ", terra::names(all_rast[[1]]),
+        "'s propertie. Bilinear method is used to estimate the new cell values."
+      ))
+
+      all_rast_sampled <- list()
+      for (rst_ in 1:length(all_rast)) {
+        all_rast_sampled[[rst_]] <- nm_match_raster(all_rast[[rst_]], all_rast[[1]])
+      }
+      ras <- rast(all_rast_sampled)
+      ras
+    } else{
+      tryCatch({
+        ras <- terra::rast(pred_list())
+        if (base::any(duplicated(names(ras)))) {
+          names(ras) <- sub("\\.[^.]*$", "", basename(pred_list()))}
+        ras
+      }, error = function(e){
+        showModal(error_modal())
+        output$error_modal <- renderText(paste(e))
+      })
+    }
   })
   ## display summary
   predictors_summary <- function() {
@@ -1452,7 +1493,7 @@ observeEvent(input$species_input, {
     species_suggested <- nm_gbif_suggestion(search_term, time_out = tmout()*60)
     shinyWidgets::updatePickerInput(inputId = "species_suggestions", session = session,
                       choices = species_suggested[, search_by], selected = input$species_suggestions)
-  }, error = function(e){return(e)})
+  }, error = function(e){paste0(e)})
 })
 
 gbif_data <- eventReactive(input$load_gbif_data, {
