@@ -148,7 +148,7 @@ nm_fit_bioclim <- function(data,
           thr = thr
         )
 
-        eval_partial[[i]] <- dplyr::tibble(model = "max", eval)
+        eval_partial[[i]] <- dplyr::tibble(model = "bioc", eval)
         names(eval_partial) <- i
       })
     }
