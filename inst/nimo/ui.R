@@ -152,7 +152,7 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
              menuSubItem("Ensembling", tabName = "model_ensembling", icon = NULL)
              ),
     menuItem("Post-Modeling", tabName = "post_modeling", icon = icon("arrow-right", lib = "glyphicon"),
-             menuSubItem("Spatial predictions", tabName = "spatial_predict", icon = NULL),
+             menuSubItem("Predictions", tabName = "spatiotemporal_predict", icon = NULL),
              menuSubItem("Extrapolation ", tabName = "extrapolation", icon = NULL),
              menuSubItem("Overprediction correction", tabName = "overpredict_correct", icon = NULL)
              ),
@@ -463,7 +463,7 @@ nimo_body <- shinydashboard::dashboardBody(
               )
             )
             ),
-    tabItem("spatial_predict",
+    tabItem("spatiotemporal_predict",
             fluidPage(
               fluidRow(column(8,
                               DT::DTOutput("st_fitted_model_list_dt"),

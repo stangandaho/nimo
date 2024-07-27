@@ -1235,7 +1235,7 @@ prediction <- eventReactive(input$predict, {
 })
 ## Modal to show predict output
 predict_modal <- function(){
-  modalDialog(title = h3("Spatial predictions", style = "text-align:left;"),
+  modalDialog(title = h3("Predictions", style = "text-align:left;"),
               footer = modalButton("Ok"), size = "l",
               fluidRow(column(9,
                               shinycssloaders::withSpinner(
