@@ -4,8 +4,8 @@ Title: nimo: A Graphical User Interface-Based R Package for Species Distribution
 Version: 0.2.1
 Date: 2023-10-05
 Depends: R (>= 3.5.0)
-Imports: flexsdm, shiny, shinyFiles, shinydashboard, shinydashboardPlus, shinyjs,
-        plotly, leaflet, leaflet.extras, httr2, sf, terra, dismo,
+Imports: shiny, shinyFiles, shinydashboard, shinydashboardPlus, shinyjs,
+        plotly, leaflet, leaflet.extras, httr2, dismo,
         DT, shinyWidgets, shinycssloaders, methods, dplyr, ggplot2
 Remotes: sjevelazco/flexsdm
 Author: Stanislas Mahussi GANDAHO
