@@ -72,6 +72,7 @@ query_occ <- function(query_params) {
                        "recordedBy", "institutionCode", "samplingProtocol", "habitat", "license")
 
         absent_col <- basic_col[!basic_col %in% occdt_col[which(occdt_col %in% basic_col)]]
+
         if (length(absent_col) > 0) {
           df <- data.frame(matrix(NA, nrow = nrow(occurrences), ncol = length(absent_col)))
           colnames(df) <- absent_col
@@ -101,6 +102,7 @@ query_occ <- function(query_params) {
         }
           markdown_text <- sub("accessed via GBIF.org", "accessed via GBIF.org using nimo", paste(metadata_list))
       }
+      Sys.sleep(input$sleep_time) # Sleep
 
     }
 

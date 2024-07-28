@@ -632,6 +632,7 @@ nimo_body <- shinydashboard::dashboardBody(
               shinyWidgets::panel(
                 tagList(numericInput("set_seed", "Set seed", value = 123, min = 0, step = 1),
                         numericInput("sys_timeout", "Timeout (min)", value = 5, min = 1, step = 0.1),
+                        numericInput("sleep_time", "Sleep time (sec)", value = 0.5, min = 0.01, step = 0.1),
                         actionButton("save_config", "Save change", style = bttn_primary_style))
               )
             )
