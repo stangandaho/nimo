@@ -23,7 +23,6 @@ Imports:
     dismo,
     dplyr,
     DT,
-    flexsdm,
     ggplot2,
     httr2,
     leaflet,
@@ -39,6 +38,8 @@ Imports:
     shinyjs,
     shinyWidgets,
     terra
+Remotes: 
+    sjevelazco/flexsdm
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
