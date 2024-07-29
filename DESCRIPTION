@@ -23,6 +23,7 @@ Imports:
     dismo,
     dplyr,
     DT,
+    flexsdm,
     ggplot2,
     httr2,
     leaflet,
