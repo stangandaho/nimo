@@ -1297,6 +1297,7 @@ mperf <- reactive({ sdm_summarize(models = perf_models()) })
 observeEvent(input$merge_model_perf, {
   tryCatch({output$model_perf_merged <- render_dt(mperf())}, error = error)
 })
+
 ## Save performace table
 observe({
   hide("save_model_perf_merged")

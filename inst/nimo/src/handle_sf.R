@@ -37,10 +37,12 @@ geom_gbif <- reactive({
 loc_geom <- reactive({
   query_params <- query_params()# query_params() from ./inst/nimo/src/query_gbif_occ_data.R
   if (nrow(geom_gbif()) > 1) {
-    g <- sf::st_union(geom_gbif()) %>% sf::st_as_sf()
-    geom_wkt <- sf::st_as_text(g$x)
+    g <- sf::st_union(geom_gbif()) %>% st_as_sfc() %>% st_simplify()
+    geom_wkt <- sf::st_as_text(g)
   } else {
-    geom_wkt <- sf::st_as_text(geom_gbif()$geometry)
+    geom_wkt <- sf::st_as_text(geom_gbif() %>%
+                                 dplyr::select(geometry) %>%
+                                 st_as_sfc() %>% st_simplify())
   }
 
   if (!is.null(query_params[["country"]])) {
