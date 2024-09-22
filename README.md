@@ -3,8 +3,7 @@
 [![Code coverage](https://codecov.io/gh/stangandaho/nimo/graph/badge.svg?token=ehmZyEafyI)](https://codecov.io/gh/stangandaho/nimo)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10495310.svg)](https://doi.org/10.5281/zenodo.10495310)
 
-
-# nimo <img src="man/figures/logo.png" align="right" height="94" alt="" />
+# nimo <img src="man/figures/logo.png" align="right" height="90" alt="NIMO LOGO" />
 
 # **`{nimo}`** in brief
 **`nimo`** provides a user-friendly graphical interface that enables users to define complete or partial modeling procedures, including variables, records, algorithms, ensemble methods, and algorithm tuning.  This comprehensive package empowers users to explore, customize, and model their data effectively, with the added benefit of accessing real-world biodiversity data. They can intuitively control the input parameters, explore different modeling options, and observe the corresponding outputs in real-time. This visual and interactive experience enhances the usability and accessibility allowing researchers to focus on their modeling tasks without worrying about complex programming or technical details. It allows users to easily query occurrence data through Global Biodiversity Information Facility [(GBIF)](https://www.gbif.org/occurrence/search) and incorporate it into their modeling workflow. Based on [**`flexsdm`**](https://github.com/sjevelazco/flexsdm/) features and powered by [**`shiny`**](https://github.com/rstudio/shiny), **`nimo`** offers users the flexibility to manipulate and parameterize models. 
@@ -33,7 +32,7 @@ Once **nimo** is installed, load the package and call `nimo()` function.
 library(nimo)
 nimo()
 ```
-The **nimo** [website](https://nimo.re-agro.org) provides to users the resources to get started. 
+The **nimo** [website](https://nimo.naben.org) provides to users the resources to get started. 
 All necessaries concept and part of **nimo** are explained with screenshot and example. 
 
 # To do 
