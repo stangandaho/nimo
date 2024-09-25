@@ -1,7 +1,7 @@
+[![DOI](https://img.shields.io/badge/DOI-10.1002%2F2688--8319.12385-004c03)](https://doi.org/10.1002/2688-8319.12385)
 [![License](https://img.shields.io/badge/license-GPL%20%28%3E=%203%29-lightgrey.svg?style=flat)](https://www.gnu.org/licenses/gpl-3.0.html#license-text)
 [![R-CMD-check](https://github.com/stangandaho/nimo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stangandaho/nimo/actions/workflows/R-CMD-check.yaml)
 [![Code coverage](https://codecov.io/gh/stangandaho/nimo/graph/badge.svg?token=ehmZyEafyI)](https://codecov.io/gh/stangandaho/nimo)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10495310.svg)](https://doi.org/10.5281/zenodo.10495310)
 
 # nimo <img src="man/figures/logo.png" align="right" height="90" alt="NIMO LOGO" />
 
