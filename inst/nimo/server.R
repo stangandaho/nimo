@@ -66,12 +66,10 @@ server <- function(input, output, session) {
   species_data <- reactive({
     if (is.null(input$start_modeling) && input$import_data_check == TRUE) {
     req(data_file_path())
-    data <- read.csv(file = data_file_path(), header = TRUE) %>%
-      dplyr::select(-1)
+    data <- read.csv(file = data_file_path(), header = TRUE)
     } else if (input$start_modeling == 1 && input$import_data_check == TRUE) {
       req(data_file_path())
-      data <- read.csv(file = data_file_path(), header = TRUE) %>%
-        dplyr::select(-1)
+      data <- read.csv(file = data_file_path(), header = TRUE)
     } else if (input$start_modeling == 1 && input$import_data_check == FALSE) {
       data <- gbif_data()[[1]]
     }
