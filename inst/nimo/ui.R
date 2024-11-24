@@ -22,12 +22,12 @@ loader_color <- "#042d0f"; loader_type  <- 7
 # Web page link
 git_repo <- "https://github.com/stangandaho/nimo"
 git_issues <- "https://github.com/stangandaho/nimo/issues"
-nimo_site <- "https://nimo.re-agro.org/"
-get_started_url <- "https://nimo.re-agro.org/get-started/"
+nimo_site <- "https://nimo.naben.org/"
+get_started_url <- "https://nimo.naben.org/get-started/"
 nimo_logo <- "nimo/nimo_logo.png"; gbif_white_logo <- "nimo/gbif_white_logo.png"
 mytitle <-   tags$link(tags$a(href = nimo_site,
-                              tags$img(src= nimo_logo, height = '32',width='37')),
-                       strong("nimo", style = "font-size: 1.8em;     font-family: 'Montserrat-Bold';"))
+                              tags$img(src= nimo_logo, height = '35',width='35')),
+                       strong("NIMO", style = "font-size: 1em; font-family: 'Montserrat-Bold';"))
 # Colinearity methods
 colinearity_method <- c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
                         "Principal component analysis" = "pca", "Factorial analysis" = "fa")
@@ -220,25 +220,27 @@ nimo_body <- shinydashboard::dashboardBody(
                               style="text-align:center; font-size:50px;"))
                 ),
                 column(12,
-                       div(shiny::img(src = nimo_logo, height = "25%",width = "30%"), style="text-align: center;")
+                       div(shiny::img(src = nimo_logo, height = "20%",width = "20%"), style="text-align: center;")
                 ),
                 column(12,
                        div(p(strong("To start quickly with NIMO, please visite the start page "),
                              em(a("here",
                                   href = get_started_url)),
-                             style="text-align:center; font-size:2.5rem; color:#00910a")),
+                             style="text-align:center; font-size:2.5rem; color:#042d0f")),
                 ),
                 hr(),
                 column(12,
                        div(id = "main_page",
-                           div(h5("nimo is open-source and freely available for use, distributed under the MIT license.")),
-                           # div(h5("When they are used in a publication, we ask that authors to cite the following reference:")),
-                           # br(),
-                           # div(h5("GANDAHO, S.M. . (2023).", strong(" nimo: ..."))),
-                           # div(h5(strong("species distribution modeling."), em("Journal of ..."),", xx(6), xxx-xxx.")),
-                           # br(),
-                           # div(h5(strong("Failure to properly cite the software is considered a violation of the license🥺"),
-                           #        style = "color:red;"))
+                           br(),
+                           br(),
+                           div(h3("CITATION"), style="text-align: center;"),
+                           br(),
+                           div(p("Gandaho, S. M., Sogbohossou, E. A., & Thompson, L. J. (2024).
+                                 NIMO: A graphical user interface-based R package
+                                 for species distribution modelling. Ecological
+                                 Solutions and Evidence, 5, e12385.
+                                 https://doi.org/10.1002/2688-8319.12385", style="font-size: 1.3em;")),
+                           br()
                            )
                 )
 
