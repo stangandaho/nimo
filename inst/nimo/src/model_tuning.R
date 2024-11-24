@@ -84,7 +84,8 @@ raf_tuning <- eventReactive(input$t_raf, {
       predictors_f = input$t_raf_predictors_f,
       fit_formula = stats::formula(as.formula(input$t_raf_formula)),
       partition = ".part",
-      grid = expand.grid(mtry = as.numeric( strsplit(input$t_raf_mtry, split = ",")[[1]] )),
+      grid = expand.grid(mtry = as.numeric( strsplit(input$t_raf_mtry, split = ",")[[1]] ),
+                         ntree = as.numeric( strsplit(input$t_raf_ntree, split = ",")[[1]] )),
       thr = if(any(input$t_raf_thr %in% c("sensitivity"))) {
         c(input$t_raf_thr, "sens" = as.character(input$t_raf_sens))
       } else{input$t_raf_thr},

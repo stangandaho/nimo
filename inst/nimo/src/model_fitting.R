@@ -131,6 +131,8 @@ raf_fitting <- eventReactive(input$fit_raf, {
       predictors = input$raf_predictors,
       predictors_f = input$raf_predictors_f,
       fit_formula = stats::formula(as.formula(input$raf_fit_formula)),
+      ntree = input$raf_ntree,
+      mtry = input$raf_mtry,
       partition = ".part",
       thr = if(any(input$raf_thr %in% c("sensitivity"))) {
         c(input$raf_thr, "sens" = as.character(input$raf_sens))

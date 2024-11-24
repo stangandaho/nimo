@@ -11,7 +11,7 @@ output$dynamic_model_fitting <- renderUI({
   selected_order <- input$fit_model_algorithm
 
   columns <- lapply(selected_order, function(order) {
-    ## ESM
+    ## ✅ESM
     if (order %in% c("gam") && input$esm == TRUE) {
       div(style = "flex: 1;  margin-right: 20px;",
           h4("Generalized Additive Models - ESM"),
@@ -104,7 +104,7 @@ output$dynamic_model_fitting <- renderUI({
           numericInput("svm_esm_C", "Cost of constraints violation", value = 1, min = 1),
           actionButton("fit_svm_esm", "Fit SVM - ESM", icon = fit_model_btn_icon, style = fit_model_btn_style))
     }
-    ## TUNING
+    ## ✅TUNING
     else if (order  %in% c("gbm") && input$tuning == TRUE) {
       div(style = "flex: 1;margin-right: 20px;",
           h4("Generalized Boosted - Tuning"),
@@ -174,6 +174,8 @@ output$dynamic_model_fitting <- renderUI({
                            numericInput("t_raf_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
           textInput("t_raf_formula", "Model formula"),
           # Grid Construction
+          textInput("t_raf_ntree", "Number of tree",
+                    value = "10, 50, 100, 200, 500", placeholder = "10, 50, 100, 200, 500"),
           textInput("t_raf_mtry", "Number of variables sampled",
                     value = "1, 2, 3, 4, 5", placeholder = "1, 2, 3, 4, 5"),
           selectInput("t_raf_metric", "Metric", choices = metric, selected = "TSS"),
@@ -197,7 +199,7 @@ output$dynamic_model_fitting <- renderUI({
           numericInput(inputId = "t_svm_n_cores", "Number of cores", min = 1, value = 1),
           actionButton("t_svm", "Tune SVM", icon = fit_model_btn_icon, style = fit_model_btn_style))
     }
-    ## FITTING
+    ## ✅FITTING
     else if (order %in% c("gam") && input$tuning == FALSE) {
       div(style = "flex: 1;  margin-right: 20px;",
               h4("Generalized Additive Models"),
@@ -288,6 +290,8 @@ output$dynamic_model_fitting <- renderUI({
           h4("Random Forests Models"),
           selectInput("raf_predictors", "Quantitative predictors", choices = c(), multiple = T),
           selectInput("raf_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+          numericInput("raf_ntree", "Number of tree", 500, min = 1, step = 1),
+          numericInput("raf_mtry", "Number of variables sampled", 2, min = 1, step = 1),
           selectInput("raf_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.raf_thr.includes('sensitivity')",
                            numericInput("raf_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
