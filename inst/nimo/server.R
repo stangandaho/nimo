@@ -412,7 +412,10 @@ occ_dt <- reactive({
 
       all_rast_sampled <- list()
       for (rst_ in 1:length(all_rast)) {
-        all_rast_sampled[[rst_]] <- nm_match_raster(all_rast[[rst_]], all_rast[[1]])
+        tgt <- all_rast[[1]]
+        tmch <- all_rast[[rst_]]
+        tmch <- terra::project(tmch, tgt)
+        all_rast_sampled[[rst_]] <- nimo::nm_match_raster(to_match = tmch, target = tgt)
       }
       ras <- rast(all_rast_sampled)
       ras
