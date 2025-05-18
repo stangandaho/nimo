@@ -76,7 +76,7 @@ server <- function(input, output, session) {
     data
   })
 
-  ## set nodal to customize data importing
+  ## set Modal to customize data importing
   data_customize_modal <- function(){
     sdm_data <- species_data()
     modalDialog(title = h3("Characterize the species data", style = "text-align:left"), size = "l",
@@ -393,7 +393,8 @@ occ_dt <- reactive({
       showModal(
         shiny::modalDialog(title = h3("Predictor properties differ", style = "text-align:left"),
                            footer = modalButton("Ok"), size = "m",
-                             DT::dataTableOutput("rast_properties_table"),
+                           shinycssloaders::withSpinner(DT::dataTableOutput("rast_properties_table"),
+                                                        color = loader_color, type = loader_type),
                              br(),
                              textOutput("unmatched_properties_warning")
                            )
@@ -407,7 +408,7 @@ occ_dt <- reactive({
       )
       output$unmatched_properties_warning <- renderText(paste0(
         "We matched all predictor properties (resolution and extend) to ", terra::names(all_rast[[1]]),
-        "'s propertie. Bilinear method is used to estimate the new cell values."
+        "'s properties. Nearest neighbor method is used to estimate the new cell values."
       ))
 
       all_rast_sampled <- list()
@@ -472,7 +473,8 @@ occ_dt <- reactive({
     })
   })
   colin_modal <- function(){
-    modalDialog(title = h3("Pair plots of predictor", style = "text-align:left"), footer = modalButton("Ok"), size = "l",
+    modalDialog(title = h3("Pair plots of predictor", style = "text-align:left"),
+                footer = modalButton("Ok"), size = "l",
                 shinycssloaders::withSpinner(plotOutput("colin_corr"),
                                              color = loader_color, type = loader_type))
   }

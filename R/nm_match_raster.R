@@ -49,7 +49,7 @@
 #'
 #'@export
 
-nm_match_raster <- function(to_match, target, method = "bilinear", threads = FALSE,
+nm_match_raster <- function(to_match, target, method = "near", threads = FALSE,
                          save_file = FALSE, file_name = "", ...) {
 
   check_class <- c(class(target), class(to_match))

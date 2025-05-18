@@ -81,9 +81,7 @@ nm_fit_bioclim <- function(data,
     train <- list()
     test <- list()
 
-    if (any(c("train", "train-test", "test")
-            %in%
-            unique(data[, p_names[h]]))) {
+    if (any(c("train", "train-test", "test") %in% unique(data[, p_names[h]]))) {
       np2 <- 1
 
       filt <- grepl("train", data[, p_names[h]])
@@ -139,7 +137,6 @@ nm_fit_bioclim <- function(data,
 
         pred_test_ens[[h]][[i]] <- pred_test %>%
           dplyr::mutate(rnames = rownames(test[[i]]))
-
 
         # Validation of model
         eval <- sdm_eval(
