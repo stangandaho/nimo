@@ -416,7 +416,8 @@ occ_dt <- reactive({
         tgt <- all_rast[[1]]
         tmch <- all_rast[[rst_]]
         tmch <- terra::project(tmch, tgt)
-        all_rast_sampled[[rst_]] <- nimo::nm_match_raster(to_match = tmch, target = tgt)
+        all_rast_sampled[[rst_]] <- nm_match_raster(to_match = tmch, target = tgt,
+                                                    method = 'near')
       }
       ras <- rast(all_rast_sampled)
       ras

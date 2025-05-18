@@ -8,7 +8,7 @@ of a raster to a reference one (resampling).}
 nm_match_raster(
   to_match,
   target,
-  method = "bilinear",
+  method = "near",
   threads = FALSE,
   save_file = FALSE,
   file_name = "",
