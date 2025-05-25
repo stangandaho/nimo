@@ -59,16 +59,6 @@ This function calculates the continuous Boyce index (CBI), a measure of model ac
 \details{
 CBI is the Spearman rank correlation coefficient between the proportion of sites in each prediction class and the expected proportion of predictions in each prediction class based on the proportion of the landscape that is in that class.  The index ranges from -1 to 1. Values >0 indicate the model's output is positively correlated with the true probability of presence.  Values <0 indicate it is negatively correlated with the true probability of presence.
 }
-\examples{
-
-set.seed(123)
-presence_predicted <- sqrt(runif(100))
-contrast <- runif(1000)
-nm_boyce(presence_predicted, contrast)
-presence_weight <- c(rep(1, 10), rep(0.5, 90))
-nm_boyce(presence_predicted, contrast, presence_weight=presence_weight)
-
-}
 \references{
 Boyce, M.S., Vernier, P.R., Nielsen, S.E., and Schmiegelow, F.K.A.  2002.  Evaluating resource selection functions.  \emph{Ecological Modeling} 157:281-300. \doi{https://doi.org/10.1016/S0304-3800(02)00200-4}
 

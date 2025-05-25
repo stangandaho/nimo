@@ -37,8 +37,8 @@ geom_gbif <- reactive({
 loc_geom <- reactive({
   query_params <- query_params()# query_params() from ./inst/nimo/src/query_gbif_occ_data.R
   if (nrow(geom_gbif()) > 1) {
-    g <- sf::st_union(geom_gbif()) %>% st_as_sfc() %>% st_simplify()
-    geom_wkt <- sf::st_as_text(g)
+    g <- sf::st_combine(geom_gbif()) %>% st_as_sf() %>% st_simplify()
+    geom_wkt <- sf::st_as_text(sf::st_as_sfc(g))
   } else {
     geom_wkt <- sf::st_as_text(geom_gbif() %>%
                                  dplyr::select(geometry) %>%

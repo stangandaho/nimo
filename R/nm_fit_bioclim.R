@@ -9,7 +9,6 @@
 #' groups (like part_* family output from `flexsdm`).
 #' @param thr character. Threshold used to get binary suitability values (i.e. 0,1).
 #' See a function of model fitting family in `flexsdm` package (e.g [fit_gam()])
-#' @param ... Additional arguments
 #'
 #' @return
 #'

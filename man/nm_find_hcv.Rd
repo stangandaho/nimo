@@ -20,7 +20,7 @@ integer(0) is returned.
 \description{
 This function examines a correlation matrix and generates a vector of
 integers representing columns to be eliminated for minimizing pairwise
-correlations. It is similar to \code{\link[=findCorrelation]{findCorrelation()}} in \code{caret} package.
+correlations. It is similar to findCorrelation() in \code{caret} package.
 }
 \examples{
 wbv_path <- paste0(system.file("extdata", package = "nimo"), "/Gyps_africanus_KNP.csv")

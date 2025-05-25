@@ -18,8 +18,6 @@ groups (like part_* family output from \code{flexsdm}).}
 
 \item{thr}{character. Threshold used to get binary suitability values (i.e. 0,1).
 See a function of model fitting family in \code{flexsdm} package (e.g \code{\link[=fit_gam]{fit_gam()}})}
-
-\item{...}{Additional arguments}
 }
 \value{
 A list object with:

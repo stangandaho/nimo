@@ -10,18 +10,5 @@ nimo()
 Entry function to launch nimo app to query occurrence data
 from the Global Biodiversity Information Facility \href{https://www.gbif.org/occurrence/search}{(GBIF)}
 and incorporate it into ecological niche modelling workflow offered by
-[\link{flexdsm}](https://besjournals.onlinelibrary.wiley.com/doi/10.1111/2041-210X.13874)
-}
-\examples{
-# Install remotes if it is not already installed
-if (!require("remotes", character.only = TRUE)) {
-  install.packages("remotes")
-  }
-
-# Install nimo R package
-remotes::install_github("stangandaho/nimo")
-
-# Launch the app
-nimo::nimo()
-
+\href{https://besjournals.onlinelibrary.wiley.com/doi/10.1111/2041-210X.13874}{flexdsm}
 }

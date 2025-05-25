@@ -3,7 +3,7 @@
 #' @description
 #' This function examines a correlation matrix and generates a vector of
 #' integers representing columns to be eliminated for minimizing pairwise
-#' correlations. It is similar to [findCorrelation()] in `caret` package.
+#' correlations. It is similar to findCorrelation() in `caret` package.
 #'
 #' @param x A correlation matrix
 #' @param cutoff A numeric value for the pair-wise absolute correlation cutoff

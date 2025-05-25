@@ -64,15 +64,17 @@ server <- function(input, output, session) {
   })
   ## import data
   species_data <- reactive({
-    if (is.null(input$start_modeling) && input$import_data_check == TRUE) {
-    req(data_file_path())
-    data <- read.csv(file = data_file_path(), header = TRUE)
-    } else if (input$start_modeling == 1 && input$import_data_check == TRUE) {
+    #req(input$import_data_check)  # Ensure input is available
+
+    if (input$import_data_check) {
       req(data_file_path())
       data <- read.csv(file = data_file_path(), header = TRUE)
-    } else if (input$start_modeling == 1 && input$import_data_check == FALSE) {
+    } else if (isTRUE(input$start_modeling)) {
       data <- gbif_data()[[1]]
+    } else {
+      data <- NULL  # or return(NULL) if you want to suppress reactivity
     }
+
     data
   })
 
@@ -708,7 +710,6 @@ occ_dt <- reactive({
       prt <- partion %>% select(.part1)
 
     } else if (input$partition_type == "part_sband"){
-      print(env_layers())
       parts <- part_sband(env_layer = env_layers(), data = wrangle_data()[[1]],
         x = input$long_var, y = input$lat_var, pr_ab = "pr_ab",
         type = input$sband_lon_lat,

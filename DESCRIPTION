@@ -3,9 +3,13 @@ Package: nimo
 Title: Graphical User Interface for Species Distribution Modeling
 Version: 0.2.1
 Date: 2023-10-05
-Authors@R: 
+Authors@R: c(
     person("Stanislas Mahussi", "Gandaho", email = "gandahostanmah@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0009-0003-4969-1252"))
+                   comment = c(ORCID = "0009-0003-4969-1252")),
+    person("Etotépé A.", "Sogbohossou", email = "etotepe@gmail.com", role = c("cph"),
+                   comment = c(ORCID = "0000-0002-0446-0720")),
+    person("Lindy Jane", "Thompson", email = "lindyjane.thompson@gmail.com", role = c("cph"),
+                   comment = c(ORCID = "0000-0001-9847-2003")))
 Description: An Application for flexibility to manipulate and parameterize
     models according to unique research needs. It provides a user-friendly
     graphical interface that enables users to define complete modeling
@@ -26,9 +30,11 @@ Imports:
     flexsdm,
     ggplot2,
     httr2,
+    kernlab,
     leaflet,
     leaflet.extras,
     methods,
+    mgcv,
     plotly,
     sf,
     shiny,

@@ -46,12 +46,6 @@
 #'
 #' @seealso \code{\link{sdm_predict}}
 #'
-#' @importFrom dplyr mutate across left_join pull bind_rows filter  select
-#' @importFrom kernlab predict
-#' @importFrom mgcv predict.gam
-#' @importFrom stats median
-#' @importFrom terra vect crop mask as.data.frame is.factor rast app weighted.mean lapp crs
-#'
 #'
 #' @author
 #' Velazco, S. J. E., Rose, M. B., de Andrade, A. F. A., Minoli, I., & Franklin, J. (2022).

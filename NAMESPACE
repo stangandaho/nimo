@@ -13,7 +13,7 @@ export(nm_extract)
 importFrom("grDevices", "gray.colors", "rainbow")
 importFrom("graphics", "points")
 importFrom("methods", "show")
-importFrom("stats", "complete.cases")
+importFrom("stats", "complete.cases", "dist", "formula", "model.matrix", "na.omit")
 importFrom("utils", "URLencode", "read.csv", "write.csv")
 
 #flexsdm
@@ -179,3 +179,4 @@ importFrom(httr2, req_timeout)
 importFrom(httr2, req_url_query)
 importFrom(httr2, req_perform)
 importFrom(httr2, resp_body_json)
+

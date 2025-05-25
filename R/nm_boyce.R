@@ -26,16 +26,7 @@
 #'
 #' @seealso \code{\link[stats]{cor}}, \code{link[enmSdm]{contBoyce2x}}
 #'
-#' @examples
-#'
-#' set.seed(123)
-#' presence_predicted <- sqrt(runif(100))
-#' contrast <- runif(1000)
-#' nm_boyce(presence_predicted, contrast)
-#' presence_weight <- c(rep(1, 10), rep(0.5, 90))
-#' nm_boyce(presence_predicted, contrast, presence_weight=presence_weight)
-#'
-
+#'@export
 nm_boyce <- function(
     presence_predicted,
     contrast,
