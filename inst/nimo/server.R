@@ -217,7 +217,8 @@ server <- function(input, output, session) {
   ## set shp data
   shp_layer <- reactive({
     req(layer_file_path())
-    sf::read_sf(layer_file_path())
+    sf::read_sf(layer_file_path()) %>%
+      sf::st_make_valid(duplicate_edges = FALSE, split_crossing_edges = TRUE)
     })
 
   occ_data <- reactive({
