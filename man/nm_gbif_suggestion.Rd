@@ -21,4 +21,5 @@ prefix matching against the scientific name. Results are ordered by relevance.
 }
 \examples{
 nm_gbif_suggestion("Gyps")
+
 }

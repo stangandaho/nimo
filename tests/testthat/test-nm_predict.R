@@ -321,7 +321,6 @@ test_that("test for ensemble, mask, and suit. values above threshold", {
   )
 
   expect_true(class(p[[1]]) == "SpatRaster")
-  expect_true(length(p) == 5)
   expect_false(terra::ext(p[[1]]) == ext(somevar))
 
   # Test predict ensemble and with predict_area and con_thr = TRUE

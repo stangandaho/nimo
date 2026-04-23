@@ -1,7 +1,6 @@
+# nocov start
 ## %######################################################%##
-#                                                          #
 ####                     GRaF codes                     ####
-#                                                          #
 ## %######################################################%##
 # This codes belogn to GRaF package available at https://github.com/goldingn/GRaF
 
@@ -11,6 +10,8 @@
 # https://doi.org/10.1111/2041-210X.12523
 
 # cov.SE
+#' @noRd
+#' @importFrom stats dist
 cov.SE <- function(x1, x2 = NULL, e1 = NULL, e2 = NULL, l) {
   n1 <- nrow(x1)
   n2 <- ifelse(is.null(x2), n1, nrow(x2))
@@ -82,6 +83,7 @@ cov.SE <- function(x1, x2 = NULL, e1 = NULL, e2 = NULL, l) {
 }
 
 # pred
+#' @noRd
 pred <-
   function(predx, fit, mn, std = TRUE, maxn = 250, same = FALSE) {
     predx <- as.matrix(predx)
@@ -205,3 +207,5 @@ predict.graf <-
     }
     ans
   }
+
+# nocov end

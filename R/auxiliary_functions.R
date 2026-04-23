@@ -1,13 +1,11 @@
 ## %######################################################%##
-#                                                          #
 ####                Auxiliary functions                 ####
-#                                                          #
 ## %######################################################%##
 
 
 # maxnet:::predict.maxnet()
 #' Predict maxnet
-#' @importFrom stats model.matrix
+#' @importFrom stats model.matrix formula
 #' @noRd
 predict_maxnet <- function(object, newdata, clamp = TRUE, type = c("link", "exponential", "cloglog", "logistic"), ...) {
   categoricalval <- function(x, category) {

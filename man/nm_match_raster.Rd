@@ -69,6 +69,6 @@ new_dnw <- nm_match_raster(to_match = to_match, target = target)
 \itemize{
 \item Hijmans, R. J., Bivand, R., Forner, K., Ooms, J., Pebesma, E., & Sumner, M. D. (2022). Package ‘terra.’ Maintainer: Vienna, Austria.
 \item Lovelace, R., Nowosad, J., & Muenchow, J. (2019). Geocomputation with R.
-Chapman and Hall/CRC. \href{https://doi.org/10.1201/9780203730058}{(https://doi.org/10.1201/9780203730058)}
+Chapman and Hall/CRC. \doi{10.1201/9780203730058}
 }
 }

@@ -58,6 +58,9 @@
 #' e <- nm_eval(p, a)
 #' }
 #'
+#' @importFrom dplyr tibble mutate filter pull bind_cols left_join
+#' @importFrom stats quantile
+#'
 #' @export
 nm_eval <- function (p, a, bg = NULL, thr = NULL) {
 
@@ -79,13 +82,13 @@ nm_eval <- function (p, a, bg = NULL, thr = NULL) {
     stop("Presence and absence must be greater than zero")
   }
   if (length(p) > 1000) {
-    tr <- as.vector(stats::quantile(p, 0:1000/1000))
+    tr <- as.vector(quantile(p, 0:1000/1000))
   }
   else {
     tr <- p
   }
   if (length(a) > 1000) {
-    tr <- c(tr, as.vector(stats::quantile(a, 0:1000/1000)))
+    tr <- c(tr, as.vector(quantile(a, 0:1000/1000)))
   }
   else {
     tr <- c(tr, a)
@@ -111,7 +114,7 @@ nm_eval <- function (p, a, bg = NULL, thr = NULL) {
   prN = (res$fn+ res$tn)/N * (res$fp + res$tn)/N
   prE = prY + prN
 
-  performance <- dplyr::tibble(threshold = tr,
+  performance <- tibble(threshold = tr,
                                n_presences = np,
                                n_absences = na,
                                prevalence = (res$tp + res$fn) / N, # Prevalence
@@ -128,34 +131,35 @@ nm_eval <- function (p, a, bg = NULL, thr = NULL) {
                                OR = (1 - TPR),
                                TSS = (TPR + TNR) - 1)
   R <- sum(rank(c(p, a))[1:np]) - (np * (np + 1)/2)
-  performance <- performance %>% dplyr::mutate(AUC = R/(as.numeric(na) * as.numeric(np)))
+  performance <- performance %>% mutate(AUC = R/(as.numeric(na) * as.numeric(np)))
+
   if (is.null(bg)) {
-    performance <- performance %>% dplyr::mutate(BOYCE = nm_boyce(presence_predicted = p, contrast = c(p, a)))
+    performance <- performance %>% mutate(BOYCE = nm_boyce(presence_predicted = p, contrast = c(p, a)))
   }
   else {
-    performance <- performance %>% dplyr::mutate(BOYCE = nm_boyce(presence_predicted = p, bg = bg))
+    performance <- performance %>% mutate(BOYCE = nm_boyce(presence_predicted = p, bg = bg))
   }
   real <- c(rep(1, length(p)), rep(0, length(a)))
   pred <- c(p, a)
-  performance <- performance %>% dplyr::mutate(IMAE = 1 - (sum(abs(real - pred))/length(pred)))
+  performance <- performance %>% mutate(IMAE = 1 - (sum(abs(real - pred))/length(pred)))
 
   thresholds <- list()
-  thresholds$max_sorensen <- max(performance %>% dplyr::filter(SORENSEN == max(SORENSEN)) %>% dplyr::pull(threshold))
-  thresholds$max_jaccard <- max(performance %>% dplyr::filter(JACCARD == max(JACCARD)) %>% dplyr::pull(threshold))
-  thresholds$max_fpb <- max(performance %>% dplyr::filter(FPB == max(FPB)) %>% dplyr::pull(threshold))
-  thresholds$max_sens_spec <- max(performance %>% dplyr::filter(TSS == max(TSS)) %>% dplyr::pull(threshold))
+  thresholds$max_sorensen <- max(performance %>% filter(SORENSEN == max(SORENSEN)) %>% pull(threshold))
+  thresholds$max_jaccard <- max(performance %>% filter(JACCARD == max(JACCARD)) %>% pull(threshold))
+  thresholds$max_fpb <- max(performance %>% filter(FPB == max(FPB)) %>% pull(threshold))
+  thresholds$max_sens_spec <- max(performance %>% filter(TSS == max(TSS)) %>% pull(threshold))
   thresholds$equal_sens_spec <- performance$threshold[which(abs(performance$TPR - performance$TNR) == min(abs(performance$TPR - performance$TNR)))] %>% max()
   suppressWarnings(thresholds$lpt <- max(performance$threshold[performance$TPR == 1]))
   if (any(thr == "sensitivity")) {
     thresholds$sensitivity <- performance$threshold[which.min(performance$TPR > as.numeric(thr["sens"]))]
   }
-  thresholds <- dplyr::bind_cols(thresholds)
-  thr_table <- dplyr::tibble(threshold = names(thresholds),
+  thresholds <- bind_cols(thresholds)
+  thr_table <- tibble(threshold = names(thresholds),
                              thr_value = unlist(thresholds))
-  thr_table <- dplyr::left_join(thr_table, performance, by = c(thr_value = "threshold"))
+  thr_table <- left_join(thr_table, performance, by = c(thr_value = "threshold"))
   result <- thr_table
   if (!is.null(thr)) {
-    result <- result %>% dplyr::filter(threshold %in% thr)
+    result <- result %>% filter(threshold %in% thr)
   }
   performance <<- performance
   return(result)

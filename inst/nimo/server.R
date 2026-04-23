@@ -339,7 +339,7 @@ occ_dt <- reactive({
       showNotification(
         id = "cala_validity_status",
         ui = "Area calibrated and saved",
-        duration = 4,
+        duration = 6,
         closeButton = TRUE,
         type = "message"
       )
@@ -993,7 +993,7 @@ observeEvent(input$valided_dp, {
       showNotification(
         id = "valided_dp",
         ui = "Partition validated",
-        duration = 4,
+        duration = 6,
         closeButton = TRUE,
         type = "message"
       )

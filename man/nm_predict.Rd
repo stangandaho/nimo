@@ -68,12 +68,9 @@ with the fit_ or tune_ function set, models fitted with esm_ function set (i.e.,
 small models approach), or models constructed with fit_ensemble function. It can return
 continuous or continuous and binary predictions for one or more thresholds
 }
-\seealso{
-\code{\link{sdm_predict}}
-}
 \author{
 Velazco, S. J. E., Rose, M. B., de Andrade, A. F. A., Minoli, I., & Franklin, J. (2022).
 flexsdm: An r package for supporting a comprehensive and flexible species distribution
 modelling workflow. Methods in Ecology and Evolution, 13(8), 1661–1669.
-\href{https://doi.org/10.1111/2041-210X.13874}{{https://doi.org/10.1111/2041-210X.13874}}
+\doi{10.1111/2041-210X.13874}
 }

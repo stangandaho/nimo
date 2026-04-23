@@ -29,6 +29,10 @@
 #' extracted <- nm_extract(data = wbv_df, longitude = "decimalLongitude",
 #' latitude = "decimalLatitude", env_layer = env_layers)
 #'
+#' @importFrom dplyr filter sym select tibble
+#' @importFrom terra crs extract
+#' @importFrom sf st_as_sf st_transform
+#'
 #' @export
 nm_extract <- function (data,
                         longitude,
@@ -42,8 +46,8 @@ nm_extract <- function (data,
     variables <- names(env_layer)
   }
   data <- data %>%
-    dplyr::filter(!is.na(!!dplyr::sym(longitude))) %>%
-    dplyr::filter(!is.na(!!dplyr::sym(latitude)))
+    filter(!is.na(!!sym(longitude))) %>%
+    filter(!is.na(!!sym(latitude)))
 
   if (! current_crs %in% c("geographic", "projected")) {
     stop("The current crs must be one of 'geographic' and 'projected'")
@@ -51,19 +55,17 @@ nm_extract <- function (data,
   if(current_crs == "geographic"){
     coord_rs <- 4326
   }else{
-    coord_rs <- terra::crs(env_layer)
+    coord_rs <- crs(env_layer)
   }
-  sp_data <- sf::st_as_sf(data, coords = c(longitude, latitude), crs = coord_rs) %>%
-    sf::st_transform(crs = terra::crs(env_layer))
-  extract_data <- dplyr::tibble(data,
-                                terra::extract(env_layer[[variables]], sp_data, cells = FALSE) %>%
-                                  dplyr::select({{variables}}))
+  sp_data <- st_as_sf(data, coords = c(longitude, latitude), crs = coord_rs) %>%
+    st_transform(crs = crs(env_layer))
+  extract_data <- tibble(data,
+                         extract(env_layer[[variables]], sp_data, cells = FALSE) %>% select({{variables}}))
   if (filter_na) {
-    complete_vec <- stats::complete.cases(extract_data[,
-                                                       variables])
+    complete_vec <- complete.cases(extract_data[, variables])
     if (sum(!complete_vec) > 0) {
       message(sum(!complete_vec), " rows were excluded from database because NAs were found")
-      extract_data <- extract_data %>% dplyr::filter(complete_vec)
+      extract_data <- extract_data %>% filter(complete_vec)
     }
   }
   return(extract_data)

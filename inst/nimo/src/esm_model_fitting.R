@@ -6,7 +6,7 @@ gam_esm_fitting <- eventReactive(input$fit_gam_esm, {
     esm_gam(
       data = ready_df_mod(),
       response = "pr_ab",
-      predictors = input$gam_esm_predictors ,
+      predictors = input$gam_esm_predictors,
       partition = ".part",#input$gam_esm_partition,
       thr = if(any(input$gam_esm_thr %in% c("sensitivity"))) {
         c(input$gam_esm_thr, "sens" = as.character(input$gam_esm_sens))

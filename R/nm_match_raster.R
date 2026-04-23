@@ -45,7 +45,9 @@
 #'@references
 #' - Hijmans, R. J., Bivand, R., Forner, K., Ooms, J., Pebesma, E., & Sumner, M. D. (2022). Package ‘terra.’ Maintainer: Vienna, Austria.
 #' - Lovelace, R., Nowosad, J., & Muenchow, J. (2019). Geocomputation with R.
-#' Chapman and Hall/CRC. [(https://doi.org/10.1201/9780203730058)](https://doi.org/10.1201/9780203730058)
+#' Chapman and Hall/CRC. \doi{10.1201/9780203730058}
+#'
+#' @importFrom terra sources resample
 #'
 #'@export
 
@@ -59,8 +61,8 @@ nm_match_raster <- function(to_match, target, method = "near", threads = FALSE,
 
   if (save_file) {
     if (file_name == "") {
-      file_name <- paste0(dirname(terra::sources(to_match)), "/",
-                          strsplit(basename(terra::sources(to_match)), "\\.")[[1]][1],
+      file_name <- paste0(dirname(sources(to_match)), "/",
+                          strsplit(basename(sources(to_match)), "\\.")[[1]][1],
                           "_matched.tif")
     }else{
       file_name <- paste0(getwd(), "/", file_name)
@@ -68,13 +70,13 @@ nm_match_raster <- function(to_match, target, method = "near", threads = FALSE,
   }
 
   if (save_file) {
-    resampled <- terra::resample(x = to_match, y = target, method = method,
+    resampled <- resample(x = to_match, y = target, method = method,
                                  filename = file_name, overwrite = TRUE, ...)
     message(paste("File saved to ", file_name))
 
     return(resampled)
   } else {
-    return(terra::resample(x = to_match, y = target, method = method, ...))
+    return(resample(x = to_match, y = target, method = method, ...))
   }
 }
 

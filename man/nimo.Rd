@@ -8,7 +8,7 @@ nimo()
 }
 \description{
 Entry function to launch nimo app to query occurrence data
-from the Global Biodiversity Information Facility \href{https://www.gbif.org/occurrence/search}{(GBIF)}
-and incorporate it into ecological niche modelling workflow offered by
-\href{https://besjournals.onlinelibrary.wiley.com/doi/10.1111/2041-210X.13874}{flexdsm}
+from the Global Biodiversity Information Facility (GBIF)
+and incorporate it into ecological niche modelling workflow offered by flexsdm
+\doi{10.1111/2041-210X.13874}
 }

@@ -270,8 +270,9 @@ nimo_body <- shinydashboard::dashboardBody(
                                                   selected = "Presence"),
                                       shinyFilesButton("choose_data_file", "Load data",
                                                        "Select Species occurrence data", multiple = FALSE,
-                                                       icon = icon("file-upload")),
-                                      selectInput("occ_current_crs", label = "Coordinates CRS",
+                                                       icon = icon("file-upload"), style = bttn_primary_style),
+                                      hr(),
+                                      selectInput("occ_current_crs", label = "Coordinate Reference System (CRS)",
                                                   choices = c("Geographic" = "geographic", "Projected" = "projected"), multiple = FALSE,
                                                   selected = c("Geographic" = "geographic"))
                                       ),
@@ -385,16 +386,16 @@ nimo_body <- shinydashboard::dashboardBody(
                                       numericInput("senv_min_occ", "Min occurrence", value = 10, min = 1),
                                       numericInput("senv_prop", "Proportion of points", value = 0.5, min = 0, max = 1, step = 0.1)
                      ),
-                     fluidRow(column(4, actionButton("divvy_data", "Divvy", icon = icon("project-diagram"), style = bttn_primary_style)),
-                              column(4, actionButton("valided_dp", "Validate", icon = icon("check-circle"), style = bttn_primary_style))
-                     ),
+                     fluidRow(actionButton("divvy_data", "Split", icon = icon("project-diagram"), style = bttn_primary_style)),
                      hr(),
                      conditionalPanel("input.occ_type == 'Presence'",
                                       div(id = "bpas_check",
                                           p("You must generate background or pseudo-absence points for the modeling goals"),
                                           div(actionButton("back_ps_ab_samp", "Sample", style = "border: 2px solid #fd7769"),
                                               style = "float: right; position:relative; margin: -10px 12px")
-                                      ))
+                                      )),
+                    hr(),
+                    fluidRow(actionButton("valided_dp", "Validate", icon = icon("check-circle"), style = bttn_primary_style))
               )
 
               )

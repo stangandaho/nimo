@@ -1,29 +1,40 @@
 [![DOI](https://img.shields.io/badge/DOI-10.1002%2F2688--8319.12385-004c03)](https://doi.org/10.1002/2688-8319.12385)
 [![License](https://img.shields.io/badge/license-GPL%20%28%3E=%203%29-lightgrey.svg?style=flat)](https://www.gnu.org/licenses/gpl-3.0.html#license-text)
 [![R-CMD-check](https://github.com/stangandaho/nimo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stangandaho/nimo/actions/workflows/R-CMD-check.yaml)
-[![Code coverage](https://codecov.io/gh/stangandaho/nimo/graph/badge.svg?token=ehmZyEafyI)](https://codecov.io/gh/stangandaho/nimo)
+[![Code coverage](https://codecov.io/gh/stangandaho/nimo/graph/badge.svg?token=ehmZyEafyI)](https://app.codecov.io/gh/stangandaho/nimo)
 
 # nimo <img src="man/figures/logo.png" align="right" height="90" alt="NIMO LOGO" />
 
-# **`{nimo}`** in brief
-**`nimo`** provides a user-friendly graphical interface that enables users to define complete or partial modeling procedures, including variables, records, algorithms, ensemble methods, and algorithm tuning.  This comprehensive package empowers users to explore, customize, and model their data effectively, with the added benefit of accessing real-world biodiversity data. They can intuitively control the input parameters, explore different modeling options, and observe the corresponding outputs in real-time. This visual and interactive experience enhances the usability and accessibility allowing researchers to focus on their modeling tasks without worrying about complex programming or technical details. It allows users to easily query occurrence data through Global Biodiversity Information Facility [(GBIF)](https://www.gbif.org/occurrence/search) and incorporate it into their modeling workflow. Based on [**`flexsdm`**](https://github.com/sjevelazco/flexsdm/) features and powered by [**`shiny`**](https://github.com/rstudio/shiny), **`nimo`** offers users the flexibility to manipulate and parameterize models. 
+**`nimo`** provides a user-friendly graphical interface that enables users to define 
+complete or partial modeling procedures, including variables, records, algorithms, 
+ensemble methods, and algorithm tuning.  This comprehensive package empowers users 
+to explore, customize, and model their data effectively, with the added benefit of 
+accessing real-world biodiversity data. They can intuitively control the input 
+parameters, explore different modeling options, and observe the corresponding 
+outputs in real-time. This visual and interactive experience enhances the usability 
+and accessibility allowing researchers to focus on their modeling tasks without 
+worrying about complex programming or technical details. It allows users to easily 
+query occurrence data through Global Biodiversity Information Facility (GBIF) and incorporate it into their 
+modeling workflow. Based on [**`flexsdm`**](https://github.com/sjevelazco/flexsdm/) 
+features and powered by [**`shiny`**](https://github.com/rstudio/shiny), 
+**`nimo`** offers users the flexibility to manipulate and parameterize models. 
 
 # Install
 **`nimo`** is not yet on CRAN. The development version can be installed from [github](https://github.com/stangandaho/nimo). 
 
 
 ``` r
-# Install remotes if it is not already installed
+# Install pak if it is not already installed
 
-if (!require("remotes", character.only = TRUE)) {
-  install.packages("remotes")
+if (!require("pak", character.only = TRUE)) {
+  install.packages("pak")
 }
 
-# For Windows and Mac OS operating systems
-remotes::install_github("stangandaho/nimo")
-
-# For Linux operating system
-remotes::install_github("stangandaho/nimo@HEAD")
+# Install all required packages at once
+pak::pkg_install(c(
+  "sjevelazco/flexsdm",
+  "stangandaho/nimo"
+))
 ```
 
 # Get started

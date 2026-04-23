@@ -41,6 +41,9 @@ query_params <- function() {
 }
 
 ## Query
+#' @noRd
+#' @importFrom httr2 request req_timeout req_url_query req_perform resp_body_json
+#' @importFrom dplyr bind_cols select all_of
 query_occ <- function(query_params) {
     base_url <- "https://api.gbif.org/v1/occurrence/search" # GBIF API base URL
     # Initialize variables
@@ -71,9 +74,11 @@ query_occ <- function(query_params) {
                        "continent", "stateProvince", "locality", "year", "month", "day",
                        "recordedBy", "institutionCode", "samplingProtocol", "habitat", "license")
 
-        absent_col <- basic_col[!basic_col %in% occdt_col[which(occdt_col %in% basic_col)]]
+        absent_col <- setdiff(basic_col, occdt_col)
+        print(paste("ABS", absent_col))
 
         if (length(absent_col) > 0) {
+          print(matrix(NA, nrow = nrow(occurrences), ncol = length(absent_col)))
           df <- data.frame(matrix(NA, nrow = nrow(occurrences), ncol = length(absent_col)))
           colnames(df) <- absent_col
           occurrences <- occurrences %>% dplyr::bind_cols(df)
@@ -95,7 +100,7 @@ query_occ <- function(query_params) {
           # Check if the request for dataset metadata was successful
           if (metadata_response$status_code == 200) {
             metadata <- metadata_response %>%
-              httr2::resp_body_json()
+              resp_body_json()
             metadata_list[[dataset_key]] <- metadata$citation$text
           }
 

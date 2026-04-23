@@ -1,7 +1,7 @@
 bibentry(
   bibtype  = "Article",
   title    = "NIMO: A graphical user interface-based R package for species distribution modelling",
-  author   = personList(
+  author   = c(
           person("Stanislas Mahussi", "Gandaho"),
           person("Etotépé A.", "Sogbohossou"),
           person("Lindy Jane", "Thompson")),
@@ -10,7 +10,7 @@ bibentry(
   volume   = 5,
   number   = 3,
   pages    = "e12385",
-  doi      = "https://doi.org/10.1002/2688-8319.12385",
+  doi      = "10.1002/2688-8319.12385",
   textVersion = paste0("Gandaho,	S.	M.,	Sogbohossou,	E.	A.,	&	",
   "Thompson,	L.	J.	(2024).	NIMO:	A	graphical	user	interface-",
   "based R package for species distribution modelling. Ecological ",

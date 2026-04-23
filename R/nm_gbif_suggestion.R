@@ -12,22 +12,26 @@
 #' @return
 #' Dataframe
 #'
-#' @export
 #'
 #' @examples
 #' nm_gbif_suggestion("Gyps")
+#'
+#' @importFrom httr2 request req_url_query req_timeout req_perform
+#' resp_body_json
+#'
+#' @export
 
 nm_gbif_suggestion <- function(query, time_out = 60) {
 
   url <- paste0("https://api.gbif.org/v1/species/suggest?")
 
-  response <- httr2::request(base_url = url) %>%
-    httr2::req_url_query(q = query)%>%
-    httr2::req_timeout(time_out) %>%
-    httr2::req_perform()
+  response <- request(base_url = url) %>%
+    req_url_query(q = query)%>%
+    req_timeout(time_out) %>%
+    req_perform()
 
   species_list <- response %>%
-    httr2::resp_body_json(simplifyDataFrame = T)
+    resp_body_json(simplifyDataFrame = T)
 
   if (!is.null(species_list)) {
     return(species_list)
