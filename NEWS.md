@@ -1,4 +1,4 @@
-# nimo 0.3.0
+# nimo 1.0.0
 
 ## Reproducible script
 

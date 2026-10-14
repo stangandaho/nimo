@@ -1,7 +1,7 @@
 Type: Package
 Package: nimo
 Title: Graphical User Interface for Species Distribution Modeling
-Version: 0.3.0
+Version: 1.0.0
 Date: 2026-10-14
 Authors@R: c(
     person("Stanislas Mahussi", "Gandaho", email = "gandahostanmah@gmail.com", role = c("aut", "cre"),
