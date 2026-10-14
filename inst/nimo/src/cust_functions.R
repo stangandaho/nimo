@@ -27,6 +27,7 @@ concat_model <- function(list, index = c()){
 ## bind in list prediction output (raster)
 predict_rasters <- function(prediction){
   predic_raster_list <- list()
+  layer_code <- list()
   for (m in 1:length(prediction)) {
     rst <- prediction[[m]]
     if (input$model_category == "Standard models") {
@@ -44,7 +45,9 @@ predict_rasters <- function(prediction){
 
     for (r in 1:terra::nlyr(rst)) {
       predic_raster_list[[ names(rst[[r]]) ]] <- rst[[r]]
+      layer_code[[ names(rst[[r]]) ]] <- sprintf("pred[[%d]][[%d]]", m, r)
     }
   }
+  attr(predic_raster_list, "code") <- unlist(layer_code)
   return(predic_raster_list)
 }

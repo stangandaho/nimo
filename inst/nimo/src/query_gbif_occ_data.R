@@ -41,75 +41,19 @@ query_params <- function() {
 }
 
 ## Query
-#' @noRd
-#' @importFrom httr2 request req_timeout req_url_query req_perform resp_body_json
-#' @importFrom dplyr bind_cols select all_of
+## Code of the last GBIF query
+gbif_query_code <- reactiveVal(NULL)
+
 query_occ <- function(query_params) {
-    base_url <- "https://api.gbif.org/v1/occurrence/search" # GBIF API base URL
-    # Initialize variables
-    occ <- data.frame()
-    offset <- 0
-    more_results <- TRUE
-    while (more_results) {
-      # Update the offset parameter
-      query_params$offset <- offset
-
-      response <- httr2::request(base_url = base_url) %>%
-        httr2::req_timeout((input$sys_timeout)*60) %>%
-        httr2::req_url_query(!!!query_params) %>%
-        httr2::req_perform()
-
-      # Check if the request was successful
-      if (response$status_code == 200) {
-        resultats <- response %>%
-          httr2::resp_body_json(simplifyDataFrame = T) # Extract the occurrence data
-        occurrences <- resultats$results
-        more_results <- resultats$endOfRecords == FALSE # Check if there are more results
-
-        offset <- offset + query_params$limit # Update the offset for the next request
-
-        occdt_col <- colnames(occurrences)
-        basic_col <- c("basisOfRecord", "decimalLatitude", "decimalLongitude",
-                       "country", "occurrenceStatus", "scientificName", "taxonomicStatus", "sex",
-                       "continent", "stateProvince", "locality", "year", "month", "day",
-                       "recordedBy", "institutionCode", "samplingProtocol", "habitat", "license")
-
-        absent_col <- setdiff(basic_col, occdt_col)
-        print(paste("ABS", absent_col))
-
-        if (length(absent_col) > 0) {
-          print(matrix(NA, nrow = nrow(occurrences), ncol = length(absent_col)))
-          df <- data.frame(matrix(NA, nrow = nrow(occurrences), ncol = length(absent_col)))
-          colnames(df) <- absent_col
-          occurrences <- occurrences %>% dplyr::bind_cols(df)
-        }
-        #col <- basic_col[which(basic_col %in% occdt_col)]
-
-        occurrences <- occurrences %>%
-          dplyr::select(dplyr::all_of(basic_col))
-        occ <- dplyr::bind_rows(occ, occurrences)
-        # Get dataset keys for metadata retrieval
-        dataset_keys <- unique(resultats$results[, "datasetKey"])#unique(occurrences$datasetKey)
-        # Fetch metadata for each dataset
-        metadata_list <- list()
-        for (dataset_key in dataset_keys) {
-          metadata_url <- paste0("https://api.gbif.org/v1/dataset/", dataset_key)
-          metadata_response <- httr2::request(base_url = metadata_url) %>%
-            httr2::req_perform()
-
-          # Check if the request for dataset metadata was successful
-          if (metadata_response$status_code == 200) {
-            metadata <- metadata_response %>%
-              resp_body_json()
-            metadata_list[[dataset_key]] <- metadata$citation$text
-          }
-
-        }
-          markdown_text <- sub("accessed via GBIF.org", "accessed via GBIF.org using nimo", paste(metadata_list))
-      }
-      Sys.sleep(input$sleep_time) # Sleep
-
-    }
-
-    return(list(occ, markdown_text))
+  query <- query_params[!names(query_params) %in% c("limit", "offset")]
+  args <- list(query = query, limit = query_params$limit,
+               time_out = input$sys_timeout * 60, sleep = input$sleep_time)
+  res <- do.call(nm_gbif_occ, args)
+  gbif_query_code(c(
+    paste0("# Query run on ", format(Sys.Date()), " (GBIF data change over time)"),
+    nm_code_call("nimo::nm_gbif_occ", args, assign = "gbif"),
+    "occ_raw <- gbif$occurrences",
+    "gbif$citation"
+  ))
+  return(list(res$occurrences, res$citation))
 }

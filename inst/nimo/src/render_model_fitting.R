@@ -30,7 +30,7 @@ output$dynamic_model_fitting <- renderUI({
           selectInput("gau_esm_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.gau_esm_thr.includes('sensitivity')",
                            numericInput("gau_esm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
-          actionButton("fit_gam_esm", "Fit GPM - ESM", icon = fit_model_btn_icon, style = fit_model_btn_style))
+          actionButton("fit_gau_esm", "Fit GPM - ESM", icon = fit_model_btn_icon, style = fit_model_btn_style))
 
     } else if (order  %in% c("gbm") && input$esm == TRUE) {
       div(style = "flex: 1;margin-right: 20px;",
@@ -319,7 +319,22 @@ output$dynamic_model_fitting <- renderUI({
           conditionalPanel("input.bioc_thr.includes('sensitivity')",
                            numericInput("bioc_sens", label = "Sensitivity value",
                                         value = 0.9, min = 0, max = 1, step = 0.01)),
+          selectInput("bioc_tails", "Limiting tails",
+                      choices = c("Low and high values" = "both", "Low values only" = "low",
+                                  "High values only" = "high")),
+          selectInput("bioc_aggregation", "Combine variables with",
+                      choices = c("Minimum (classic Bioclim)" = "min", "Geometric mean" = "gmean",
+                                  "Arithmetic mean" = "mean")),
           actionButton("fit_bioc", "Fit BIOC", icon = fit_model_btn_icon, style = fit_model_btn_style))
+    } else if (order %in% c("dom") && input$tuning == FALSE) {
+      div(style = "flex: 1; margin-right: 20px;",
+          h4("Domain Models"),
+          selectInput("dom_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("dom_thr", "Threshold", choices = thr, multiple = T),
+          conditionalPanel("input.dom_thr.includes('sensitivity')",
+                           numericInput("dom_sens", label = "Sensitivity value",
+                                        value = 0.9, min = 0, max = 1, step = 0.01)),
+          actionButton("fit_dom", "Fit DOM", icon = fit_model_btn_icon, style = fit_model_btn_style))
     }
 
   })

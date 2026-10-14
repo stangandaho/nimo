@@ -3,8 +3,8 @@
 gam_fitting <- eventReactive(input$fit_gam, {
     req(input$gam_predictors)
   tryCatch({
-    fit_gam(
-      data = ready_df_mod(),
+    fit_recorded("Generalized Additive Models", "fit_gam", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$gam_predictors ,
       predictors_f = input$gam_predictors_f,
@@ -15,7 +15,7 @@ gam_fitting <- eventReactive(input$fit_gam, {
       } else{input$gam_thr},
       fit_formula = stats::formula(as.formula(input$gam_fit_formula)),
       k = input$gam_k
-    )
+    ))
   }, error = error)
 })
 
@@ -23,8 +23,8 @@ gam_fitting <- eventReactive(input$fit_gam, {
 gau_fitting <- eventReactive(input$fit_gau, {
     req(input$gau_predictors)
   tryCatch({
-    fit_gau(
-      data = ready_df_mod(),
+    fit_recorded("Gaussian Process Models", "fit_gau", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$gau_predictors ,
       predictors_f = input$gau_predictors_f,
@@ -32,7 +32,7 @@ gau_fitting <- eventReactive(input$fit_gau, {
       thr = if(any(input$gau_thr %in% c("sensitivity"))) {
         c(input$gau_thr, "sens" = as.character(input$gau_sens))
       } else{input$gau_thr}
-    )
+    ))
   }, error = error)
 })
 
@@ -40,8 +40,8 @@ gau_fitting <- eventReactive(input$fit_gau, {
 gbm_fitting <- eventReactive(input$fit_gbm, {
     req(input$gbm_predictors)
   tryCatch({
-    fit_gbm(
-      data = ready_df_mod(),
+    fit_recorded("Generalized Boosted Regression Models", "fit_gbm", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$gbm_predictors,
       predictors_f = input$gbm_predictors_f,
@@ -53,7 +53,7 @@ gbm_fitting <- eventReactive(input$fit_gbm, {
       n_trees = input$gbm_n_trees,
       #n_minobsinnode = as.integer(nrow(data) * 0.5/4),
       shrinkage = input$gbm_shrinkage
-    )
+    ))
   }, error = error)
 })
 
@@ -61,8 +61,8 @@ gbm_fitting <- eventReactive(input$fit_gbm, {
 glm_fitting <- eventReactive(input$fit_glm, {
       req(input$glm_predictors)
   tryCatch({
-    fit_glm(
-      data = ready_df_mod(),
+    fit_recorded("Generalized Linear Models", "fit_glm", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$glm_predictors,
       predictors_f = input$glm_predictors_f,
@@ -74,7 +74,7 @@ glm_fitting <- eventReactive(input$fit_glm, {
       fit_formula = stats::formula(as.formula(input$glm_fit_formula)),
       poly = input$glm_poly,
       inter_order = input$glm_inter_order
-    )
+    ))
   }, error = error)
   })
 
@@ -82,14 +82,14 @@ glm_fitting <- eventReactive(input$fit_glm, {
 max_fitting <- eventReactive(input$fit_max, {
   req(input$max_predictors)
   tryCatch({
-    fit_max(
-      data = ready_df_mod(),
+    fit_recorded("Maximum Entropy Models", "fit_max", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$max_predictors,
       predictors_f = input$max_predictors_f,
       #fit_formula = stats::formula(as.formula(input$max_fit_formula)),
       partition = ".part",
-      background = ready_df_mod(),
+      background = nm_cv(ready_df_mod(), "sdm_data"),
       thr = if(any(input$max_thr %in% c("sensitivity"))) {
         c(input$max_thr, "sens" = as.character(input$max_sens))
       } else{input$max_thr},
@@ -97,7 +97,7 @@ max_fitting <- eventReactive(input$fit_max, {
       classes = input$max_classes,
       pred_type = input$max_pred_type,
       regmult = input$max_regmult
-    )
+    ))
   }, error = error)
 })
 
@@ -105,8 +105,8 @@ max_fitting <- eventReactive(input$fit_max, {
 net_fitting <- eventReactive(input$fit_net, {
   req(input$net_predictors)
   tryCatch({
-    fit_net(
-      data = ready_df_mod(),
+    fit_recorded("Neural Networks Models", "fit_net", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$net_predictors,
       predictors_f = input$net_predictors_f,
@@ -117,7 +117,7 @@ net_fitting <- eventReactive(input$fit_net, {
       } else{input$net_thr},
       size = input$net_size,
       decay = input$net_decay
-    )
+    ))
   }, error = error)
 })
 
@@ -125,8 +125,8 @@ net_fitting <- eventReactive(input$fit_net, {
 raf_fitting <- eventReactive(input$fit_raf, {
   req(input$raf_predictors)
   tryCatch({
-    fit_raf(
-      data = ready_df_mod(),
+    fit_recorded("Random Forests Models", "fit_raf", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$raf_predictors,
       predictors_f = input$raf_predictors_f,
@@ -137,7 +137,7 @@ raf_fitting <- eventReactive(input$fit_raf, {
       thr = if(any(input$raf_thr %in% c("sensitivity"))) {
         c(input$raf_thr, "sens" = as.character(input$raf_sens))
       } else{input$raf_thr}
-    )
+    ))
   }, error = error)
 })
 
@@ -145,8 +145,8 @@ raf_fitting <- eventReactive(input$fit_raf, {
 svm_fitting <- eventReactive(input$fit_svm, {
   req(input$svm_predictors)
   tryCatch({
-    fit_svm(
-      data = ready_df_mod(),
+    fit_recorded("Support Vector Machine Models", "fit_svm", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$svm_predictors,
       predictors_f = input$svm_predictors_f,
@@ -157,7 +157,7 @@ svm_fitting <- eventReactive(input$fit_svm, {
       } else{input$svm_thr},
       sigma = "automatic", #input$svm_sigma,
       C = input$svm_C
-    )
+    ))
   }, error = error)
 })
 
@@ -165,15 +165,31 @@ svm_fitting <- eventReactive(input$fit_svm, {
 bioc_fitting <- eventReactive(input$fit_bioc, {
   req(input$bioc_predictors)
   tryCatch({
-    nm_fit_bioclim(
-      data = ready_df_mod(),
+    fit_recorded("Bioclim Models", "nm_fit_bioclim", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = input$bioc_response,
       predictors = input$bioc_predictors,
       partition = ".part",
       thr = if(any(input$bioc_thr %in% c("sensitivity"))) {
         c(input$bioc_thr, "sens" = as.character(input$bioc_sens))
-      } else{input$bioc_thr}
-    )
+      } else{input$bioc_thr},
+      tails = input$bioc_tails,
+      aggregation = input$bioc_aggregation
+    ))
+  }, error = error)
+})
+
+## Domain
+dom_fitting <- eventReactive(input$fit_dom, {
+  req(input$dom_predictors)
+  tryCatch({
+    fit_recorded("Domain Models", "fit_dom", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
+      response = "pr_ab",
+      predictors = input$dom_predictors,
+      partition = ".part",
+      thr = thr_arg(input$dom_thr, input$dom_sens)
+    ))
   }, error = error)
 })
 
@@ -278,13 +294,33 @@ tryCatch({
 
 observeEvent(input$fit_bioc, {
   tryCatch({
-    showModal(models_modals("Bioclim Models output"))
+    showModal(models_modals("Bioclim Models output", bioclim = TRUE))
     output$xx_model <- renderPrint(bioc_fitting()$model)
     output$xx_performance_metric <- render_dt(bioc_fitting()[[3]])
     performance_metric <<- bioc_fitting()$performance
     output$xx_predicted_suitability <- DT::renderDT(bioc_fitting()$data_ens,
                                                     options = list(scrollX = TRUE))
     model_list$models$`Bioclim Models` <- bioc_fitting()
+  }, error = error)
+})
+## Bioclim envelope plot
+output$bioc_envelope_plot <- renderPlot({
+  req(bioc_fitting(), input$bioc_env_x, input$bioc_env_y)
+  others <- ready_df_mod()
+  others <- others[others[[input$bioc_response]] == 0, , drop = FALSE]
+  nm_bioclim_plot(bioc_fitting(), input$bioc_env_x, input$bioc_env_y, data = others) +
+    ggplot2::labs(caption = "Grey: absences / background points")
+})
+
+observeEvent(input$fit_dom, {
+  tryCatch({
+    showModal(models_modals("Domain Models output"))
+    output$xx_model <- renderPrint(dom_fitting()$model$domain)
+    output$xx_performance_metric <- render_dt(dom_fitting()$performance)
+    performance_metric <<- dom_fitting()$performance
+    output$xx_predicted_suitability <- DT::renderDT(dom_fitting()$data_ens,
+                                                    options = list(scrollX = TRUE))
+    model_list$models$`Domain Models` <- dom_fitting()
   }, error = error)
 })
 

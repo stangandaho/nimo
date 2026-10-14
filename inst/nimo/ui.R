@@ -101,6 +101,7 @@ box_dropdown_item <- function (..., id = NULL, href = NULL, icon = NULL)
 # HEADER ----
 header <- shinydashboardPlus::dashboardHeader(title = mytitle,
                                               titleWidth = 300,
+                                              fixed = TRUE,
                                               dropdownMenu(
                                                 type = "messages",
                                                 icon = icon("question-sign", lib = "glyphicon"),
@@ -152,10 +153,13 @@ sidebar <- shinydashboardPlus::dashboardSidebar(
              menuSubItem("Ensembling", tabName = "model_ensembling", icon = NULL)
              ),
     menuItem("Post-Modeling", tabName = "post_modeling", icon = icon("arrow-right", lib = "glyphicon"),
+             menuSubItem("Variable importance", tabName = "var_importance", icon = NULL),
+             menuSubItem("Response curves", tabName = "response_curves", icon = NULL),
              menuSubItem("Predictions", tabName = "spatiotemporal_predict", icon = NULL),
-             menuSubItem("Extrapolation ", tabName = "extrapolation", icon = NULL),
+             menuSubItem("Extrapolation & uncertainty", tabName = "extrapolation", icon = NULL),
              menuSubItem("Overprediction correction", tabName = "overpredict_correct", icon = NULL)
              ),
+    menuItem("Script", tabName = "repro_script", icon = icon("code")),
     ## CONFIGURATION
     div(
       #menuItem("Report", tabName = "nm_report", icon = icon("doc")),
@@ -187,6 +191,12 @@ nimo_body <- shinydashboard::dashboardBody(
     tags$style(("#cr_layer {height:200px;}")),
     tags$style("#dir_setup_success {height: 300px;}"),
     tags$style("#pred_summary {height: 400px;}"),
+    tags$style(".nimo-script-preview pre {height: 78vh; overflow: auto; white-space: pre; font-size: 12px;
+               background-color: #fcfcfa; border-radius: 8px;}"),
+    tags$style(".nimo-section {text-align: left; font-family: 'Montserrat-Bold'; font-size: 1.6rem;
+               margin-top: 5px;}"),
+    # fixed layout: the header and the sidebar stay in place when scrolling
+    tags$script("$(document).ready(function() { $('body').addClass('fixed'); });"),
     tags$style(".nav-tabs {margin-bottom: 25px}"),
     tags$style(".treeview-menu {font-size: 0px}"),
     tags$style(".sidebar-menu {font-size: 18px}"),
@@ -315,22 +325,51 @@ nimo_body <- shinydashboard::dashboardBody(
                                      title = "Select folder containing predictors"),
                       hr(),
                       selectInput("pred_single", "Predictors", choices = c()),
-                      fluidRow(column(3, actionButton("pred_load", "Show", icon = icon("eye"), style = bttn_primary_style)),
-                               column(4, actionButton("colinearize", "Colinearize", icon = icon("poll-h"), style = bttn_primary_style)),
-                               column(3, actionButton("occ_filt", "", icon = icon("braille"), style = bttn_second_style))),
+                      div(style = "display: flex; flex-wrap: wrap; gap: 6px;",
+                          actionButton("pred_load", "Show", icon = icon("eye"), style = bttn_primary_style),
+                          actionButton("colinearize", "Colinearize", icon = icon("poll-h"), style = bttn_primary_style),
+                          actionButton("occ_filt", "Filter", icon = icon("braille"), style = bttn_second_style,
+                                       title = "Occurrence filtering"),
+                          actionButton("outliers_btn", "Outliers", icon = icon("user-slash"), style = bttn_second_style,
+                                       title = "Detect and remove environmental outliers")),
                       tags$hr(),
                      shiny::div(
                        shiny::div(
-                         tags$h5("Reduce colinearity"),
+                         h5("Reduce colinearity", class = "nimo-section"),
                          selectInput("coli_method", "Method", choices = colinearity_method),
                          conditionalPanel("input.coli_method == 'pearson'",
                                           numericInput("pearson_threshold", "Threshold", value = 0.7, min = 0, step = 0.1, max = 1)),
                          conditionalPanel("input.coli_method == 'vif'",
                                           numericInput("vif_threshold", "Threshold", value = 10, min = 1)),
                          fluidRow(column(7, actionButton("reduce_collin", "Reduce colinearity",
-                                                         icon = icon("sort-amount-down"), style = bttn_second_style)))
+                                                         icon = icon("sort-amount-down"), style = bttn_second_style))),
+                         conditionalPanel("input.coli_method == 'pca'",
+                                          br(),
+                                          tagList(actionButton("use_pca", "Use PCs as predictors", icon = icon("check"),
+                                                               style = bttn_second_style),
+                                                  actionButton("unuse_pca", "Use originals", icon = icon("undo"))),
+                                          br(), br(),
+                                          textOutput("pca_status"))
                        ), style = "background-color:#fcfcfa; border-radius: 8px 8px; padding: 15px 15px"
-                      )
+                      ),
+                     br(),
+                     shiny::div(
+                       h5("Spatial constraint (a priori)", class = "nimo-section"),
+                       p("Adds layers built from the presences as predictors, to limit overprediction",
+                         "in areas far from records.", style = "color:#5f6b6d"),
+                       selectInput("msdm_method", "Method",
+                                   choices = c("Latitude and longitude" = "xy",
+                                               "Distance to closest record" = "min",
+                                               "Cumulative distance to records" = "cml",
+                                               "Kernel density of records" = "ker"),
+                                   selected = "min"),
+                       tagList(actionButton("add_msdm", "Add constraint", icon = icon("map-marker-alt"),
+                                            style = bttn_second_style),
+                               actionButton("remove_msdm", "Remove", icon = icon("undo"))),
+                       br(), br(),
+                       textOutput("msdm_status"),
+                       style = "background-color:#fcfcfa; border-radius: 8px 8px; padding: 15px 15px"
+                     )
                        )
               )
             )
@@ -507,11 +546,89 @@ nimo_body <- shinydashboard::dashboardBody(
               )
             ),
             ),
+    tabItem("var_importance",
+            fluidPage(
+              fluidRow(column(8,
+                              shinycssloaders::withSpinner(plotOutput("vi_plot", height = "420px"),
+                                                           color = loader_color, type = loader_type),
+                              hr(),
+                              DT::DTOutput("vi_table")),
+                       column(4,
+                              p("Each predictor is shuffled in turn and the models are predicted again.",
+                                "The loss of performance shows how much a model relies on that predictor.",
+                                style = "color:#5f6b6d"),
+                              selectInput("vi_models", "Models", choices = c(), multiple = TRUE),
+                              selectInput("vi_metrics", "Metrics", choices = metric,
+                                          selected = c("AUC", "TSS"), multiple = TRUE),
+                              selectInput("vi_thr", "Threshold (for TSS, Kappa...)",
+                                          choices = thr[thr != "sensitivity"], selected = "max_sens_spec"),
+                              numericInput("vi_n_sim", "Permutations per predictor", value = 10, min = 1, step = 1),
+                              checkboxInput("vi_relative", "Show relative importance (%)", value = FALSE),
+                              tagList(
+                                actionButton("compute_vi", "Compute", icon = icon("chart-bar"),
+                                             style = bttn_primary_style),
+                                downloadButton("download_vi", "Download")
+                              )
+                       ))
+            )),
+    tabItem("response_curves",
+            fluidPage(
+              fluidRow(column(8,
+                              tabsetPanel(
+                                id = "rc_tabs",
+                                tabPanel("Curves",
+                                         shinycssloaders::withSpinner(plotOutput("rc_plot", height = "560px"),
+                                                                      color = loader_color, type = loader_type)),
+                                tabPanel("Surface (two predictors)",
+                                         shinycssloaders::withSpinner(plotOutput("rs_plot", height = "520px"),
+                                                                      color = loader_color, type = loader_type))
+                              )),
+                       column(4,
+                              p("How suitability changes along each predictor.",
+                                strong("Marginal:"), "other predictors held at their mean.",
+                                strong("Partial dependence:"), "predictions averaged over the records,",
+                                "which accounts for interactions between predictors.",
+                                style = "color:#5f6b6d"),
+                              selectInput("rc_models", "Models", choices = c(), multiple = TRUE),
+                              selectInput("rc_predictors", "Predictors (all if empty)", choices = c(), multiple = TRUE),
+                              selectInput("rc_type", "Type", choices = c("Marginal" = "marginal",
+                                                                         "Partial dependence" = "partial")),
+                              numericInput("rc_resolution", "Resolution", value = 50, min = 2, step = 1),
+                              checkboxInput("rc_rug", "Show records as rugs", value = TRUE),
+                              tagList(
+                                actionButton("compute_rc", "Compute", icon = icon("chart-line"),
+                                             style = bttn_primary_style),
+                                downloadButton("download_rc", "Download")
+                              ),
+                              hr(),
+                              h5("Surface of two predictors", class = "nimo-section"),
+                              fluidRow(column(6, selectInput("rs_x", "X", choices = c())),
+                                       column(6, selectInput("rs_y", "Y", choices = c()))),
+                              tagList(
+                                actionButton("compute_rs", "Compute surface", icon = icon("th"),
+                                             style = bttn_primary_style),
+                                downloadButton("download_rs", "Download")
+                              )
+                       ))
+            )),
     tabItem("extrapolation",
             fluidPage(
               fluidRow(column(8,
-                              shinycssloaders::withSpinner(plotOutput("extrapo_raster"),
-                                                           color = loader_color, type = loader_type)),
+                              tabsetPanel(
+                                id = "extra_tabs",
+                                tabPanel("Extrapolation",
+                                         shinycssloaders::withSpinner(plotOutput("extrapo_raster"),
+                                                                      color = loader_color, type = loader_type)),
+                                tabPanel("Truncated prediction",
+                                         shinycssloaders::withSpinner(plotOutput("trunc_raster"),
+                                                                      color = loader_color, type = loader_type)),
+                                tabPanel("Environmental space",
+                                         shinycssloaders::withSpinner(plotOutput("p_extra_plot", height = "520px"),
+                                                                      color = loader_color, type = loader_type)),
+                                tabPanel("Uncertainty",
+                                         shinycssloaders::withSpinner(plotOutput("unc_raster"),
+                                                                      color = loader_color, type = loader_type))
+                              )),
                        column(4,
                               selectInput("extrap_metric", "Metric",
                                           choices = c("Mahalanobis" = "mahalanobis", "Euclidean" = "euclidean"),
@@ -521,6 +638,37 @@ nimo_body <- shinydashboard::dashboardBody(
                               tagList(
                                 actionButton("extrapo_model", "Extrapolate", style = bttn_primary_style),
                                 downloadButton("download_extrapo_raster", "Save", icon = icon("save"))
+                              ),
+                              hr(),
+                              h5("Truncate a prediction", class = "nimo-section"),
+                              p("Sets suitability to a fixed value where extrapolation exceeds the threshold.",
+                                style = "color:#5f6b6d"),
+                              selectInput("trunc_layer", "Prediction", choices = c()),
+                              numericInput("trunc_threshold", "Extrapolation threshold", value = 50, min = 0),
+                              numericInput("trunc_value", "Truncation value", value = 0),
+                              tagList(
+                                actionButton("truncate_pred", "Truncate", icon = icon("cut"),
+                                             style = bttn_primary_style),
+                                downloadButton("download_trunc", "Save", icon = icon("save"))
+                              ),
+                              hr(),
+                              h5("Extrapolation in environmental space", class = "nimo-section"),
+                              fluidRow(column(6, selectInput("pe_x", "X", choices = c())),
+                                       column(6, selectInput("pe_y", "Y", choices = c()))),
+                              checkboxInput("pe_geo", "Also show geographical space", value = TRUE),
+                              actionButton("plot_p_extra", "Plot", icon = icon("chart-area"),
+                                           style = bttn_primary_style),
+                              hr(),
+                              h5("Uncertainty (bootstrap)", class = "nimo-section"),
+                              p("Refits the model on 80% bootstrap samples and maps the standard deviation",
+                                "of the predictions.", style = "color:#5f6b6d"),
+                              selectInput("unc_model", "Model", choices = c()),
+                              fluidRow(column(6, numericInput("unc_iter", "Iterations", value = 20, min = 2, step = 1)),
+                                       column(6, numericInput("unc_cores", "Cores", value = 1, min = 1, step = 1))),
+                              tagList(
+                                actionButton("compute_unc", "Map uncertainty", icon = icon("layer-group"),
+                                             style = bttn_primary_style),
+                                downloadButton("download_unc", "Save", icon = icon("save"))
                               )
                               ))
             )),
@@ -629,6 +777,35 @@ nimo_body <- shinydashboard::dashboardBody(
 
             ),
 
+    # Reproducible script
+    tabItem("repro_script",
+            fluidPage(
+              fluidRow(
+                column(8,
+                       div(class = "nimo-script-preview",
+                           verbatimTextOutput("script_preview", placeholder = TRUE))
+                ),
+                column(4,
+                       h4("Reproducible script", style = "font-family:'Montserrat-Bold'"),
+                       p("Every step you run in nimo is written here as R code.",
+                         "Download it at any time to reproduce, share or extend the analysis",
+                         "outside the app."),
+                       tagList(
+                         downloadButton("download_script", "Download", style = bttn_primary_style),
+                         copy_button("copy_script_btn", "Copy", icon = icon("copy"), text = "")
+                       ),
+                       br(),
+                       checkboxInput("script_session_info", "Include package versions", value = TRUE),
+                       hr(),
+                       h5("Recorded steps", class = "nimo-section"),
+                       uiOutput("script_steps"),
+                       hr(),
+                       actionButton("reset_script", "Clear recorded steps", icon = icon("eraser"))
+                )
+              )
+            )
+    ),
+
     # Congiguration
     tabItem("configuration",
             fluidPage(
@@ -639,14 +816,7 @@ nimo_body <- shinydashboard::dashboardBody(
                         actionButton("save_config", "Save change", style = bttn_primary_style))
               )
             )
-    )#,
-    # ## Report
-    # tabItem("nm_report",
-    #         fluidPage(
-    #           actionButton("render_report", "Render", style = bttn_primary_style)
-    #         )
-    #         )
-
+    )
 )
 )
 

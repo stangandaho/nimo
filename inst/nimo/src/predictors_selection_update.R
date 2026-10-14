@@ -126,10 +126,16 @@ observe({
 
 ## BIOC
 observe({
-  updateSelectInput(inputId = "bioc_response", choices = predictors())
+  updateSelectInput(inputId = "bioc_response", choices = predictors(),
+                    selected = intersect("pr_ab", predictors())[1])
 })
 observe({
   updateSelectInput(inputId = "bioc_predictors", choices = predictors()[ !predictors() %in% input$bioc_response])
+})
+
+## DOM
+observe({
+  updateSelectInput(inputId = "dom_predictors", choices = predictors()[predictors() != "pr_ab"])
 })
 
 ################################### ESM ########################################

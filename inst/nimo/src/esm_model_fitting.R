@@ -3,8 +3,8 @@
 gam_esm_fitting <- eventReactive(input$fit_gam_esm, {
   req(input$gam_esm_predictors)
   tryCatch({
-    esm_gam(
-      data = ready_df_mod(),
+    fit_recorded("Generalized Additive Models - ESM", "esm_gam", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$gam_esm_predictors,
       partition = ".part",#input$gam_esm_partition,
@@ -12,7 +12,7 @@ gam_esm_fitting <- eventReactive(input$fit_gam_esm, {
         c(input$gam_esm_thr, "sens" = as.character(input$gam_esm_sens))
       } else{input$gam_esm_thr},
       k = input$gam_esm_k
-    )
+    ))
   }, error = error)
 })
 
@@ -20,15 +20,15 @@ gam_esm_fitting <- eventReactive(input$fit_gam_esm, {
 gau_esm_fitting <- eventReactive(input$fit_gau_esm, {
   req(input$gau_esm_predictors)
   tryCatch({
-    esm_gau(
-      data = ready_df_mod(),
+    fit_recorded("Gaussian Process Models - ESM", "esm_gau", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$gau_esm_predictors ,
       partition = ".part",#input$gau_esm_partition,
       thr = if(any(input$gau_esm_thr %in% c("sensitivity"))) {
         c(input$gau_esm_thr, "sens" = as.character(input$gau_esm_sens))
       } else{input$gau_esm_thr}
-    )
+    ))
   }, error = error)
 })
 
@@ -36,8 +36,8 @@ gau_esm_fitting <- eventReactive(input$fit_gau_esm, {
 gbm_esm_fitting <- eventReactive(input$fit_gbm_esm, {
   req(input$gbm_esm_predictors)
   tryCatch({
-    esm_gbm(
-      data = ready_df_mod(),
+    fit_recorded("Generalized Boosted Regression Models - ESM", "esm_gbm", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$gbm_esm_predictors,
       fit_formula = stats::formula(as.formula(input$gbm_esm_fit_formula)),
@@ -48,7 +48,7 @@ gbm_esm_fitting <- eventReactive(input$fit_gbm_esm, {
       n_trees = input$gbm_esm_n_trees,
       #n_minobsinnode = as.integer(nrow(data) * 0.5/4),
       shrinkage = input$gbm_esm_shrinkage
-    )
+    ))
   }, error = error)
 })
 
@@ -56,8 +56,8 @@ gbm_esm_fitting <- eventReactive(input$fit_gbm_esm, {
 glm_esm_fitting <- eventReactive(input$fit_glm_esm, {
   req(input$glm_esm_predictors)
   tryCatch({
-    esm_glm(
-      data = ready_df_mod(),
+    fit_recorded("Generalized Linear Models - ESM", "esm_glm", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$glm_esm_predictors,
       partition = ".part",
@@ -66,7 +66,7 @@ glm_esm_fitting <- eventReactive(input$fit_glm_esm, {
       } else{input$glm_esm_thr},
       poly = input$glm_esm_poly,
       inter_order = input$glm_esm_inter_order
-    )
+    ))
   }, error = error)
 })
 
@@ -75,8 +75,8 @@ max_esm_fitting <- eventReactive(input$fit_max_esm, {
   req(input$max_esm_predictors)
   classes <- paste0(input$max_esm_classes, collapse = "")
   tryCatch({
-    esm_max(
-      data = ready_df_mod(),
+    fit_recorded("Maximum Entropy Models - ESM", "esm_max", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$max_esm_predictors,
       partition = ".part",
@@ -87,7 +87,7 @@ max_esm_fitting <- eventReactive(input$fit_max_esm, {
       classes = classes,
       pred_type = input$max_esm_pred_type,
       regmult = input$max_esm_regmult
-    )
+    ))
   }, error = error)
 })
 
@@ -95,8 +95,8 @@ max_esm_fitting <- eventReactive(input$fit_max_esm, {
 net_esm_fitting <- eventReactive(input$fit_net_esm, {
   req(input$net_esm_predictors)
   tryCatch({
-    esm_net(
-      data = ready_df_mod(),
+    fit_recorded("Neural Networks Models - ESM", "esm_net", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$net_esm_predictors,
       partition = ".part",
@@ -105,7 +105,7 @@ net_esm_fitting <- eventReactive(input$fit_net_esm, {
       } else{input$net_esm_thr},
       size = input$net_esm_size,
       decay = input$net_esm_decay
-    )
+    ))
   }, error = error)
 })
 
@@ -113,8 +113,8 @@ net_esm_fitting <- eventReactive(input$fit_net_esm, {
 svm_esm_fitting <- eventReactive(input$fit_svm_esm, {
   req(input$svm_esm_predictors)
   tryCatch({
-    esm_svm(
-      data = ready_df_mod(),
+    fit_recorded("Support Vector Machine Models - ESM", "esm_svm", list(
+      data = nm_cv(ready_df_mod(), "sdm_data"),
       response = "pr_ab",
       predictors = input$svm_esm_predictors,
       partition = ".part",
@@ -123,7 +123,7 @@ svm_esm_fitting <- eventReactive(input$fit_svm_esm, {
       } else{input$svm_esm_thr},
       sigma = "automatic", #input$svm_esm_sigma,
       C = input$svm_esm_C
-    )
+    ))
   }, error = error)
 })
 

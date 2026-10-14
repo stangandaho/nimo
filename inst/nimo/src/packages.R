@@ -11,5 +11,4 @@ library(DT)
 library(leaflet)
 library(leaflet.extras)
 library(httr2)
-library(dismo)
 

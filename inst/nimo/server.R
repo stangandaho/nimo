@@ -4,11 +4,17 @@ server <- function(input, output, session) {
 
   source(paste0(src_root, "global_variables.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "cust_functions.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "script_recorder.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "predictors_selection_update.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "render_model_fitting.R"), local = TRUE)[1]
   source(paste0(src_root, "model_fitting.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "model_tuning.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "esm_model_fitting.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "var_importance.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "response_curves.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "outliers.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "constraints.R"), verbose = FALSE, local = TRUE)$value
+  source(paste0(src_root, "uncertainty.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "handle_sf.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "leaflet_map.R"), verbose = FALSE, local = TRUE)$value
   source(paste0(src_root, "query_gbif_occ_data.R"), verbose = FALSE, local = TRUE)$value
@@ -39,19 +45,21 @@ server <- function(input, output, session) {
   root <- shinyFiles::getVolumes()()
   shinyFiles::shinyDirChoose(input, "browse_dir", roots = root)
   folder_path <- reactive({
-    shinyFiles::parseDirPath(roots = root, selection = input$browse_dir)
+    unname(shinyFiles::parseDirPath(roots = root, selection = input$browse_dir))
   })
   ## dir_setup invoking function
   project_dir <- eventReactive(input$dir_setup, {
     setwd(folder_path())# set working directory
-      project_directory <- sdm_directory(
-        main_dir = folder_path(),
-        projections = "proj",
-        calibration_area = if(input$cali_area != TRUE){NULL},
-        algorithm = input$algorithm,
-        ensemble = input$ensemble,
-        threshold = TRUE)
-      return(project_directory)
+    run_recorded(
+      "setup", "setup", "", "project_dir", "flexsdm::sdm_directory", sdm_directory,
+      list(main_dir = folder_path(),
+           projections = "proj",
+           calibration_area = isTRUE(input$cali_area),
+           algorithm = input$algorithm,
+           ensemble = input$ensemble,
+           threshold = TRUE),
+      pre = paste0("setwd(", nm_lit(folder_path()), ")")
+    )
   })
   output$dir_setup_success <- renderText(paste("\n", {project_dir()}))
 
@@ -60,7 +68,7 @@ server <- function(input, output, session) {
   shinyFiles::shinyFileChoose(input, "choose_data_file", roots = root,
                               filetypes = c("txt", "csv"))
   data_file_path <- reactive({
-    shinyFiles::parseFilePaths(roots = root, selection = input$choose_data_file)$datapath
+    unname(shinyFiles::parseFilePaths(roots = root, selection = input$choose_data_file)$datapath)
   })
   ## import data
   species_data <- reactive({
@@ -68,9 +76,13 @@ server <- function(input, output, session) {
 
     if (input$import_data_check) {
       req(data_file_path())
-      data <- read.csv(file = data_file_path(), header = TRUE)
-    } else if (isTRUE(input$start_modeling)) {
+      data <- run_recorded("occ_raw", "occurrences", "Occurrences imported from file",
+                           "occ_raw", "read.csv", read.csv,
+                           list(file = data_file_path(), header = TRUE))
+    } else if (isTRUE(input$start_modeling > 0)) {
       data <- gbif_data()[[1]]
+      record_step("occ_raw", "occurrences", "Occurrences queried from GBIF",
+                  isolate(gbif_query_code()))
     } else {
       data <- NULL  # or return(NULL) if you want to suppress reactivity
     }
@@ -144,48 +156,50 @@ server <- function(input, output, session) {
   ## wrangle data imported -----
   wrangle_data <- eventReactive(input$valid_data, {
     req(species_data(), input$species_var, input$long_var, input$lat_var)
+    lit <- nm_lit
+    sp <- input$species_var; lon <- input$long_var; lat <- input$lat_var
+    not_na_xy <- paste0("  dplyr::filter(!is.na(.data[[", lit(lon), "]]), !is.na(.data[[", lit(lat), "]]))")
     if (input$occ_type != "Presence") {
-    df <- species_data() %>%
-      dplyr::select(input$species_var, input$long_var, input$lat_var, input$occ_var, input$var_to_conserve) %>%
-      dplyr::filter(!!sym(input$species_var) %in% input$unique_species &
-                      !!sym(input$occ_var) %in% c(input$presence, input$abscence)) %>%
-      dplyr::mutate(uni = paste0(!!sym(input$long_var), !!sym(input$lat_var))) #%>%
-    w_df_uni <- df %>% dplyr::distinct(uni, .keep_all = TRUE) %>%
-      dplyr::select(-uni) %>%
-      dplyr::rename("pr_ab" = input$occ_var) %>%
-      dplyr::filter(!is.na(pr_ab)) %>%
-      dplyr::mutate(pr_ab = dplyr::case_when(pr_ab == input$presence ~ 1,
-                                      pr_ab == input$abscence ~ 0))%>%
-      # Remove NA in Long and Lat
-      dplyr::filter(!is.na(!!sym(input$long_var))) %>%
-      dplyr::filter(!is.na(!!sym(input$lat_var)))
-
-      ## duplicate
-    w_df_dupl <- df %>% dplyr::filter(duplicated(uni)) %>%
-      dplyr::select(-uni)
-    w_df_dupl <- w_df_dupl[complete.cases(w_df_dupl), ]# remove NA rows
+      code <- c(
+        "occ_sel <- occ_raw %>%",
+        paste0("  dplyr::select(dplyr::all_of(",
+               lit(unique(c(sp, lon, lat, input$occ_var, input$var_to_conserve))), ")) %>%"),
+        paste0("  dplyr::filter(.data[[", lit(sp), "]] %in% ", lit(input$unique_species), ","),
+        paste0("                .data[[", lit(input$occ_var), "]] %in% ",
+               lit(c(input$presence, input$abscence)), ") %>%"),
+        paste0("  dplyr::mutate(uni = paste0(.data[[", lit(lon), "]], .data[[", lit(lat), "]]))"),
+        "occ <- occ_sel %>%",
+        "  dplyr::distinct(uni, .keep_all = TRUE) %>%",
+        "  dplyr::select(-uni) %>%",
+        paste0("  dplyr::rename(pr_ab = ", lit(input$occ_var), ") %>%"),
+        "  dplyr::filter(!is.na(pr_ab)) %>%",
+        paste0("  dplyr::mutate(pr_ab = dplyr::case_when(pr_ab == ", lit(input$presence), " ~ 1,"),
+        paste0("                                         pr_ab == ", lit(input$abscence), " ~ 0)) %>%"),
+        not_na_xy
+      )
+    } else {
+      code <- c(
+        "occ_sel <- occ_raw %>%",
+        paste0("  dplyr::select(dplyr::all_of(", lit(unique(c(sp, lon, lat, input$var_to_conserve))), ")) %>%"),
+        paste0("  dplyr::filter(.data[[", lit(sp), "]] == ", lit(input$unique_species), ") %>%"),
+        paste0("  dplyr::mutate(uni = paste0(.data[[", lit(lon), "]], .data[[", lit(lat), "]]))"),
+        "occ <- occ_sel %>%",
+        "  dplyr::distinct(uni, .keep_all = TRUE) %>%",
+        "  dplyr::select(-uni) %>%",
+        "  dplyr::mutate(pr_ab = 1,",
+        paste0("                dplyr::across(dplyr::all_of(", lit(c(lon, lat)), "), as.numeric)) %>%"),
+        not_na_xy
+      )
     }
-    else{
-      df <- species_data() %>%
-        dplyr::select(input$species_var, input$long_var, input$lat_var, input$var_to_conserve) %>%
-        dplyr::filter(!!sym(input$species_var) == input$unique_species) %>%
-        dplyr::mutate(uni = paste0(!!sym(input$long_var), !!sym(input$lat_var)))
-      w_df_uni <- df %>% dplyr::distinct(uni, .keep_all = TRUE) %>%
-        dplyr::select(-uni) %>%
-        dplyr::mutate("pr_ab" = 1,
-                      "{input$long_var}" := as.numeric(!!sym(input$long_var)),
-                      "{input$lat_var}" := as.numeric(!!sym(input$lat_var))) %>%
-        # Remove NA in Long and Lat
-        dplyr::filter(!is.na(!!sym(input$long_var))) %>%
-        dplyr::filter(!is.na(!!sym(input$lat_var)))
-
-      ## duplicate
-      w_df_dupl <- df %>% dplyr::filter(duplicated(uni)) %>%
-        dplyr::select(-uni)
-      w_df_dupl <- w_df_dupl[complete.cases(w_df_dupl), ]# remove NA rows
-
-    }
-    return(list(w_df_uni, w_df_dupl))
+    code <- paste(c(
+      code,
+      "occ_dupl <- occ_sel %>% dplyr::filter(duplicated(uni)) %>% dplyr::select(-uni)",
+      "occ_dupl <- occ_dupl[complete.cases(occ_dupl), ]",
+      "rm(occ_sel)"
+    ), collapse = "\n")
+    env <- run_code("occ", "occurrences", "Species records cleaning", code,
+                    list(occ_raw = species_data()))
+    return(list(env$occ, env$occ_dupl))
   })
   # display data
   output$unique_data <- st_render_dt({ wrangle_data()[[1]] })
@@ -212,13 +226,14 @@ server <- function(input, output, session) {
   shinyFiles::shinyFileChoose(input, "add_layer", roots = root,
                               filetypes = c("shp", "kml", "kmz"))
   layer_file_path <- reactive({
-    shinyFiles::parseFilePaths(roots = root, selection = input$add_layer)$datapath
+    unname(shinyFiles::parseFilePaths(roots = root, selection = input$add_layer)$datapath)
   })
   ## set shp data
   shp_layer <- reactive({
     req(layer_file_path())
-    sf::read_sf(layer_file_path()) %>%
-      sf::st_make_valid(duplicate_edges = FALSE, split_crossing_edges = TRUE)
+    code <- paste0("study_area <- sf::read_sf(", nm_lit(layer_file_path()), ") %>%\n",
+                   "  sf::st_make_valid(duplicate_edges = FALSE, split_crossing_edges = TRUE)")
+    run_code("layer", "layer", "", code)$study_area
     })
 
   occ_data <- reactive({
@@ -297,40 +312,34 @@ server <- function(input, output, session) {
 
   ## function to calibrate area
   # drop point outside area
-occ_dt <- reactive({
-  req(shp_layer())
-  tryCatch({
-    wd <- wrangle_data()[[1]]
-    occ_dt <- sf::st_as_sf(wd, coords = c(input$long_var, input$lat_var), crs = crs(shp_layer())) %>%
-      dplyr::bind_cols(wd[, c(input$long_var, input$lat_var)])
-    occ_dt <- sf::st_intersection(x = occ_dt, y = shp_layer()) %>%
-      as.data.frame() %>% dplyr::select(-geometry)
-    occ_dt
-  }, error = error)
-})
-
-  calib_area_nimo <- function(){
-    occ_dt <- occ_dt()
-    if (input$calib_area_method == "buffer") {
-      cala <- calib_area(data = occ_dt, x = input$long_var,
-                         y = input$lat_var, crs = terra::crs(shp_layer()),
-                         method = c("buffer", width = as.numeric(input$calib_area_width)))
-    } else if (input$calib_area_method == "bmcp"){
-      cala <- calib_area(data = occ_dt, x = input$long_var,
-                         y = input$lat_var, crs = terra::crs(shp_layer()),
-                         method = c("bmcp", width = as.numeric(input$calib_area_width)))
-    } else if (input$calib_area_method == "mcp"){
-      cala <- calib_area(data = occ_dt, x = input$long_var,
-                         y = input$lat_var, crs = terra::crs(shp_layer()),
-                         method = c("mcp"))
-    } else if (input$calib_area_method == "mask"){
-      clusters <- terra::vect(shp_layer())
-      cala <- calib_area(data = occ_dt, x = input$long_var,
-                         y = input$lat_var, crs = terra::crs(shp_layer()),
-                         method = c("mask", clusters, input$clusters_field))
-    }
-    return(cala)
-  }
+  calib_res <- eventReactive(input$valid_calib_area, {
+    req(shp_layer(), wrangle_data())
+    lon <- nm_lit(input$long_var); lat <- nm_lit(input$lat_var)
+    method <- switch(input$calib_area_method,
+                     "buffer" = nm_lit(c("buffer", width = as.numeric(input$calib_area_width))),
+                     "bmcp" = nm_lit(c("bmcp", width = as.numeric(input$calib_area_width))),
+                     "mcp" = nm_lit(c("mcp")),
+                     "mask" = paste0('c("mask", terra::vect(study_area), ', nm_lit(input$clusters_field), ')'))
+    code <- paste(c(
+      paste0("occ_in_area <- sf::st_as_sf(occ, coords = c(", lon, ", ", lat, "), crs = sf::st_crs(study_area)) %>%"),
+      paste0("  dplyr::bind_cols(occ[, c(", lon, ", ", lat, ")]) %>%"),
+      "  sf::st_intersection(study_area) %>%",
+      "  as.data.frame() %>%",
+      "  dplyr::select(-geometry)",
+      "calib_area <- flexsdm::calib_area(",
+      "  data = occ_in_area,",
+      paste0("  x = ", lon, ","),
+      paste0("  y = ", lat, ","),
+      "  crs = terra::crs(study_area),",
+      paste0("  method = ", method),
+      ")"
+    ), collapse = "\n")
+    env <- run_code("calib_area", "calibration", "", code,
+                    list(occ = occ_used(), study_area = shp_layer()))
+    list(occ_dt = env$occ_in_area, calib_area = env$calib_area)
+  })
+  occ_dt <- function() calib_res()$occ_dt
+  calib_area_nimo <- function() calib_res()$calib_area
 
   ## Notify calibration area valid
   observeEvent(input$valid_calib_area, {
@@ -347,7 +356,7 @@ occ_dt <- reactive({
   })
   ## plot calibrated area
   plot_cali_area <- eventReactive(input$valid_calib_area, {
-      req(calib_area_nimo(), layer_file_path(), wrangle_data(), data_file_path(), shp_layer())
+      req(calib_area_nimo(), layer_file_path(), wrangle_data(), shp_layer())
     occ_dt <- sf::st_as_sf(occ_dt(), coords = c(input$long_var, input$lat_var), crs = crs(shp_layer()))
 
       ##
@@ -372,13 +381,13 @@ occ_dt <- reactive({
   shinyFiles::shinyDirChoose(input, "pred_source", roots = root,
                               filetypes = c("tif", "TIF", "tiff", "TIFF"))
   predictors_path <- reactive({
-    shinyFiles::parseDirPath(roots = root, selection = input$pred_source)
+    unname(shinyFiles::parseDirPath(roots = root, selection = input$pred_source))
   })
 
   pred_list <- reactive({
-    list.files(path = predictors_path(), pattern = "[.tif!TIF!TIFF!tiff]$", full.names = T)
+    list.files(path = predictors_path(), pattern = "\\.tiff?$", ignore.case = TRUE, full.names = TRUE)
   })
-  env_layers <- reactive({
+  env_base <- reactive({
     req(pred_list())
     all_rast <- to_check <- n_col <- n_row <- name <- list(); rast_n <- 0
     for (rst_path in pred_list()) {
@@ -423,12 +432,25 @@ occ_dt <- reactive({
                                                     method = 'near')
       }
       ras <- rast(all_rast_sampled)
+      record_step("env", "predictors", "", c(
+        env_files_code(),
+        "# match all predictors to the first one",
+        "env_target <- terra::rast(env_files[1])",
+        "env <- terra::rast(lapply(env_files, function(f) {",
+        "  r <- terra::project(terra::rast(f), env_target)",
+        "  nimo::nm_match_raster(to_match = r, target = env_target, method = \"near\")",
+        "}))"
+      ))
       ras
     } else{
       tryCatch({
         ras <- terra::rast(pred_list())
+        code <- c(env_files_code(), "env <- terra::rast(env_files)")
         if (base::any(duplicated(names(ras)))) {
-          names(ras) <- sub("\\.[^.]*$", "", basename(pred_list()))}
+          names(ras) <- sub("\\.[^.]*$", "", basename(pred_list()))
+          code <- c(code, 'names(env) <- sub("\\\\.[^.]*$", "", basename(env_files))')
+        }
+        record_step("env", "predictors", "", code)
         ras
       }, error = function(e){
         showModal(error_modal())
@@ -436,6 +458,10 @@ occ_dt <- reactive({
       })
     }
   })
+  env_files_code <- function() {
+    paste0("env_files <- list.files(", nm_lit(predictors_path()),
+           ', pattern = "\\\\.tiff?$", ignore.case = TRUE, full.names = TRUE)')
+  }
   ## display summary
   predictors_summary <- function() {
     pred_rast <- c()
@@ -484,17 +510,33 @@ occ_dt <- reactive({
   }
 
   reduce_colin <- eventReactive(input$reduce_collin, {
-    req(env_layers())
+    req(env_base())
     tryCatch({
+      colin_method <- switch(input$coli_method,
+                             "pearson" = c("pearson", th = as.character(input$pearson_threshold)),
+                             "vif" = c("vif", th = as.character(input$vif_threshold)),
+                             input$coli_method)
+      colin_post <- switch(input$coli_method,
+                           "pearson" = paste0("removed_vars <- nimo::nm_find_hcv(colin$cor_table, cutoff = ",
+                                              nm_lit(input$pearson_threshold), ")"),
+                           "pca" = "colin$cumulative_variance",
+                           "removed_vars <- colin$removed_variables")
+      reset_pca_use()
+      correct_colinvar <- function(env_layer, method) {
+        run_recorded("colin", "colinearity", "", "colin", "flexsdm::correct_colinvar",
+                     flexsdm::correct_colinvar,
+                     list(env_layer = nm_cv(env_layer, "env"), method = colin_method),
+                     post = colin_post)
+      }
       if(input$coli_method == "pearson"){
-        colin_var <- correct_colinvar(env_layer = env_layers(),
+        colin_var <- correct_colinvar(env_layer = env_base(),
                                       method = c("pearson", th = as.character(input$pearson_threshold)))
         cr_df <- colin_var$cor_table # table
         enlayer <- colin_var$cor_variables # layer
         highly_corr_vars <- nm_find_hcv(cr_df, cutoff = input$pearson_threshold)
         rm_enlayer <- highly_corr_vars
       } else if(input$coli_method == "vif"){
-        colin_var <- correct_colinvar(env_layer = env_layers(), method = c("vif", th = as.character(input$vif_threshold)))
+        colin_var <- correct_colinvar(env_layer = env_base(), method = c("vif", th = as.character(input$vif_threshold)))
         cr_df <- colin_var$vif_table # table
         enlayer <- list()
         for (i in 1:terra::nlyr(colin_var$env_layer)) {
@@ -503,7 +545,7 @@ occ_dt <- reactive({
         }
         rm_enlayer <- colin_var$removed_variables
       } else if(input$coli_method == "pca"){
-        colin_var <- correct_colinvar(env_layer = env_layers(), method = c("pca"))
+        colin_var <- correct_colinvar(env_layer = env_base(), method = c("pca"))
         cr_df <- colin_var$coefficients # table
         enlayer <- list()
         for (i in 1:terra::nlyr(colin_var$env_layer)) {
@@ -511,8 +553,8 @@ occ_dt <- reactive({
           enlayer[[i]] <- l
         }
         rm_enlayer <- colin_var$cumulative_variance
-      } else if(input$coli_method == "fa" & terra::nlyr(env_layers()) > 2){
-        colin_var <- correct_colinvar(env_layer = env_layers(), method = c("fa"))
+      } else if(input$coli_method == "fa" & terra::nlyr(env_base()) > 2){
+        colin_var <- correct_colinvar(env_layer = env_base(), method = c("fa"))
         cr_df <- colin_var$loadings # table
         enlayer <- colin_var$env_layer
         rm_enlayer <- colin_var$removed_variables
@@ -546,9 +588,9 @@ occ_dt <- reactive({
 
   # OCCURENCE FILTERING --------
   observe({
-    req(env_layers())
+    req(env_base())
     tryCatch({
-      if (terra::nlyr(env_layers()) <= 2) {
+      if (terra::nlyr(env_base()) <= 2) {
         updateSelectInput(inputId = "coli_method", session = session,
                           choices = c("Pearson correlation" = "pearson", "Variance inflation factor" = "vif",
                                       "Principal component analysis" = "pca"))
@@ -562,86 +604,7 @@ occ_dt <- reactive({
       output$error_modal <- renderText(paste(e))
     })
   })
-
-
-  occ_filt_modal <- function(){
-    modalDialog(title = h3("Occurrence data filtering", style = "text-align:left"), size = "l",
-                footer = tagList(
-                  modalButton("Ok"),
-                  actionButton("valid_occ_filt", "Filter", icon = icon("check"), style = bttn_primary_style)
-                  ),
-                fluidRow(column(8,
-                                tabsetPanel(
-                                  tabPanel("Distribution",
-                                           plotOutput("occ_filt_plot")),
-                                  tabPanel("Filtered data",
-                                           DT::dataTableOutput("occ_filtered_data", height = "500px"))
-                )),
-                         column(4,
-                                selectInput("occ_filt_type", "Filtering type", choices = c("Geographical", "Environmental")),
-                                conditionalPanel("input.occ_filt_type == 'Environmental'",
-                                                 numericInput("occ_filt_nbins", "Number of bin", value = 1, min = 1, step = 1)),
-                                conditionalPanel("input.occ_filt_type == 'Geographical'",
-                                                 selectInput("enlayer_to_plot", label = NULL,  choices = c()),
-                                                 selectInput("occ_filt_method", "Filtering method",
-                                                             choices = occ_filt_method),
-                                                 conditionalPanel("input.occ_filt_method == 'cellsize'",
-                                                                  numericInput("occ_filt_cellsize", "Factor", min = 1, value = 2, step = 1)),
-                                                 conditionalPanel("input.occ_filt_method == 'defined'",
-                                                                  numericInput("occ_filt_defined", "Distance (km)", min = 0, value = 1))),
-                                shinySaveButton(id = "save_occ_filt", label = "Save",  title = "Save occurrence data filtered",
-                                                filename = "", filetype = list(CSV = "csv", `Plain text` = "txt"),
-                                                icon = icon("save"), style = bttn_primary_style)
-                                )),
-                )
-  }
-
-  observeEvent(input$occ_filt, {
-    showModal(occ_filt_modal())
-    updateSelectInput(session, "enlayer_to_plot", choices = names(env_layers()))
-  })
-  ### Download setting
-  shinyFiles::shinyFileSave(input, "save_occ_filt", roots = root, session = session)
-  save_occ_filt_path <- reactive({
-    req(input$save_occ_filt)
-    shinyFiles::parseSavePath(roots = root, selection = input$save_occ_filt)
-  })
-
-  observe({
-    req(save_occ_filt_path())
-    if (nrow(save_occ_filt_path()) > 0 ) {
-      write.csv(x = occ_filt_out()[[2]], file = as.character(save_occ_filt_path()$datapath))
-    }
-    })
-
-  occ_filt_out <- eventReactive(input$valid_occ_filt, {
-    # data frame
-    data <- wrangle_data()[[1]]#[c(input$long_var, input$lat_var)]
-    if(input$occ_filt_method == "moran" && input$occ_filt_type == "Geographical"){
-      occ_filtered <- occfilt_geo(data = data, x = input$long_var, y = input$lat_var, env_layer = env_layers(),
-                                  method = "moran", prj = terra::crs(env_layers()))
-    } else if (input$occ_filt_method == "cellsize" && input$occ_filt_type == "Geographical") {
-      occ_filtered <- occfilt_geo(data = data, x = input$long_var, y = input$lat_var, env_layer = env_layers(),
-                                  method = c("cellsize", factor = input$occ_filt_cellsize), prj = terra::crs(env_layers()))
-    } else if (input$occ_filt_method == "defined" && input$occ_filt_type == "Geographical") {
-      occ_filtered <- occfilt_geo(data = data, x = input$long_var, y = input$lat_var, env_layer = env_layers(),
-                                  method = c("defined", d = input$occ_filt_defined), prj = terra::crs(env_layers()))
-    } else if (input$occ_filt_type == "Environmental") {
-      data$id <- 1:nrow(data)
-      occ_filtered <- occfilt_env(data = data, x = input$long_var, y = input$lat_var, env_layer = env_layers(), id = "id",
-                                  nbins = input$occ_filt_nbins)
-    }
-    # plot
-    occ_env_layer_plot <- function(){
-      terra::plot(env_layers()[input$enlayer_to_plot], main = input$enlayer_to_plot)
-      points(occ_filtered[c(input$long_var, input$lat_var)])
-    }
-    return(list(occ_env_layer_plot(), occ_filtered))
-  })
-  output$occ_filt_plot <- renderPlot({ occ_filt_out()[[1]] })
-  output$occ_filtered_data <- DT::renderDataTable({ occ_filt_out()[[2]] })
-
-
+  source(paste0(src_root, "occ_filtering.R"), verbose = FALSE, local = TRUE)$value
 
   # DATA PARTITION -------
   ## update -- sband partion
@@ -649,16 +612,16 @@ occ_dt <- reactive({
     updateNumericInput(session, "sband_part_max", min = input$sband_part_min + 1)
   })
   observeEvent(input$sband_part_number, {
-    req(wrangle_data()[[1]])
-    updateNumericInput(session, "sband_part_min_occ", max = nrow(wrangle_data()[[1]]) %/% input$sband_part_number)
+    req(occ_used())
+    updateNumericInput(session, "sband_part_min_occ", max = nrow(occ_used()) %/% input$sband_part_number)
   })
   ### update -- sblock partion
   observeEvent(input$min_res_mult, {
     updateNumericInput(session, "max_res_mult", min = input$min_res_mult + 1)
   })
   observeEvent(input$sblock_part_number, {
-    req(wrangle_data()[[1]])
-    updateNumericInput(session, "sblock_min_occ", max = nrow(wrangle_data()[[1]]) %/% input$sblock_part_number)
+    req(occ_used())
+    updateNumericInput(session, "sblock_min_occ", max = nrow(occ_used()) %/% input$sblock_part_number)
   })
   ### update -- senv partition
   observeEvent(input$min_n_groups, {
@@ -666,113 +629,91 @@ occ_dt <- reactive({
   })
 
   ## data partition
+  ### partition function and arguments
+  partition_call <- function(data, data_code) {
+    d <- nm_cv(data, data_code)
+    env <- nm_cv(env_layers(), "env")
+    xy <- list(x = input$long_var, y = input$lat_var, pr_ab = "pr_ab")
+    switch(input$partition_type,
+           "part_random" = list(fun = "part_random", args = list(
+             data = d, pr_ab = "pr_ab",
+             method = switch(input$part_random_method,
+                             "kfold" = c(method = "kfold", folds = input$kfold_number),
+                             "rep_kfold" = c(method = "rep_kfold", folds = input$kfold_number,
+                                             replicates = input$rep_kfold),
+                             "loocv" = c(method = "loocv"),
+                             "boot" = c(method = "boot", replicates = input$rep_boot,
+                                        proportion = input$prop_boot)))),
+           "part_sband" = list(fun = "part_sband", args = c(
+             list(env_layer = env, data = d), xy,
+             list(type = input$sband_lon_lat, n_part = input$sband_part_number,
+                  min_bands = input$sband_part_min, max_bands = input$sband_part_max,
+                  min_occ = input$sband_part_min_occ, prop = input$sband_part_prop))),
+           "part_sblock" = list(fun = "part_sblock", args = c(
+             list(env_layer = env, data = d), xy,
+             list(n_part = input$sblock_part_number, min_res_mult = input$min_res_mult,
+                  max_res_mult = input$max_res_mult, num_grids = input$num_grids,
+                  min_occ = input$sblock_min_occ, prop = input$sblock_prop))),
+           "part_senv" = list(fun = "part_senv", args = c(
+             list(env_layer = env, data = d), xy,
+             list(min_n_groups = input$min_n_groups, max_n_groups = input$max_n_groups,
+                  min_occ = input$senv_min_occ, prop = input$senv_prop)))
+    )
+  }
+  run_partition <- function(key, section, title, assign, data, data_code, pre = NULL, post = NULL) {
+    p <- partition_call(data, data_code)
+    set.seed(global_seed())
+    run_recorded(key, section, title, assign, paste0("flexsdm::", p$fun),
+                 getExportedValue("flexsdm", p$fun), p$args,
+                 pre = c(pre, "set.seed(seed)"), post = post)
+  }
+  spatial_partition <- function() input$partition_type %in% c("part_sband", "part_sblock", "part_senv")
+
   data_partition <- eventReactive(input$divvy_data, {
     grid_env <- NULL
-    set.seed(global_seed())
-    if(input$partition_type == "part_random" && input$part_random_method == "kfold"){
-      partion <- part_random(data = wrangle_data()[[1]], pr_ab = "pr_ab",
-                             method = c(method = "kfold", folds = input$kfold_number))
-      prt <- partion %>%  dplyr::select(.part)
+    repl <- input$partition_type == "part_random" && input$part_random_method %in% c("rep_kfold", "boot")
+    post <- if (spatial_partition()) "part_groups <- part_preview$part$.part" else
+      if (repl) "part_groups <- part_preview$.part1" else "part_groups <- part_preview$.part"
+    if (input$partition_type %in% c("part_sband", "part_sblock")) {
+      post <- c(post, "grid_env <- flexsdm::get_block(env_layer = env, best_grid = part_preview$grid)")
+    }
+    res <- run_partition("part_preview", "partition_preview",
+                         "Sizes the background / pseudo-absence samples per partition",
+                         "part_preview", occ_used(), "occ", post = post)
+
+    if(input$partition_type == "part_random" && input$part_random_method %in% c("kfold", "loocv")){
+      partion <- res
+      prt <- if (input$part_random_method == "kfold") partion %>% dplyr::select(.part) else partion$.part
       parts <- partion$.part %>% table()
       cat("Partition group:\n")
 
-    } else if (input$partition_type == "part_random" && input$part_random_method == "rep_kfold"){
-      partion <- part_random(data = wrangle_data()[[1]], pr_ab = "pr_ab",
-                             method = c(method = "rep_kfold", folds = input$kfold_number, replicates = input$rep_kfold))
-                  replic_fold_list = list()# list to hold partitions
-                  replic_parts <- partion[(length(partion) - input$rep_kfold + 1):length(partion)]
-                  for (i in colnames(replic_parts)) {
-                    parts <- replic_parts[, i] %>% table()
-                    replic_fold_list[[i]] <- parts
-                  }
+    } else if (repl){
+      partion <- res
+      n_rep <- if (input$part_random_method == "rep_kfold") input$rep_kfold else input$rep_boot
+      replic_fold_list = list()# list to hold partitions
+      replic_parts <- partion[(length(partion) - n_rep + 1):length(partion)]
+      for (i in colnames(replic_parts)) {
+        replic_fold_list[[i]] <- replic_parts[, i] %>% table()
+      }
       cat("Partition group:\n")
-      prt <- partion %>%  dplyr::select(.part1)
+      prt <- partion %>% dplyr::select(.part1)
       parts <- replic_fold_list
 
-    } else if (input$partition_type == "part_random" && input$part_random_method == "loocv"){
-      partion <- part_random(data = wrangle_data()[[1]], pr_ab = "pr_ab",
-                             method = c(method = "loocv"))
-      cat("Partition group:\n")
-      prt <- partion$.part
-      parts <- partion$.part %>% table()
-
-    } else if(input$partition_type == "part_random" && input$part_random_method == "boot"){
-      partion <- part_random(data = wrangle_data()[[1]], pr_ab = "pr_ab",
-                             method = c(method = "boot", replicates = input$rep_boot,
-                                        proportion = input$prop_boot))
-      cat("Partition group:\n")
-                  replic_fold_list = list()# list to hold partitions
-                  replic_parts <- partion[(length(partion) - input$rep_boot + 1):length(partion)]
-                  for (i in colnames(replic_parts)) {
-                    parts <- replic_parts[, i] %>% table()
-                    replic_fold_list[[i]] <- parts
-                  }
-      parts <- replic_fold_list
-      prt <- partion %>% select(.part1)
-
-    } else if (input$partition_type == "part_sband"){
-      parts <- part_sband(env_layer = env_layers(), data = wrangle_data()[[1]],
-        x = input$long_var, y = input$lat_var, pr_ab = "pr_ab",
-        type = input$sband_lon_lat,
-        n_part = input$sband_part_number,
-        min_bands = input$sband_part_min,
-        max_bands = input$sband_part_max,
-        min_occ = input$sband_part_min_occ,
-        prop = input$sband_part_prop
-      )
+    } else {
+      parts <- res
       partion <- parts$part
-      grid <- parts$grid ; x_y <- parts$part[c("x", "y")] ; pr_ab <- parts$part$pr_ab
-      grid_env <- get_block(env_layer = env_layers(), best_grid = grid)
       prt <- parts$part$.part
-      cat("Partition group:\n"); print(prt %>% table()); cat("\n"); cat("Information about the best partition:"); cat("\n")
-      output$part_sband_plot <- renderPlot({
-        terra::plot(grid, col = gray.colors(20))
-        points(x_y,
-               col = rainbow(8)[prt],
-               pch = c(1, 15)[pr_ab + 1]
-              )
+      if (input$partition_type %in% c("part_sband", "part_sblock")) {
+        grid <- parts$grid ; x_y <- parts$part[c("x", "y")] ; pr_ab <- parts$part$pr_ab
+        grid_env <- get_block(env_layer = env_layers(), best_grid = grid)
+        output$part_sband_plot <- renderPlot({
+          terra::plot(grid_env, col = gray.colors(20))
+          points(x_y,
+                 col = rainbow(8)[prt],
+                 pch = c(1, 15)[pr_ab + 1]
+          )
         })
-      parts <- data.frame(parts$best_part_info)
-
-    } else if(input$partition_type == "part_sblock") {
-      parts <- part_sblock(
-        env_layer = env_layers(),
-        data = wrangle_data()[[1]],
-        x = input$long_var, y = input$lat_var, pr_ab = "pr_ab",
-        n_part = input$sblock_part_number,
-        min_res_mult = input$min_res_mult,
-        max_res_mult = input$max_res_mult,
-        num_grids = input$num_grids,
-        min_occ = input$sblock_min_occ,
-        prop = input$sblock_prop
-      )
-      partion <- parts$part
-      grid <- parts$grid ; x_y <- parts$part[c("x", "y")] ; pr_ab <- parts$part$pr_ab
-      grid_env <- get_block(env_layer = env_layers(), best_grid = grid)
-      prt <- parts$part$.part
-      cat("Partition group:\n"); print(prt %>% table()); cat("\n"); cat("Information about the best partition:"); cat("\n")
-
-      output$part_sband_plot <- renderPlot({
-        terra::plot(grid_env, col = gray.colors(20))
-        points(x_y,
-               col = rainbow(8)[prt],
-               pch = c(1, 15)[pr_ab + 1]
-        )
-      })
-      parts <- data.frame(parts$best_part_info)
-
-    } else if(input$partition_type == "part_senv"){
-      parts <- part_senv(
-        env_layer = env_layers(),
-        data = wrangle_data()[[1]],
-        x = input$long_var, y = input$lat_var, pr_ab = "pr_ab",
-        min_n_groups = input$min_n_groups,
-        max_n_groups = input$max_n_groups,
-        min_occ = input$senv_min_occ,
-        prop = input$senv_prop
-      )
-      partion <- parts$part
-      prt <- parts$part$.part
+      }
       cat("Partition group:\n"); print(prt %>% table()); cat("\n"); cat("Information about the best partition:"); cat("\n")
       parts <- data.frame(parts$best_part_info)
     }
@@ -818,108 +759,81 @@ occ_dt <- reactive({
   observeEvent(input$back_ps_ab_samp , { showModal(bpas_modal()) })
   ########----
   sd_occ_data <- eventReactive(input$generate_bpas, {
-    req(wrangle_data()[[1]])
+    req(occ_used())
     prt <- data_partition()[[3]] %>% table() %>% as.data.frame() %>% dplyr::select(2)
-    if(input$partition_type == "part_random" && !input$part_random_method %in% c("rep_kfold", "loocv", "boot")){
-      n <- input$kfold_number
-    } else if(input$partition_type == "part_random" && input$part_random_method == "rep_kfold"){
+    if(input$partition_type == "part_random" && input$part_random_method %in% c("kfold", "rep_kfold")){
       n <- input$kfold_number
     } else if (input$partition_type == "part_random" && input$part_random_method == "loocv"){
-      n <- nrow(wrangle_data()[[1]])
+      n <- nrow(occ_used())
     } else if(input$partition_type == "part_random" && input$part_random_method == "boot"){
       n <- 2
-      #part <-  data.frame(data_partition()[[3]])[, 2]
     } else if (input$partition_type == "part_sband"){
       n <- input$sband_part_number
-      rlayer <- data_partition()[[2]]
     } else if(input$partition_type == "part_sblock"){
       n <- input$sblock_part_number
-      rlayer <- data_partition()[[2]]
     } else if(input$partition_type == "part_senv"){
       n <- nrow(prt)
     }
+    lit <- nm_lit
+    nm_name <- nimo:::nm_name
+    lon <- input$long_var; lat <- input$lat_var; sp <- input$species_var
+    banded <- input$partition_type %in% c("part_sband", "part_sblock")
+    w <- as.character(input$pseudo_abs_width)
+    common <- paste0("    data = occ,\n    x = ", lit(lon), ",\n    y = ", lit(lat), ",\n")
+    mask <- if (banded) "    rlayer = grid_env,\n    maskval = x,\n" else "    rlayer = env,\n    maskval = NULL,\n"
+    head <- c("# Number of records per partition group",
+              "n_points <- as.data.frame(table(part_groups))$Freq",
+              "set.seed(seed)")
+
     #### background sample
-    if(input$bpas_type == "Background" && input$partition_type %in% c("part_sband", "part_sblock")){
-      bg <- lapply(1:n, function(x) {
-        flexsdm::sample_background(
-          data = wrangle_data()[[1]],
-          x = input$long_var, y = input$lat_var,
-          n = prt[x, 1] * (input$n_bg),
-          method = switch(input$bg_method,
-                          "random" = "random",
-                          "thickening" = c(input$bg_method, input$thickening_width)),
-          rlayer = rlayer,
-          maskval = x,
-          calibarea = calib_area_nimo()
-        )
-      }) %>%
-        dplyr::bind_rows() %>%
-        dplyr::mutate(pr_ab = 0)
-
+    if (input$bpas_type == "Background" && banded) {
+      method <- switch(input$bg_method, "random" = "random",
+                       "thickening" = c(input$bg_method, input$thickening_width))
+      code <- c(head, paste0(
+        "bg <- lapply(1:", n, ", function(x) {\n",
+        "  flexsdm::sample_background(\n", common,
+        "    n = n_points[x] * ", lit(input$n_bg), ",\n",
+        "    method = ", lit(method), ",\n", mask,
+        "    calibarea = calib_area\n  )\n",
+        "}) %>%\n  dplyr::bind_rows() %>%\n  dplyr::mutate(pr_ab = 0)"))
+    } else if (input$bpas_type == "Background") {
+      code <- c(head, paste0(
+        "bg <- do.call(rbind, lapply(1:", n, ", function(x) {\n",
+        "  bgpoint <- terra::spatSample(x = calib_area, method = \"random\", size = n_points[x] * ",
+        lit(input$n_bg), ")\n",
+        "  sf::st_coordinates(sf::st_as_sf(bgpoint)) %>%\n",
+        "    as.data.frame() %>%\n",
+        "    dplyr::rename(", nm_name(lon), " = X, ", nm_name(lat), " = Y) %>%\n",
+        "    dplyr::mutate(pr_ab = 0, ", nm_name(sp), " = unique(occ[[", lit(sp), "]])) %>%\n",
+        "    dplyr::relocate(dplyr::all_of(", lit(sp), "), .before = dplyr::all_of(", lit(lon), "))\n",
+        "}))"))
+    } else {
+      ## pseudo-absence sample
+      method <- switch(input$pseudo_abs_method,
+                       "random" = "\"random\"",
+                       "env_const" = "c(\"env_const\", env = env)",
+                       "geo_const" = paste0("c(\"geo_const\", width = ", lit(w), ")"),
+                       "geo_env_const" = paste0("c(\"geo_env_const\", width = ", lit(w), ", env = env)"),
+                       "geo_env_km_const" = paste0("c(\"geo_env_km_const\", width = ", lit(w), ", env = env)"))
+      code <- c(head, paste0(
+        "bg <- lapply(1:", n, ", function(x) {\n",
+        "  flexsdm::sample_pseudoabs(\n", common,
+        "    n = n_points[x],\n",
+        "    method = ", method, ",\n", mask,
+        "    calibarea = calib_area\n  )\n",
+        "}) %>%\n  dplyr::bind_rows() %>%\n  dplyr::mutate(pr_ab = 0)"))
     }
-    else if(input$bpas_type == "Background" && !input$partition_type %in% c("part_sband", "part_sblock")){
-      bg_list <- lapply(1:n, function(x){
-        bgpoint <- terra::spatSample(x = calib_area_nimo(), method = "random",
-                                     size = prt[x, 1]* (input$n_bg))
-        sf::st_coordinates(st_as_sf(bgpoint)) %>% as.data.frame() %>%
-          dplyr::rename("{input$long_var}" := X, "{input$lat_var}" := Y) %>%
-          dplyr::mutate(pr_ab = 0,
-                 "{input$species_var}" := unique(dplyr::pull(wrangle_data()[[1]],
-                                                             var = input$species_var))) %>%
-          dplyr::relocate(!!sym(input$species_var), .before = !!sym(input$long_var))
-      }) #%>% dplyr::bind_rows()
-      bg <- do.call(rbind, bg_list)
-    }
-
-    ## pseudo-abscence sample
-    else if(input$bpas_type == "Pseudo-absence" && input$partition_type %in% c("part_sband", "part_sblock")){
-      w <- as.character(input$pseudo_abs_width)
-      bg <- lapply(1:n, function(x) {
-        sample_pseudoabs(
-          data = wrangle_data()[[1]],
-          x = input$long_var, y = input$lat_var,
-          n = prt[x, 1] ,
-          method = switch(input$pseudo_abs_method,
-                          "random" = 'random',
-                          "env_const" = c('env_const', env = env_layers()),
-                          "geo_const" = c('geo_const', width = w),
-                          "geo_env_const" = c('geo_env_const', width = w, env = env_layers()),
-                          "geo_env_km_const" = c('geo_env_km_const', width = w, env = env_layers())
-                          ),
-          rlayer = rlayer,
-          maskval = x,
-          calibarea = calib_area_nimo()
-        )
-      }) %>%
-        dplyr::bind_rows() %>%
-        dplyr::mutate(pr_ab = 0)
-    }else if(input$bpas_type == "Pseudo-absence" && !input$partition_type %in% c("part_sband", "part_sblock")){
-      w <- as.character(input$pseudo_abs_width)
-      bg <- lapply(1:n, function(x) {
-        sample_pseudoabs(
-          data = wrangle_data()[[1]],
-          x = input$long_var, y = input$lat_var,
-          n = prt[x, 1] ,
-          method = switch(input$pseudo_abs_method,
-                          "random" = 'random',
-                          "env_const" = c('env_const', env = env_layers()),
-                          "geo_const" = c('geo_const', width = w),
-                          "geo_env_const" = c('geo_env_const', width = w, env = env_layers()),
-                          "geo_env_km_const" = c('geo_env_km_const', width = w, env = env_layers())
-          ),
-          rlayer = env_layers(),
-          maskval = NULL,
-          calibarea = calib_area_nimo()
-        )
-      }) %>%
-        dplyr::bind_rows() %>%
-        dplyr::mutate(pr_ab = 0)
-    }
-    return(bg)
+    title <- if (input$bpas_type == "Background") input$bg_method else input$pseudo_abs_method
+    env <- run_code("bg", "background", paste0(input$bpas_type, " (", title, ")"),
+                    paste(code, collapse = "\n"),
+                    list(occ = occ_used(), part_groups = data_partition()[[3]],
+                         grid_env = data_partition()[[2]], calib_area = calib_area_nimo(),
+                         env = env_layers(), seed = global_seed()))
+    return(env$bg)
   })
 
   c_occ_data <- reactive({
-    dplyr::bind_rows(wrangle_data()[[1]], sd_occ_data())})
+    dplyr::bind_rows(occ_used(), sd_occ_data())})
     output$new_points <- st_render_dt({sd_occ_data()})
     output$complete_occ_data <- st_render_dt({c_occ_data()})
     output$pbas_plot <- renderPlot({
@@ -937,55 +851,20 @@ occ_dt <- reactive({
     if(input$occ_type == "Presence"){
       req(c_occ_data())
       data <- c_occ_data()
+      data_code <- "occ_pa"
+      pre <- c("# Presences + background / pseudo-absence points",
+               "occ_pa <- dplyr::bind_rows(occ, bg)")
     }else{
-      data <- wrangle_data()[[1]]
+      data <- occ_used()
+      data_code <- "occ"
+      pre <- NULL
     }
-
-      if(input$partition_type == "part_random" && input$part_random_method == "kfold"){
-      partion <- part_random(data = data, pr_ab = "pr_ab",
-                             method = c(method = "kfold", folds = input$kfold_number))
-      val_dp <- partion
-    } else if (input$partition_type == "part_random" && input$part_random_method == "rep_kfold"){
-      partion <- part_random(data = data, pr_ab = "pr_ab",
-                             method = c(method = "rep_kfold", folds = input$kfold_number, replicates = input$rep_kfold))
-      val_dp <- partion
-    } else if (input$partition_type == "part_random" && input$part_random_method == "loocv"){
-      partion <- part_random(data = data, pr_ab = "pr_ab",
-                             method = c(method = "loocv"))
-      val_dp <- partion
-    } else if(input$partition_type == "part_random" && input$part_random_method == "boot"){
-      partion <- part_random(data = data, pr_ab = "pr_ab",
-                             method = c(method = "boot", replicates = input$rep_boot,
-                                        proportion = input$prop_boot))
-      val_dp <- partion
-    } else if (input$partition_type == "part_sband"){
-      partion <- part_sband(
-        env_layer = env_layers(), data = data,
-        x = input$long_var, y = input$lat_var, pr_ab = "pr_ab",
-        type = input$sband_lon_lat, n_part = input$sband_part_number,
-        min_bands = input$sband_part_min, max_bands = input$sband_part_max,
-        min_occ = input$sband_part_min_occ, prop = input$sband_part_prop
-      )
-      val_dp <- partion$part
-    } else if(input$partition_type == "part_sblock") {
-      partion <- part_sblock(
-        env_layer = env_layers(), data = data,
-        x = input$long_var, y = input$lat_var, pr_ab = "pr_ab", n_part = input$sblock_part_number,
-        min_res_mult = input$min_res_mult, max_res_mult = input$max_res_mult,
-        num_grids = input$num_grids, min_occ = input$sblock_min_occ, prop = input$sblock_prop
-      )
-      val_dp <- partion$part
-    } else if(input$partition_type == "part_senv"){
-      partion <- part_senv(
-        env_layer = env_layers(),
-        data = data,
-        x = input$long_var, y = input$lat_var, pr_ab = "pr_ab",
-        min_n_groups = input$min_n_groups, max_n_groups = input$max_n_groups,
-        min_occ = input$senv_min_occ, prop = input$senv_prop
-      )
-      val_dp <- partion$part
+    if (spatial_partition()) {
+      run_partition("partition", "partition", "", "part_res", data, data_code,
+                    pre = pre, post = "occ_part <- part_res$part")$part
+    } else {
+      run_partition("partition", "partition", "", "occ_part", data, data_code, pre = pre)
     }
-    return(val_dp)
   })
 observeEvent(input$valided_dp, {
   tryCatch({
@@ -1022,16 +901,19 @@ kept_colin_var <- reactiveValues(rc = NULL)
   ## process extraction
   extracted_df <- eventReactive(input$extract_data, {
     req(valided_dp())
-    nm_extract(
-      data = valided_dp(),
-      longitude = ifelse(input$partition_type %in% c("part_sband", "part_sblock", "part_senv"), "x", input$long_var),
-      latitude = ifelse(input$partition_type %in% c("part_sband", "part_sblock", "part_senv"), "y", input$lat_var),
-      env_layer = env_layers(),
-      current_crs = input$occ_current_crs,
-      variables = input$extract_variables,
-      filter_na = TRUE
+    out <- run_recorded(
+      "sdm_data", "extraction", "", "sdm_data", "nimo::nm_extract", nm_extract,
+      list(data = nm_cv(valided_dp(), "occ_part"),
+           longitude = ifelse(spatial_partition(), "x", input$long_var),
+           latitude = ifelse(spatial_partition(), "y", input$lat_var),
+           env_layer = nm_cv(env_layers(), "env"),
+           current_crs = input$occ_current_crs,
+           variables = input$extract_variables,
+           filter_na = TRUE)
     )
+    out
   })
+  observeEvent(input$extract_data, model_data_source("extract"))
   output$extracted_data <- st_render_dt({extracted_df()}, width = "50%")
   ### Download extracted data
   shinyFiles::shinyFileSave(input, "save_extracted_data", roots = root, session = session)
@@ -1064,14 +946,20 @@ kept_colin_var <- reactiveValues(rc = NULL)
   shinyFileChoose(input, id = "import_exiting_df4mod", roots = root,
                   filetype = c("txt", "csv"))
   exiting_df4mod_path <- reactive({
-    parseFilePaths(roots = root, selection = input$import_exiting_df4mod)$datapath
+    unname(parseFilePaths(roots = root, selection = input$import_exiting_df4mod)$datapath)
   })
 
   exiting_df4mod <- reactive({
+    req(length(exiting_df4mod_path()) > 0)
     tryCatch({
-      req(exiting_df4mod_path())
-      read.csv(file = exiting_df4mod_path(), header = T)
+      run_recorded("sdm_data", "extraction", "Modelling data imported from file", "sdm_data",
+                   "read.csv", read.csv, list(file = exiting_df4mod_path(), header = TRUE))
     }, error = error)
+  })
+  ## Data used for modelling: last loaded or extracted
+  model_data_source <- reactiveVal(NULL)
+  observeEvent(input$import_exiting_df4mod, {
+    if (length(exiting_df4mod_path()) > 0) model_data_source("file")
   })
 
   ## update algorithm to use selection
@@ -1084,20 +972,19 @@ kept_colin_var <- reactiveValues(rc = NULL)
   })
   ## data frame to use for modeling
   ready_df_mod <- reactive({
-    req(exiting_df4mod_path())
-    if(exiting_df4mod_path() != ""){
-      req(exiting_df4mod())
+    req(model_data_source())
+    if (model_data_source() == "file") {
       data <- exiting_df4mod()
     } else {
-      req(extracted_df())
       data <- extracted_df()
     }
+    req(is.data.frame(data))
     return(data)
   })
 
   ## fitting
   ## modal to show model output
-  models_modals <- function(tle = "")({
+  models_modals <- function(tle = "", bioclim = FALSE)({
     modalDialog(
       title = h3(tle, style = "text-align:left;"),
       footer = tagList(modalButton("Ok"),
@@ -1114,7 +1001,13 @@ kept_colin_var <- reactiveValues(rc = NULL)
           ),
         tabPanel("Performance metric", value = "xx_pm" , DT::DTOutput("xx_performance_metric")),
         tabPanel("Predicted suitability", DT::DTOutput("xx_predicted_suitability")),
-        if(input$tuning) tabPanel(title = "Hyper-parameters performance", DT::DTOutput("xx_hyper_performance"))
+        if(input$tuning) tabPanel(title = "Hyper-parameters performance", DT::DTOutput("xx_hyper_performance")),
+        if(bioclim) tabPanel(title = "Envelope",
+                             fluidRow(column(4, selectInput("bioc_env_x", "X", choices = input$bioc_predictors,
+                                                            selected = input$bioc_predictors[1])),
+                                      column(4, selectInput("bioc_env_y", "Y", choices = input$bioc_predictors,
+                                                            selected = input$bioc_predictors[min(2, length(input$bioc_predictors))]))),
+                             plotOutput("bioc_envelope_plot", height = "380px"))
       )
     )
   })
@@ -1130,19 +1023,23 @@ output$selected_mod_lenght <- renderText(
   paste("The number of models selected for ensemble:", length(sst()) ))
 
 
+## Code for a list of fitted models
+models_code <- function(display_names) {
+  paste0("list(", paste0(nimo:::nm_name(display_names), " = ",
+                         vapply(display_names, model_var, ""), collapse = ", "), ")")
+}
+
 ens_fitting <- eventReactive(input$fit_ens, {
-  req(es_model_list$models, esm_models_names_df(), sst())
+  req(length(model_list$models) > 0, sst())
   tryCatch({
-    fit_ensemble(
-      models = model_list$models[ models_names_df()[sst(), ] ],
-      ens_method = input$ens_method,
-      thr = if(any(input$ens_thr %in% c("sensitivity"))) {
-        c(input$ens_thr, "sens" = as.character(input$ens_sens))
-      } else {input$ens_thr},
-      thr_model = if(any(input$ens_thr_model %in% c("sensitivity"))) {
-        c(input$ens_thr_model, "sens" = as.character(input$ens_sens_model))
-      } else {input$ens_thr_model},
-      metric = input$ens_metric)
+    selected <- models_names_df()[sst(), ]
+    run_recorded(
+      "ensemble", "ensemble", "", "ens", "flexsdm::fit_ensemble", fit_ensemble,
+      list(models = nm_cv(model_list$models[selected], models_code(selected)),
+           ens_method = input$ens_method,
+           thr = thr_arg(input$ens_thr, input$ens_sens),
+           thr_model = thr_arg(input$ens_thr_model, input$ens_sens_model),
+           metric = input$ens_metric))
   }, error = error)
 })
 
@@ -1199,15 +1096,17 @@ predict_models <- reactive(
   tryCatch({
     if(input$esm == TRUE){
       req(esm_selected())
-      base::as.list(es_model_list$models[[esm_models_names_df()[esm_selected(), ]]])
+      nm <- esm_models_names_df()[esm_selected(), ][1]
+      nm_cv(base::as.list(es_model_list$models[[nm]]), model_var(nm))
     } else if(input$esm == FALSE && input$model_category == "Ensemble"){
       req(ens_fitting())
-      ens_fitting()
+      nm_cv(ens_fitting(), "ens")
     } else if(input$esm == FALSE && input$model_category == "Standard models"){
       req(st_selected())
-      lapply(st_selected(), function(x){
+      selected <- names(model_list$models)[st_selected()]
+      nm_cv(lapply(st_selected(), function(x){
         concat_model(model_list$models, x)
-      })
+      }), paste0("list(", paste(vapply(selected, model_var, ""), collapse = ", "), ")"))
     }
   }, error = error)
 
@@ -1215,29 +1114,33 @@ predict_models <- reactive(
 ## set layer files path
 shinyFiles::shinyFileChoose(input, "predict_area", roots = root, filetypes = c("shp", "kml", "kmz"))
 predict_area_path <- reactive({
-  shinyFiles::parseFilePaths(roots = root, selection = input$predict_area)$datapath
+  unname(shinyFiles::parseFilePaths(roots = root, selection = input$predict_area)$datapath)
 })
 
 predict_area <- reactive({
-  req(predict_area_path())
+  req(length(predict_area_path()) > 0)
   terra::vect(sf::read_sf( predict_area_path() ) %>%
                 st_transform(crs = terra::crs(env_layers())))
 })
 #
 prediction <- eventReactive(input$predict, {
-  req(env_layers())
+  req(env_layers(), predict_models())
   tryCatch({
-    nm_predict(
-      models = predict_models(),
-      pred = env_layers(),
-      thr = if(any(input$predict_thr %in% c("sensitivity"))) {
-        c(input$predict_thr, "sens" = as.character(input$predict_sens))
-      } else{input$predict_thr},
-      #predict_area = predict_area(),
-      clamp = input$predict_clamp,
-      pred_type = input$predict_pred_type,
+    area <- if (length(predict_area_path()) > 0) {
+      nm_cv(predict_area(),
+            paste0("terra::vect(sf::st_transform(sf::read_sf(", nm_lit(predict_area_path()),
+                   "), crs = terra::crs(env)))"))
+    } else NULL
+    run_recorded(
+      "prediction", "prediction", "", "pred", "nimo::nm_predict", nm_predict,
+      list(models = predict_models(),
+           pred = nm_cv(env_layers(), "env"),
+           thr = thr_arg(input$predict_thr, input$predict_sens),
+           predict_area = area,
+           clamp = as.logical(input$predict_clamp),
+           pred_type = input$predict_pred_type)
     )
-  }, eraror = error)
+  }, error = error)
 })
 ## Modal to show predict output
 predict_modal <- function(){
@@ -1257,9 +1160,34 @@ predict_modal <- function(){
 
 observeEvent(input$predict, {showModal(predict_modal())})
 
+## Script code of each prediction layer
+pred_layer_code <- reactiveVal(character(0))
+
 pred_rst <- eventReactive(input$predict, {
   tryCatch({
-    predict_rasters(prediction = prediction())
+    out <- predict_rasters(prediction = prediction())
+    codes <- attr(out, "code")
+
+    # Bioclim diagnostics
+    if (!isTRUE(input$esm) && input$model_category == "Standard models") {
+      selected <- names(model_list$models)[st_selected()]
+      is_bioc <- vapply(model_list$models[selected],
+                        function(x) inherits(x$model, "nm_bioclim"), logical(1))
+      for (nm in selected[is_bioc]) {
+        v <- model_var(nm)
+        args <- list(model = nm_cv(model_list$models[[nm]], v), env_layer = nm_cv(env_layers(), "env"))
+        out[[paste(nm, "- limiting factor")]] <- run_recorded(
+          paste0("limiting:", v), "prediction", "Bioclim: variable limiting suitability",
+          paste0(v, "_limiting"), "nimo::nm_bioclim_limiting", nm_bioclim_limiting, args)
+        out[[paste(nm, "- envelope class")]] <- run_recorded(
+          paste0("envelope:", v), "prediction", "Bioclim: core / marginal / outside envelope",
+          paste0(v, "_envelope"), "nimo::nm_bioclim_envelope", nm_bioclim_envelope, args)
+        codes[paste(nm, c("- limiting factor", "- envelope class"))] <-
+          paste0(v, c("_limiting", "_envelope"))
+      }
+    }
+    pred_layer_code(codes)
+    out
   }, error = error)
 })
 
@@ -1285,8 +1213,8 @@ observeEvent(input$pred_rasters, {
  ## MERGE PERFORMANCE
 perf_models <- reactive(
   if(input$esm == TRUE){
-    req(es_selected())
-    base::as.list(es_model_list$models[[esm_models_names_df()[es_selected(), ]]])
+    req(esm_selected())
+    base::as.list(es_model_list$models[[esm_models_names_df()[esm_selected(), ][1]]])
   } else if(input$esm == FALSE && input$model_category == "Ensemble"){
     req(ens_fitting())
     list(ens_fitting())
@@ -1358,22 +1286,28 @@ output$download_predict <- downloadHandler(
 
 ## MODEL EXTRAPOLATION ----
 
+## Predictors used for modelling
+kept_env <- function() {
+  env <- env_layers()
+  removed <- tryCatch(reduce_colin()[[3]], error = function(e) NULL)
+  keep <- intersect(names(env), names(ready_df_mod()))
+  if (input$reduce_collin > 0 && is.character(removed)) keep <- setdiff(keep, removed)
+  if (identical(keep, names(env))) return(nm_cv(env, "env"))
+  nm_cv(env[[keep]], paste0("env[[", nm_lit(keep), "]]"))
+}
+
 model_extrapo <- eventReactive(input$extrapo_model, {
-  req(reduce_colin())
+  req(env_layers(), ready_df_mod())
   tryCatch({
-    if (input$reduce_collin > 0 && !any(reduce_colin()[[3]] %in% "")) {
-      env_layers <- env_layers()[[!names(env_layers()) %in% reduce_colin()[[3]]]]
-    } else {
-      env_layers <- env_layers()
-    }
-    extra_eval(
-      training_data = ready_df_mod(),
-      projection_data = env_layers,
-      metric = input$extrap_metric,
-      n_cores = input$n_cores,
-      aggreg_factor = input$aggreg_factor,
-      pr_ab = "pr_ab"
-    )
+    args <- list(training_data = nm_cv(ready_df_mod(), "sdm_data"),
+                 projection_data = kept_env(),
+                 metric = input$extrap_metric,
+                 n_cores = input$n_cores,
+                 aggreg_factor = input$aggreg_factor,
+                 pr_ab = "pr_ab")
+    args <- args[names(args) %in% names(formals(flexsdm::extra_eval))]
+    run_recorded("extrapolation", "extrapolation", "", "extra", "flexsdm::extra_eval",
+                 flexsdm::extra_eval, args)
   }, error = error)
 })
 output$extrapo_raster <- renderPlot({
@@ -1399,25 +1333,23 @@ observe({
   updateSelectInput(inputId = "ov_p_lat", choices = colnames(ready_df_mod()))
 })
 over_correct <- eventReactive(input$ov_p_correct, {
-  if (input$reduce_collin > 0 && !any(reduce_colin()[[3]] %in% "")) {
-    env_layers <- env_layers()[[!names(env_layers()) %in% reduce_colin()[[3]]]]
-  } else {
-    env_layers <- env_layers()
-  }
+  req(pred_rst(), ready_df_mod())
   cont_suit <- pred_rst()[[input$ov_p_cont_suit]]
   tryCatch({
-    msdm_posteriori(
-      records = ready_df_mod(),
-      x = input$ov_p_lon,
-      y = input$ov_p_lat,
-      pr_ab = "pr_ab",
-      cont_suit = cont_suit,
-      method = input$ov_p_method,
-      thr = if(any(input$ov_p_thr %in% c("sensitivity"))) {
-        c(input$ov_p_thr, "sens" = as.character(input$predict_sens))
-      } else{input$ov_p_thr},
-      buffer = if(input$ov_p_method == "bmcp"){input$ov_p_buffer} else {NULL},
-      crs = terra::crs(cont_suit)
+    run_recorded(
+      "posteriori", "posteriori", input$ov_p_cont_suit, "pred_corrected",
+      "flexsdm::msdm_posteriori", msdm_posteriori,
+      list(records = nm_cv(ready_df_mod(), "sdm_data"),
+           x = input$ov_p_lon,
+           y = input$ov_p_lat,
+           pr_ab = "pr_ab",
+           cont_suit = nm_cv(cont_suit, "cont_suit"),
+           method = input$ov_p_method,
+           thr = thr_arg(input$ov_p_thr, input$predict_sens),
+           buffer = if(input$ov_p_method == "bmcp"){input$ov_p_buffer} else {NULL},
+           crs = nm_cv(terra::crs(cont_suit), "terra::crs(cont_suit)")),
+      pre = paste0("cont_suit <- ", pred_layer_code()[[input$ov_p_cont_suit]],
+                   " # ", input$ov_p_cont_suit)
     )
   }, error = error)
 })
@@ -1510,10 +1442,7 @@ gbif_data <- eventReactive(input$load_gbif_data, {
       inside_drawn_ply()[[2]]
     )}
   else if (input$country_filter != "" & input$use_geom_gbif == FALSE) {
-    list(
-      query_occ(query_params = query_params())[[1]],
-      query_occ(query_params = query_params())[[2]]
-    )}
+    query_occ(query_params = query_params())}
   else if (input$use_geom_gbif == TRUE) {
     list(
       loc_geom()[[1]],
@@ -1716,12 +1645,13 @@ observeEvent(input$valid_data, {
 })
 
 # CONFIGURATION
-global_seed <- reactive(123)
-tmout <- reactive(5)
+config <- reactiveValues(seed = 123, timeout = 5)
+global_seed <- function() config$seed
+tmout <- function() config$timeout
 
 observeEvent(input$save_config, {
-global_seed <<- reactive(input$set_seed)
-tmout <<- reactive(input$sys_timeout)
+  config$seed <- input$set_seed
+  config$timeout <- input$sys_timeout
   showNotification(
     id = "save_config",
     ui = "Change saved",

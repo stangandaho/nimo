@@ -3,7 +3,7 @@ algorithm <- c("Generalized Additive Models" = "gam", "Maximum Entropy" = "max",
                "Neural Networks" = "net", "Generalized Linear Models" = "glm",
                "Gaussian Process" = "gau", "Generalized Boosted Regression" = "gbm",
                "Random Forest" = "raf", "Support Vector Machine" = "svm",
-               "Bioclim" = "bioc")
+               "Bioclim" = "bioc", "Domain" = "dom")
 # Ensemble method
 ensemble <- c("Average" = "mean", "Super average" = "meansup", "Weighted average" = "meanw",
               "Median" = "median", "Based on Threshold" = "meanthr")
