@@ -4,10 +4,20 @@
 \alias{nm_fit_bioclim}
 \title{Bioclim model}
 \usage{
-nm_fit_bioclim(data, response, predictors, partition, thr = NULL)
+nm_fit_bioclim(
+  data,
+  response,
+  predictors,
+  partition,
+  thr = NULL,
+  tails = "both",
+  aggregation = c("min", "gmean", "mean")
+)
 }
 \arguments{
-\item{data}{data.frame object with response (0,1) and predictors values.}
+\item{data}{data.frame object with response (0,1) and predictors values.
+Presences (1) are used to fit the envelope; absences, pseudo-absences or
+background points (0) are only used to evaluate the model.}
 
 \item{response}{character. Column name with species absence-presence data (0,1).}
 
@@ -16,12 +26,30 @@ nm_fit_bioclim(data, response, predictors, partition, thr = NULL)
 \item{partition}{character. Column name with training and validation partition
 groups (like part_* family output from \code{flexsdm}).}
 
-\item{thr}{character. Threshold used to get binary suitability values (i.e. 0,1).}
+\item{thr}{character. Threshold used to get binary suitability values (i.e. 0,1).
+See \code{\link[=nm_eval]{nm_eval()}} for the available thresholds.}
+
+\item{tails}{character. Which tail(s) of each predictor distribution limit
+suitability. One of \code{"both"} (default), \code{"low"} (only low values are limiting,
+values above the median score 1) or \code{"high"} (only high values are limiting).
+Either a single value applied to all predictors, or a vector named by predictor.}
+
+\item{aggregation}{character. How per-variable scores are combined into the
+final suitability:
+\itemize{
+\item \code{"min"} (default): the most limiting variable sets suitability (Liebig's
+law of the minimum, classic BIOCLIM).
+\item \code{"gmean"}: geometric mean of per-variable scores. Still 0 outside the
+envelope of any variable, but less dominated by a single variable.
+\item \code{"mean"}: arithmetic mean of per-variable scores, the most permissive.
+}}
 }
 \value{
 A list object with:
 \itemize{
-\item model: A "Bioclim" class object from dismo package. This object can be used for predicting.
+\item model: A \code{nm_bioclim} object holding the fitted envelope. It can be
+used with \link[=predict.nm_bioclim]{predict()}, \code{\link[=nm_predict]{nm_predict()}}, \code{\link[=nm_bioclim_limiting]{nm_bioclim_limiting()}},
+\code{\link[=nm_bioclim_envelope]{nm_bioclim_envelope()}} and \code{\link[=nm_bioclim_plot]{nm_bioclim_plot()}}.
 \item predictors: A tibble with quantitative (c column names) variables use for modeling.
 \item performance: Performance metric (see \code{\link[=nm_eval]{nm_eval()}}).
 Threshold dependent metrics are calculated based on the threshold specified in the argument.
@@ -29,16 +57,46 @@ Threshold dependent metrics are calculated based on the threshold specified in t
 }
 }
 \description{
-The BIOCLIM algorithm
+Fit and validate a BIOCLIM climate-envelope model (Busby 1991; Booth et al. 2014).
+BIOCLIM characterises the environmental envelope of a species from its
+presence records only. For every predictor, the value of a site is located in the
+empirical distribution of the presence values; sites near the median of
+every predictor score close to 1 and sites outside the range observed at
+presences score 0. Per-variable scores are then aggregated into a single
+suitability value.
+}
+\details{
+The algorithm is implemented natively (no dependency on \code{dismo}). With the
+default settings (\code{tails = "both"}, \code{aggregation = "min"}) predictions are
+identical to \code{dismo::bioclim()}.
 }
 \examples{
 
 wbv_path <- paste0(system.file("extdata", package = "nimo"), "/Gyps_africanus_KNP.csv")
 wbv_df <- read.csv(wbv_path)
-mod = nm_fit_bioclim(data = wbv_df,
-                    response = "pr_ab",
-                    predictors = c("dnw", "dsm", "lst", "ndvi"),
-                    partition = ".part",
-                    thr = "max_sens_spec")
+mod <- nm_fit_bioclim(data = wbv_df,
+                      response = "pr_ab",
+                      predictors = c("dnw", "dsm", "lst", "ndvi"),
+                      partition = ".part",
+                      thr = "max_sens_spec")
+mod$model
+mod$performance
 
+# Less strict aggregation, and only low NDVI values are limiting
+mod2 <- nm_fit_bioclim(data = wbv_df,
+                       response = "pr_ab",
+                       predictors = c("dnw", "dsm", "lst", "ndvi"),
+                       partition = ".part",
+                       thr = "max_sens_spec",
+                       tails = c(dnw = "both", dsm = "both", lst = "both", ndvi = "low"),
+                       aggregation = "gmean")
+
+}
+\references{
+Busby, J. R. (1991). BIOCLIM - a bioclimate analysis and prediction system.
+Plant Protection Quarterly, 6, 8-9.
+
+Booth, T. H., Nix, H. A., Busby, J. R., & Hutchinson, M. F. (2014). BIOCLIM:
+the first species distribution modelling package, its early applications and
+relevance to most current MaxEnt studies. Diversity and Distributions, 20(1), 1-9.
 }
