@@ -1,10 +1,13 @@
 # Variable importance
 
+## new models are added to the selection
+vi_models_known <- character(0)
 observe({
   fitted <- names(model_list$models)
   keep <- intersect(isolate(input$vi_models), fitted)
-  updateSelectInput(session, "vi_models", choices = fitted,
-                    selected = if (length(keep) > 0) keep else fitted)
+  added <- setdiff(fitted, vi_models_known)
+  vi_models_known <<- fitted
+  updateSelectInput(session, "vi_models", choices = fitted, selected = union(keep, added))
 })
 
 var_imp <- eventReactive(input$compute_vi, {

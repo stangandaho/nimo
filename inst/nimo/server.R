@@ -114,7 +114,7 @@ server <- function(input, output, session) {
                   conditionalPanel("input.occ_type != 'Presence'",
                                    column(4, selectInput("occ_var", "Occurrence column", choices = colnames(sdm_data))),
                                    column(4, selectInput("presence", "Presence", choices = c())),
-                                   column(4, selectInput("abscence", "Abscence", choices = c())))
+                                   column(4, selectInput("abscence", "Absence", choices = c())))
                 )
 
                 )

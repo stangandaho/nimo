@@ -13,6 +13,7 @@ st_render_dt <- function(...) {
 error <- function(e){
   showModal(error_modal())
   output$error_modal <- renderText(paste(e))
+  invisible(NULL)
 }
 
 ## concatenate models selected for prediction

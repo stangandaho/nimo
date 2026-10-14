@@ -9,13 +9,15 @@ fit_model_btn_icon = icon("buromobelexperte")
 
 output$dynamic_model_fitting <- renderUI({
   selected_order <- input$fit_model_algorithm
+  # columns of the modelling data, so the lists are filled whenever the UI is drawn
+  pv <- tryCatch(predictors(), error = function(e) character(0))
 
   columns <- lapply(selected_order, function(order) {
     ## ✅ESM
     if (order %in% c("gam") && input$esm == TRUE) {
       div(style = "flex: 1;  margin-right: 20px;",
           h4("Generalized Additive Models - ESM"),
-          selectInput("gam_esm_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("gam_esm_predictors", "Quantitative predictors", choices = pv, multiple = T),
           selectInput("gam_esm_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.gam_esm_thr.includes('sensitivity')",
                            numericInput("gam_esm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -26,7 +28,7 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("gau") && input$esm == TRUE) {
       div(style = "flex: 1;margin-right: 20px;",
           h4("Gaussian Process Models - ESM"),
-          selectInput("gau_esm_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("gau_esm_predictors", "Quantitative predictors", choices = pv, multiple = T),
           selectInput("gau_esm_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.gau_esm_thr.includes('sensitivity')",
                            numericInput("gau_esm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -35,7 +37,7 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("gbm") && input$esm == TRUE) {
       div(style = "flex: 1;margin-right: 20px;",
           h4("Generalized Boosted Models - ESM"),
-          selectInput("gbm_esm_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("gbm_esm_predictors", "Quantitative predictors", choices = pv, multiple = T),
           selectInput("gbm_esm_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.gbm_esm_thr.includes('sensitivity')",
                            numericInput("gbm_esm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -46,7 +48,7 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("glm") && input$esm == TRUE) {
       div(style = "flex: 1;margin-right: 20px;",
           h4("Generalized Linear Models - ESM"),
-          selectInput("glm_esm_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("glm_esm_predictors", "Quantitative predictors", choices = pv, multiple = T),
           selectInput("glm_esm_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.glm_esm_thr.includes('sensitivity')",
                            numericInput("glm_esm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -56,7 +58,7 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("max") && input$esm == TRUE) {
       div(style = "flex: 1;margin-right: 20px;",
           h4("Maximum Entropy Models - ESM"),
-          selectInput("max_esm_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("max_esm_predictors", "Quantitative predictors", choices = pv, multiple = T),
           selectInput("max_esm_clamp", "Clamp", choices = c("No" = FALSE, "Yes" = TRUE),
                       selected = FALSE),
           selectInput("max_esm_thr", "Threshold", choices = thr, multiple = T),
@@ -74,7 +76,7 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("net") && input$esm == TRUE) {
       div(style = "flex: 1;margin-right: 20px;",
           h4("Neural Networks Models - ESM"),
-          selectInput("net_esm_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("net_esm_predictors", "Quantitative predictors", choices = pv, multiple = T),
           selectInput("net_esm_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.net_esm_thr.includes('sensitivity')",
                            numericInput("net_esm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -85,8 +87,8 @@ output$dynamic_model_fitting <- renderUI({
       disable(
         div(style = "flex: 1; margin-right: 20px;",
             h4("Random Forests Models - ESM"),
-            selectInput("raf_esm_predictors", "Quantitative predictors", choices = c(), multiple = T),
-            selectInput("raf_esm_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+            selectInput("raf_esm_predictors", "Quantitative predictors", choices = pv, multiple = T),
+            selectInput("raf_esm_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
             selectInput("raf_esm_thr", "Threshold", choices = thr, multiple = T),
             conditionalPanel("input.raf_esm_thr.includes('sensitivity')",
                              numericInput("raf_esm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -96,7 +98,7 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("svm") && input$esm == TRUE) {
       div(style = "flex: 1; margin-right: 20px;",
           h4("Support Vector Machine Models - ESM"),
-          selectInput("svm_esm_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("svm_esm_predictors", "Quantitative predictors", choices = pv, multiple = T),
           selectInput("svm_esm_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.svm_esm_thr.includes('sensitivity')",
                            numericInput("svm_esm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -108,8 +110,8 @@ output$dynamic_model_fitting <- renderUI({
     else if (order  %in% c("gbm") && input$tuning == TRUE) {
       div(style = "flex: 1;margin-right: 20px;",
           h4("Generalized Boosted - Tuning"),
-          selectInput("t_gbm_predictors", "Quantitative predictors", choices = c(), multiple = T),
-          selectInput("t_gbm_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+          selectInput("t_gbm_predictors", "Quantitative predictors", choices = pv, multiple = T),
+          selectInput("t_gbm_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
           selectInput("t_gbm_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.t_gbm_thr.includes('sensitivity')",
                            numericInput("t_gbm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -128,8 +130,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("max") && input$tuning == TRUE) {
       div(style = "flex: 1;margin-right: 20px;",
           h4("Maximum Entropy - Tuning"),
-          selectInput("t_max_predictors", "Quantitative predictors", choices = c(), multiple = T),
-          selectInput("t_max_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+          selectInput("t_max_predictors", "Quantitative predictors", choices = pv, multiple = T),
+          selectInput("t_max_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
           selectInput("t_max_clamp", "Clamp", choices = c("No" = FALSE, "Yes" = TRUE),
                       selected = TRUE),
           selectInput("t_max_thr", "Threshold", choices = thr, multiple = T),
@@ -151,8 +153,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("net") && input$tuning == TRUE) {
       div(style = "flex: 1;margin-right: 20px;",
           h4("Neural Networks - Tuning"),
-          selectInput("t_net_predictors", "Quantitative predictors", choices = c(), multiple = T),
-          selectInput("t_net_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+          selectInput("t_net_predictors", "Quantitative predictors", choices = pv, multiple = T),
+          selectInput("t_net_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
           selectInput("t_net_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.t_net_thr.includes('sensitivity')",
                            numericInput("t_net_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -167,8 +169,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("raf") && input$tuning == TRUE) {
       div(style = "flex: 1; margin-right: 20px;",
           h4("Random Forests - Tuning"),
-          selectInput("t_raf_predictors", "Quantitative predictors", choices = c(), multiple = T),
-          selectInput("t_raf_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+          selectInput("t_raf_predictors", "Quantitative predictors", choices = pv, multiple = T),
+          selectInput("t_raf_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
           selectInput("t_raf_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.t_raf_thr.includes('sensitivity')",
                            numericInput("t_raf_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -184,8 +186,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("svm") && input$tuning == TRUE) {
       div(style = "flex: 1; margin-right: 20px;",
           h4("Support Vector Machine - Tuning"),
-          selectInput("t_svm_predictors", "Quantitative predictors", choices = c(), multiple = T),
-          selectInput("t_svm_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+          selectInput("t_svm_predictors", "Quantitative predictors", choices = pv, multiple = T),
+          selectInput("t_svm_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
           selectInput("t_svm_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.t_svm_thr.includes('sensitivity')",
                            numericInput("t_svm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -203,9 +205,8 @@ output$dynamic_model_fitting <- renderUI({
     else if (order %in% c("gam") && input$tuning == FALSE) {
       div(style = "flex: 1;  margin-right: 20px;",
               h4("Generalized Additive Models"),
-              selectInput("gam_predictors", "Quantitative p
-                          redictors", choices = c(), multiple = T),
-              selectInput("gam_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+              selectInput("gam_predictors", "Quantitative predictors", choices = pv, multiple = T),
+              selectInput("gam_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
               selectInput("gam_select_pred", "Perform predictor selection", choices = c("No" = FALSE, "Yes" = TRUE),
                           selected = FALSE),
               selectInput("gam_thr", "Threshold", choices = thr, multiple = T),
@@ -219,8 +220,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("gau") && input$tuning == FALSE) {
       div(style = "flex: 1;margin-right: 20px;",
              h4("Gaussian Process Models"),
-             selectInput("gau_predictors", "Quantitative predictors", choices = c(), multiple = T),
-             selectInput("gau_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+             selectInput("gau_predictors", "Quantitative predictors", choices = pv, multiple = T),
+             selectInput("gau_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
              selectInput("gau_thr", "Threshold", choices = thr, multiple = T),
              conditionalPanel("input.gau_thr.includes('sensitivity')",
                               numericInput("gau_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -229,8 +230,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("gbm") && input$tuning == FALSE) {
       div(style = "flex: 1;margin-right: 20px;",
              h4("Generalized Boosted Models"),
-             selectInput("gbm_predictors", "Quantitative predictors", choices = c(), multiple = T),
-             selectInput("gbm_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+             selectInput("gbm_predictors", "Quantitative predictors", choices = pv, multiple = T),
+             selectInput("gbm_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
              selectInput("gbm_thr", "Threshold", choices = thr, multiple = T),
              conditionalPanel("input.gbm_thr.includes('sensitivity')",
                               numericInput("gbm_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -242,8 +243,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("glm") && input$tuning == FALSE) {
       div(style = "flex: 1;margin-right: 20px;",
              h4("Generalized Linear Models"),
-             selectInput("glm_predictors", "Quantitative predictors", choices = c(), multiple = T),
-             selectInput("glm_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+             selectInput("glm_predictors", "Quantitative predictors", choices = pv, multiple = T),
+             selectInput("glm_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
              selectInput("glm_select_pred", "Perform predictor selection", choices = c("No" = FALSE, "Yes" = TRUE),
                          selected = FALSE),
              selectInput("glm_thr", "Threshold", choices = thr, multiple = T),
@@ -256,8 +257,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("max") && input$tuning == FALSE) {
       div(style = "flex: 1;margin-right: 20px;",
              h4("Maximum Entropy Models"),
-             selectInput("max_predictors", "Quantitative predictors", choices = c(), multiple = T),
-             selectInput("max_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+             selectInput("max_predictors", "Quantitative predictors", choices = pv, multiple = T),
+             selectInput("max_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
              selectInput("max_clamp", "Clamp", choices = c("No" = FALSE, "Yes" = TRUE), selected = FALSE),
              selectInput("max_thr", "Threshold", choices = thr, multiple = T),
              conditionalPanel("input.max_thr.includes('sensitivity')",
@@ -276,8 +277,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("net") && input$tuning == FALSE) {
       div(style = "flex: 1;margin-right: 20px;",
              h4("Neural Networks Models"),
-             selectInput("net_predictors", "Quantitative predictors", choices = c(), multiple = T),
-             selectInput("net_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+             selectInput("net_predictors", "Quantitative predictors", choices = pv, multiple = T),
+             selectInput("net_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
              selectInput("net_thr", "Threshold", choices = thr, multiple = T),
              conditionalPanel("input.net_thr.includes('sensitivity')",
                               numericInput("net_sens", label = "Sensitivity value", value = 0.9, min = 0, max = 1, step = 0.01)),
@@ -288,8 +289,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("raf") && input$tuning == FALSE) {
       div(style = "flex: 1; margin-right: 20px;",
           h4("Random Forests Models"),
-          selectInput("raf_predictors", "Quantitative predictors", choices = c(), multiple = T),
-          selectInput("raf_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+          selectInput("raf_predictors", "Quantitative predictors", choices = pv, multiple = T),
+          selectInput("raf_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
           numericInput("raf_ntree", "Number of tree", 500, min = 1, step = 1),
           numericInput("raf_mtry", "Number of variables sampled", 2, min = 1, step = 1),
           selectInput("raf_thr", "Threshold", choices = thr, multiple = T),
@@ -300,8 +301,8 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order  %in% c("svm") && input$tuning == FALSE) {
       div(style = "flex: 1; margin-right: 20px;",
              h4("Support Vector Machine Models"),
-             selectInput("svm_predictors", "Quantitative predictors", choices = c(), multiple = T),
-             selectInput("svm_predictors_f", "Qualitative predictors", choices = c(), multiple = T),
+             selectInput("svm_predictors", "Quantitative predictors", choices = pv, multiple = T),
+             selectInput("svm_predictors_f", "Qualitative predictors", choices = pv, multiple = T),
              selectInput("svm_thr", "Threshold", choices = thr, multiple = T),
              conditionalPanel("input.svm_thr.includes('sensitivity')",
                               numericInput("svm_sens", label = "Sensitivity value",
@@ -313,8 +314,8 @@ output$dynamic_model_fitting <- renderUI({
     }else if (order  %in% c("bioc") && input$tuning == FALSE) {
       div(style = "flex: 1; margin-right: 20px;",
           h4("Bioclim Models"),
-          selectInput("bioc_response", "Response", choices = c(), multiple = F),
-          selectInput("bioc_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("bioc_response", "Response", choices = pv, selected = intersect("pr_ab", pv)[1], multiple = F),
+          selectInput("bioc_predictors", "Quantitative predictors", choices = pv, multiple = T),
           selectInput("bioc_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.bioc_thr.includes('sensitivity')",
                            numericInput("bioc_sens", label = "Sensitivity value",
@@ -329,7 +330,7 @@ output$dynamic_model_fitting <- renderUI({
     } else if (order %in% c("dom") && input$tuning == FALSE) {
       div(style = "flex: 1; margin-right: 20px;",
           h4("Domain Models"),
-          selectInput("dom_predictors", "Quantitative predictors", choices = c(), multiple = T),
+          selectInput("dom_predictors", "Quantitative predictors", choices = pv, multiple = T),
           selectInput("dom_thr", "Threshold", choices = thr, multiple = T),
           conditionalPanel("input.dom_thr.includes('sensitivity')",
                            numericInput("dom_sens", label = "Sensitivity value",

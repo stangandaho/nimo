@@ -18,8 +18,8 @@ outliers_modal <- function() {
       column(4,
              p("Presences with unusual environmental conditions are flagged by five methods:",
                "boxplot, reverse jackknife, support vector machine, random forest and",
-               "random-forest outlier score (the last three need absences or background points",
-               "to use all methods). Coordinates must be in the predictors' coordinate system.",
+               "random-forest outlier score (support vector machine and random forest need absences",
+               "or background points). Coordinates must be in the predictors' coordinate system.",
                style = "color:#5f6b6d"),
              numericInput("outliers_min_methods", "Remove presences flagged by at least",
                           value = 3, min = 1, max = 5, step = 1),
@@ -99,14 +99,17 @@ output$outliers_status <- renderText({
 output$outliers_plot <- renderPlot({
   out <- outliers_res()
   req(is.data.frame(out))
-  out$methods <- factor(ifelse(out$pr_ab == 1, out$.out_sum, NA), levels = 0:5)
+  out$methods <- factor(ifelse(is.na(out$.out_sum), "no data", out$.out_sum),
+                        levels = c(0:5, "no data"))
   ggplot(out, aes(x = .data[[input$long_var]], y = .data[[input$lat_var]])) +
     geom_point(data = out[out$pr_ab == 0, ], colour = "grey80", size = 1) +
     geom_point(data = out[out$pr_ab == 1, ], aes(colour = methods), size = 2) +
     scale_colour_manual(values = c("0" = "#042d0f", "1" = "#7a9a01", "2" = "#f2c14e",
-                                   "3" = "#f26802", "4" = "#c52323", "5" = "#6b0f0f"),
+                                   "3" = "#f26802", "4" = "#c52323", "5" = "#6b0f0f",
+                                   "no data" = "#9aa3a6"),
                         drop = FALSE, name = "Flagged by\n(methods)") +
-    labs(x = "Longitude", y = "Latitude", caption = "Grey: absences / background points") +
+    labs(x = "Longitude", y = "Latitude",
+         caption = "Light grey: absences / background points. No data: outside the predictors") +
     theme_minimal()
 })
 

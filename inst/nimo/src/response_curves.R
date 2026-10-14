@@ -1,10 +1,13 @@
 # Response curves
 
+## new models are added to the selection
+rc_models_known <- character(0)
 observe({
   fitted <- names(model_list$models)
   keep <- intersect(isolate(input$rc_models), fitted)
-  updateSelectInput(session, "rc_models", choices = fitted,
-                    selected = if (length(keep) > 0) keep else fitted)
+  added <- setdiff(fitted, rc_models_known)
+  rc_models_known <<- fitted
+  updateSelectInput(session, "rc_models", choices = fitted, selected = union(keep, added))
 })
 
 ## Predictors of the selected models
