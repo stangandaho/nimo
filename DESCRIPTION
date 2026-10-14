@@ -48,6 +48,8 @@ Imports:
 Suggests: 
     dismo,
     testthat (>= 3.0.0)
+Remotes:
+    sjevelazco/flexsdm
 Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
